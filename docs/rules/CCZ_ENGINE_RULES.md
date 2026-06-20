@@ -214,7 +214,7 @@ win conditions
 lose conditions
 ```
 
-> **落地状态**：win/lose 求值 `[machine-gated]` `WinLose.evaluate/settle`（列表 OR、lose 优先、`BattleOutcome` sticky、纯只读，`WinLoseTest` 覆盖全 6 条件）；mid triggers + pre/post battle ops `[aspirational]`（已建模未执行，P3b 落 `TriggerRunner` 时机器化）。
+> **落地状态** `[machine-gated]`：win/lose 求值 = `WinLose.evaluate/settle`（列表 OR、lose 优先、`BattleOutcome` sticky、纯只读，`WinLoseTest` 覆盖全 6 条件）；mid triggers + pre/post battle ops = `TriggerRunner`（`tick` = 触发器→win/lose settle；`once` 经 `BattleProgress.firedTriggers` 追踪；`TriggerConditions` 覆盖全 6 触发条件，整数 HP 比较；`BattleOps` 覆盖全 9 个 `BattleOp`，纯无 RNG、按序应用）。SpawnUnit 经 `ScriptContext.reserves` 模板（缺模板 = fail-safe no-op，引用完整性由 `ContentEventValidator` 上游守）；GiveItem 仅发事件（core 暂无背包）；非 SetVar 的 scenario op 仅发 `Event.Scenario`。`TriggerConditionTest`/`BattleOpTest`/`TriggerRunnerTest` 守护。
 
 战中触发条件第一批：
 

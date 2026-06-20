@@ -49,9 +49,14 @@ ItemGranted
 BattleEnded
 ```
 
-`BattleEnded(outcome)` is already emitted: `WinLose.settle(state, sScript)` evaluates the
-win/lose lists (OR; lose before win) and emits it once on the `ONGOING -> VICTORY/DEFEAT`
-edge. `BattleOutcome` is sticky on `BattleState`.
+Most of these are already emitted by the trigger runner (P3): `UnitSpawned`, `UnitRemoved`,
+`StatusApplied`, `ItemGranted`, plus `HpSet`, `VarSet`, and `Scenario(op)` (presentation ops
+forwarded for the view layer). `BattleEnded(outcome)` is emitted by `WinLose.settle` once on
+the `ONGOING -> VICTORY/DEFEAT` edge; `BattleOutcome` is sticky on `BattleState`.
+
+`TriggerRunner.tick(state, sScript, scriptContext)` fires eligible mid-triggers (conditions in
+`TriggerConditions`, `once` tracked) then settles win/lose; `applyPre`/`applyPost` run the
+battle's pre/post op lists. All of this is pure and deterministic (no RNG).
 
 ## Command Legality
 
