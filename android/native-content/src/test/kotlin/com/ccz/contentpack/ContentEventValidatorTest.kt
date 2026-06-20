@@ -2,7 +2,10 @@ package com.ccz.contentpack
 
 import com.ccz.core.event.BattleOp
 import com.ccz.core.event.BattleTrigger
+import com.ccz.core.event.ChoiceOption
+import com.ccz.core.event.RScript
 import com.ccz.core.event.SScript
+import com.ccz.core.event.ScenarioOp
 import com.ccz.core.event.TriggerCondition
 import com.ccz.core.event.WinLoseCondition
 import com.ccz.core.model.CombatStats
@@ -34,6 +37,64 @@ class ContentEventValidatorTest {
         assertTrue(issues.any { it.message.contains("unknown unit: ghost") })
         assertTrue(issues.any { it.message.contains("unknown item: elixir") })
     }
+
+    @Test
+    fun validRScriptReferencesValidate() {
+        val content = rScriptContent(
+            ScenarioOp.Portrait("zhaoyun"),
+            ScenarioOp.Branch(variable = "flag", equals = 1, target = "end"),
+            ScenarioOp.Choice(prompt = "?", options = listOf(ChoiceOption(text = "go", goto = "end"))),
+            ScenarioOp.Label("end"),
+        )
+
+        assertEquals(emptyList(), ContentValidator.validate(content))
+    }
+
+    @Test
+    fun unknownBranchTargetFailClosed() {
+        val content = rScriptContent(
+            ScenarioOp.Branch(variable = "flag", equals = 1, target = "missing"),
+            ScenarioOp.Label("end"),
+        )
+
+        assertTrue(ContentValidator.validate(content).any { it.message.contains("unknown label: missing") })
+    }
+
+    @Test
+    fun unknownChoiceGotoFailClosed() {
+        val content = rScriptContent(
+            ScenarioOp.Choice(prompt = "?", options = listOf(ChoiceOption(text = "x", goto = "nowhere"))),
+            ScenarioOp.Label("end"),
+        )
+
+        assertTrue(ContentValidator.validate(content).any { it.message.contains("unknown label: nowhere") })
+    }
+
+    @Test
+    fun unknownPortraitUnitFailClosed() {
+        val content = rScriptContent(ScenarioOp.Portrait("ghost"))
+
+        assertTrue(ContentValidator.validate(content).any { it.message.contains("unknown unit: ghost") })
+    }
+
+    @Test
+    fun duplicateLabelFailClosed() {
+        val content = rScriptContent(ScenarioOp.Label("dup"), ScenarioOp.Label("dup"))
+
+        assertTrue(ContentValidator.validate(content).any { it.message.contains("duplicate label: dup") })
+    }
+
+    @Test
+    fun choiceGotoNullContinuesInOrderAndValidates() {
+        val content = rScriptContent(
+            ScenarioOp.Choice(prompt = "?", options = listOf(ChoiceOption(text = "stay", goto = null))),
+        )
+
+        assertEquals(emptyList(), ContentValidator.validate(content))
+    }
+
+    private fun rScriptContent(vararg ops: ScenarioOp): NativeContent =
+        contentWith(events = EventTables(rScripts = listOf(RScript(id = "r1", ops = ops.toList()))), items = emptyList())
 
     private fun scriptReferencing(unitId: String, itemId: String): SScript =
         SScript(
