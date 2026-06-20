@@ -25,7 +25,7 @@ ticketbox_api36_host
 | 项 | 当前 pin | 建 :app 时基线 (2026-06 核实) | 官方来源 |
 |---|---|---|---|
 | Kotlin | 2.2.21 | 2.3.20（落后一 minor，可在独立 slice 升） | kotlinlang.org/docs/releases.html |
-| detekt | 2.0.0-alpha.5 | 2.0 stable 出即升（见 ADR-0003） | detekt.dev/changelog |
+| detekt | 2.0.0-alpha.3 | 升 alpha.5 需独立 slice 验证；2.0 stable 出即升正式（见 ADR-0003） | detekt.dev/changelog |
 | Gradle (wrapper) | 9.4.1 | 9.6.0（9.4.1 = AGP 9.2 最低线，偏边） | docs.gradle.org/current/release-notes.html |
 | AGP | 无 :app，未引入 | 9.2.0 | developer.android.com/build/releases/about-agp |
 | compileSdk / targetSdk | 无 :app | 37 | developer.android.com/tools/releases/platforms |
