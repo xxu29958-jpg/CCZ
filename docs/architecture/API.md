@@ -62,6 +62,13 @@ battle's pre/post op lists. All of this is pure and deterministic (no RNG).
 native-content's `BattleAssembler` from validated `UnitDef`s — full-HP `Combatant` templates keyed
 by unit id, with a sentinel position the spawn op overwrites when it places the unit on the board.
 
+`ScenarioRunner.run(rScript, vars)` interprets an R-script (cutscene) deterministically: control-flow
+ops (`Label`/`SetVar`/`Branch`) are consumed to evolve variables and the program counter; presentation
+ops (Dialogue/Portrait/Wait/SceneTransition/PlayBgm/Fade) are emitted in order into `Playback.events`.
+It stops at the first `Choice` (surfaced via `Playback.pausedAt`; player choice is a later, replayable
+step) and a step budget halts branch loops fail-safe (`Playback.haltedOnBudget`). Pure, no RNG; an unset
+variable reads 0, matching `BattleProgress.vars`.
+
 ## Command Legality
 
 Commands are submitted through the gameplay gate, not applied directly:
