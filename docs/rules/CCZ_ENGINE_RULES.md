@@ -127,12 +127,12 @@ ccz-native-pack/
 
 必须校验（标注当前 `ContentValidator` 实现状态——绝不给未实现项写现在时断言，见 `docs/architecture/SECURITY.md`）：
 
-- schema version。`[machine-gated]` native_format_version 检查。
-- required fields。`[review-only]` 当前由 Kotlin data class 构造保证；JSON loader 落地后须显式校验。
+- schema version。`[machine-gated]` native_format_version 检查（loader 解码后由 `ContentValidator` 守，二层 fail-closed）。
+- required fields。`[machine-gated]` `ContentJsonLoader` 解码边界：缺必填字段 → kotlinx `MissingFieldException` 包成 `ContentDecodeException`（无默认值的 DTO 字段即必填）。
 - duplicate ids（含空白 id）。`[machine-gated]` validateUniqueIds。
 - missing references（unit→class/skill/item、class→counter/skill、map→terrain）。`[machine-gated]` validateUnits / validateClasses / validateMaps（unknownReferencesFailClosed 测试）。
 - map bounds（尺寸、行列形状、spawn 越界）。`[machine-gated]` validateMaps。
-- unknown enum。`[review-only]` JSON loader 解码边界落地后强制。
+- unknown enum。`[machine-gated]` `ContentJsonLoader` 解码边界：faction / damageKind / counterRelation 字符串经 `Decoders` 白名单化，未知值 fail-closed（`ContentJsonLoaderTest`）。未知 JSON 键也拒（`ignoreUnknownKeys=false`）。
 - event op / trigger whitelist。`[type-enforced + machine-gated]` op/触发集是 Kotlin sealed interface，内存里造不出未知 op（未知 op 只可能在未来 JSON 解码边界出现，届时 loader 白名单化）；事件**引用完整性**（unit/item 引用）由 `ContentEventValidator` 校验（eventReferencesFailClosed 测试）。
 
 ## Game Core
@@ -167,7 +167,7 @@ ccz-native-pack/
 - 可以依赖 `game-core` 的领域基础类型。
 - 不依赖 Android framework。
 - 不解析旧 MOD。
-- 未来 JSON loader 放这里或其下游模块，但旧格式 parser 不放这里。
+- JSON loader 已落此模块（`com.ccz.contentpack.json`，`kotlinx.serialization`）：`@Serializable` DTO 层 + 映射器，把枚举字符串在解码边界白名单化，`game-core` 域类型保持零序列化依赖（DTO 层隔离 JSON）。旧格式 parser 不放这里。
 
 ## Battle Formula Rules
 

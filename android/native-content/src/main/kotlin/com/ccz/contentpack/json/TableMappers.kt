@@ -1,0 +1,113 @@
+package com.ccz.contentpack.json
+
+import com.ccz.contentpack.ClassCombat
+import com.ccz.contentpack.ClassDef
+import com.ccz.contentpack.ClassMovement
+import com.ccz.contentpack.ItemDef
+import com.ccz.contentpack.MapDef
+import com.ccz.contentpack.MapSize
+import com.ccz.contentpack.RangeDef
+import com.ccz.contentpack.SkillDef
+import com.ccz.contentpack.SkillUse
+import com.ccz.contentpack.TerrainDef
+import com.ccz.contentpack.UnitAssets
+import com.ccz.contentpack.UnitDef
+import com.ccz.contentpack.UnitIdentity
+import com.ccz.contentpack.UnitLoadout
+import com.ccz.contentpack.UnitProfile
+import com.ccz.core.model.AccuracyRates
+import com.ccz.core.model.BurstRates
+import com.ccz.core.model.CombatRates
+import com.ccz.core.model.CombatStats
+import com.ccz.core.model.Pos
+
+internal fun toClass(index: Int, dto: ClassDto): ClassDef {
+    val path = "classes[$index]"
+    return ClassDef(
+        id = dto.id,
+        name = dto.name,
+        movement = ClassMovement(dto.movement.moveType, dto.movement.move),
+        combat = ClassCombat(
+            // Counter values are validated + canonicalized to the enum name (fail-closed on unknown);
+            // the class-id keys are preserved. Domain stores strings (no game-core enum dep here).
+            counters = dto.combat.counters.mapValues { decodeCounterRelation("$path.counters", it.value).name },
+            terrainAffinity = dto.combat.terrainAffinity,
+            skills = dto.combat.skills,
+        ),
+    )
+}
+
+internal fun toUnit(index: Int, dto: UnitDto): UnitDef {
+    val path = "units[$index]"
+    return UnitDef(
+        identity = UnitIdentity(
+            id = dto.identity.id,
+            name = dto.identity.name,
+            classId = dto.identity.classId,
+            faction = decodeFaction("$path.faction", dto.identity.faction),
+        ),
+        profile = UnitProfile(
+            level = dto.profile.level,
+            hpMax = dto.profile.hpMax,
+            stats = toStats(dto.profile.stats),
+            rates = toRates(dto.profile.rates),
+        ),
+        loadout = UnitLoadout(skills = dto.loadout.skills, items = dto.loadout.items),
+        assets = UnitAssets(portrait = dto.assets.portrait, spriteSet = dto.assets.spriteSet),
+    )
+}
+
+internal fun toTerrain(dto: TerrainDto): TerrainDef =
+    TerrainDef(
+        id = dto.id,
+        name = dto.name,
+        moveCost = dto.moveCost,
+        defBonus = dto.defBonus,
+        avoidBonus = dto.avoidBonus,
+        heal = dto.heal,
+    )
+
+internal fun toSkill(index: Int, dto: SkillDto): SkillDef =
+    SkillDef(
+        id = dto.id,
+        name = dto.name,
+        kind = decodeDamageKind("skills[$index].kind", dto.kind),
+        powerCoeff = dto.powerCoeff,
+        use = SkillUse(
+            range = RangeDef(min = dto.use.range.min, max = dto.use.range.max),
+            area = dto.use.area,
+            targeting = dto.use.targeting,
+            mpCost = dto.use.mpCost,
+        ),
+    )
+
+internal fun toItem(dto: ItemDto): ItemDef =
+    ItemDef(
+        id = dto.id,
+        name = dto.name,
+        type = dto.type,
+        statMods = dto.statMods?.let { toStats(it) },
+        effects = dto.effects,
+        equipClass = dto.equipClass,
+    )
+
+internal fun toMap(dto: MapDto): MapDef =
+    MapDef(
+        id = dto.id,
+        size = MapSize(dto.size.width, dto.size.height),
+        tileset = dto.tileset,
+        tiles = dto.tiles,
+        spawnPoints = dto.spawnPoints.mapValues { entry -> entry.value.map { toPos(it) } },
+        fog = dto.fog,
+    )
+
+internal fun toStats(dto: StatsDto): CombatStats =
+    CombatStats(atk = dto.atk, def = dto.def, mat = dto.mat, res = dto.res)
+
+internal fun toRates(dto: RatesDto): CombatRates =
+    CombatRates(
+        accuracy = AccuracyRates(dto.accuracy.hit, dto.accuracy.evade, dto.accuracy.precision, dto.accuracy.block),
+        burst = BurstRates(dto.burst.crit, dto.burst.critResist, dto.burst.combo, dto.burst.comboResist),
+    )
+
+internal fun toPos(dto: PosDto): Pos = Pos(x = dto.x, y = dto.y)

@@ -8,9 +8,11 @@
 
 ## P1 Native Content Skeleton
 
-- Define manifest/classes/units/terrain/skills/items/maps/events models.
-- Add validator stubs.
-- Load a hand-written sample pack.
+- Define manifest/classes/units/terrain/skills/items/maps/events models. **[done]**
+- Add validator stubs. **[done]** `ContentValidator` + `ContentEventValidator` (cross-ref + bounds + version).
+- Load a hand-written sample pack. **[done — tables]** `ContentJsonLoader` (snake_case JSON → domain via
+  `@Serializable` DTOs + fail-closed enum/required-field/unknown-key decoding). Event scripts (R/S) in
+  JSON are not decoded yet (polymorphic op hierarchy deferred).
 
 ## P2 Minimal Battle Loop
 
