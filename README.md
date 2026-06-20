@@ -1,79 +1,58 @@
-![banner](./docs/img/banner.png)
-<hr>
+# CCZ Tactics Engine
 
-[>>> Wanna Get Started ASAP? Read Our Wiki! <<<](https://github.com/ramaureirac/godot-tactical-rpg/wiki)
+Modern Android-first tactics engine for converted Cao Cao Zhuan style content.
 
-<hr>
+## Project Entry
 
-# About
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
-[![Godot v3.4](https://img.shields.io/badge/Godot-v3.4-blue.svg)](https://github.com/ramaureirac/godot-tactical-rpg/tree/release/godot-v3.4)
-[![Godot v4.0](https://img.shields.io/badge/Godot-v4.0-blue.svg)](https://github.com/ramaureirac/godot-tactical-rpg/tree/release/godot-v4.0)
-[![Godot v4.2](https://img.shields.io/badge/Godot-v4.2-blue.svg)](https://github.com/ramaureirac/godot-tactical-rpg/tree/release/godot-v4.2)
-[![Godot v4.3](https://img.shields.io/badge/Godot-v4.3-blue.svg)](https://github.com/ramaureirac/godot-tactical-rpg/tree/release/godot-v4.3)
+Read in this order:
 
+1. `AGENTS.md`
+2. `HANDOFF.md`
+3. `docs/rules/ENGINEERING_RULES.md`
+4. `docs/architecture/ARCHITECTURE.md`
+5. `docs/DECISIONS/`
 
-A simple template for making <i>tactical role-playing games</i> on [Godot Engine 4](https://godotengine.org/).
-This is not a fully functional game framework or a professional work, just a simple project made in our free time. 
-Anyways, feel free to use this sample in your own game. 
+## Current Direction
 
-- You can see all of the project's features on [YouTube](https://youtu.be/lJKWlLwYDZY).
-- Another demo from [Open Source Games](https://www.youtube.com/watch?v=-AY6KEdX_3E).
-- In case you are searching for some 2d projects, check out [GDQuest](https://github.com/GDQuest/godot-2d-tactical-rpg-movement) or [TBS_GoDot](https://github.com/ja-brouil/TBS_GoDot)
-- In case you are looking for a similar pathfinding project/tutorial: [GameDevArts](https://www.youtube.com/watch?v=fYtwZdQTP5A) (Not mine)
+```text
+old MOD files
+  -> offline converter
+  -> native content pack
+  -> Android runtime
+  -> game-core
+```
 
+The runtime does not parse old MOD formats. Legacy scripts, opcodes, Data tables, images, and audio are converter inputs.
 
-As mentioned before, this project uses [Godot Engine 4.3](https://godotengine.org/) (and was ported quite recently), so it will no longer support previous versions of the engine. If (for some reason) you still want to use an older version of Godot, make sure to clone from the respective branch, but keep in mind that no new features will be added in the future.
+## Repository Note
 
+This repository still contains Godot tactical RPG template material at the root (`assets/`, `data/`, `project.godot`). Treat it as reference/prototype material unless a later decision says otherwise.
 
-# Features
+The Android/Kotlin workspace now contains the first two runtime modules:
 
-- Turn-based
-- Grid movement
-- Each pawn can move and attack
-- Super basic (and stupid) enemy AI 
-- Advanced camera panning, free look, zoom and rotations
-    - Mouse, gamepad or keyboard-controlled
-    - Configurable camera stray distance (radius)
-- Blender map recognition -- [tutorial for Blender (with or without Godot Export) right here](./docs/tutorials/how-to-create-maps/README.md)!
-- Controller Support
+```text
+android/game-core      deterministic battle core
+android/native-content    native content pack models and validator
+```
 
-- Complete native Godot editor documentation across the project
-- Toggleable Debugger
-    - Sending to Output tab
-    - Disable in TacticsConfig
+Current local gate:
 
-### 4.3 Project refactoring:
-[View Structure Overview Diagram](https://github.com/user-attachments/assets/65bb6862-6e84-4149-af5a-047a04f413eb)
-- @mbusson made the project structure more scalable (shared assets architecture)
-    - Models: Centralized storage for class parameters & logic
-    - Modules: Self-contained reusable units (Godot Nodes)
-    - Dedicated maps directory
-    - Other smaller architecture changes to nest components logically
-- Adapted code to follow [the official GDScript style guidelines](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html#one-statement-per-line)
-- Slightly optimized framework performance
+```powershell
+cd android
+.\gradlew.bat --no-daemon :game-core:test :native-content:test :game-core:runSelfTest :native-content:runSelfTest :game-core:detektMain :native-content:detektMain :game-core:detektTest :native-content:detektTest
+```
 
+## Documentation Map
 
-
-[![asset-store](./docs/img/asset-store.png)](https://godotengine.org/asset-library/asset/1295)
-
-
-# Preview
-
-![preview](./docs/img/preview.png)
-
-# Contribute
-
-All code contributions and opened issues are welcome! However, since I want to keep this project as simple as possible, I suggest first opening an issue suggesting your idea before sending a PR. It's really sad to reject work just because it doesn't align with a project's vision or it overrides a core functionality (If that is the case, it will be better to start your own fork).
-
-I know there are a lot of entry-level game developers in here who are looking to collaborate on open-source projects (which is nice). If that's your case, check out the label "Good First Issue" in the Issues Tab. So that you can get involved in this project with simple features.
-
-
-# Special thanks
-
-- GDQuest
-- Tiny Legions
-- Miziziziz
-- TutsByKai
-- AdamCYounis
-- Almost every other guy at Godot's forums / StackOverflow
+```text
+AGENTS.md                         entry and AI working rules
+HANDOFF.md                        current state and next step
+docs/rules/ENGINEERING_RULES.md   long-lived engineering rules
+docs/architecture/                system truth and contracts
+docs/DECISIONS/                   architecture decisions
+docs/runbook/                     operating instructions
+docs/roadmap/                     milestone plan
+docs/audits/                      deferred risk pool
+skills/                           repeatable workflows
+archive/                          historical context
+```

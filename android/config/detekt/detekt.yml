@@ -1,0 +1,32 @@
+config:
+  validation: true
+  warningsAsErrors: false
+
+complexity:
+  active: true
+  LongMethod:
+    active: true
+    allowedLines: 60
+  LargeClass:
+    active: true
+    allowedLines: 600
+  LongParameterList:
+    active: true
+    allowedFunctionParameters: 5
+    allowedConstructorParameters: 6
+    ignoreDefaultParameters: false
+    ignoreDataClasses: false
+    ignoreAnnotatedParameter: []
+  CyclomaticComplexMethod:
+    active: true
+    allowedComplexity: 14
+  NestedBlockDepth:
+    active: true
+    allowedDepth: 4
+  TooManyFunctions:
+    active: true
+    allowedFunctionsPerFile: 11
+    allowedFunctionsPerClass: 99
+    allowedFunctionsPerInterface: 99
+    allowedFunctionsPerObject: 99
+    allowedFunctionsPerEnum: 99
