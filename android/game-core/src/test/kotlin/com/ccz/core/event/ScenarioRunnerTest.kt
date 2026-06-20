@@ -181,5 +181,138 @@ class ScenarioRunnerTest {
         assertEquals(ScenarioRunner.run(script), ScenarioRunner.run(script))
     }
 
+    @Test
+    fun choiceSelectsOptionAppliesSetVarsAndGoto() {
+        val choice = ScenarioOp.Choice(
+            prompt = "pick",
+            options = listOf(
+                ChoiceOption(text = "left", goto = "left_path", setVars = mapOf("path" to 0)),
+                ChoiceOption(text = "right", goto = "right_path", setVars = mapOf("path" to 1)),
+            ),
+        )
+        val script = rScript(
+            listOf(
+                choice, // 0
+                ScenarioOp.Label("left_path"), // 1
+                ScenarioOp.Dialogue(DialogueLine(text = "left")), // 2
+                ScenarioOp.Label("right_path"), // 3
+                ScenarioOp.Dialogue(DialogueLine(text = "right")), // 4
+            ),
+        )
+
+        val pb = ScenarioRunner.run(script, choices = listOf(1)) // pick "right"
+
+        assertEquals(listOf(ScenarioOp.Dialogue(DialogueLine(text = "right"))), pb.events)
+        assertEquals(1, pb.vars["path"]) // chosen option's setVars applied
+        assertNull(pb.pausedAt)
+    }
+
+    @Test
+    fun choiceWithoutGotoFallsThroughInOrder() {
+        val choice = ScenarioOp.Choice(prompt = "?", options = listOf(ChoiceOption(text = "stay"))) // goto null
+
+        val pb = ScenarioRunner.run(rScript(listOf(choice, ScenarioOp.FadeOut)), choices = listOf(0))
+
+        assertEquals(listOf(ScenarioOp.FadeOut), pb.events) // no goto => fall through to next op
+        assertNull(pb.pausedAt)
+    }
+
+    @Test
+    fun multipleChoicesConsumedInSequence() {
+        val first = ScenarioOp.Choice("1", listOf(ChoiceOption(text = "a", setVars = mapOf("x" to 1))))
+        val second = ScenarioOp.Choice("2", listOf(ChoiceOption(text = "b", setVars = mapOf("y" to 2))))
+
+        val pb = ScenarioRunner.run(
+            rScript(listOf(first, ScenarioOp.Wait(1), second, ScenarioOp.FadeOut)),
+            choices = listOf(0, 0),
+        )
+
+        assertEquals(listOf(ScenarioOp.Wait(1), ScenarioOp.FadeOut), pb.events)
+        assertEquals(1, pb.vars["x"])
+        assertEquals(2, pb.vars["y"])
+    }
+
+    @Test
+    fun exhaustedChoicesPauseAtNextChoice() {
+        val first = ScenarioOp.Choice("1", listOf(ChoiceOption(text = "a")))
+        val second = ScenarioOp.Choice("2", listOf(ChoiceOption(text = "b")))
+
+        val pb = ScenarioRunner.run(
+            rScript(listOf(first, ScenarioOp.FadeIn, second, ScenarioOp.FadeOut)),
+            choices = listOf(0), // only enough for the first choice
+        )
+
+        assertEquals(listOf(ScenarioOp.FadeIn), pb.events) // ran past first choice, paused at second
+        assertEquals(second, pb.pausedAt)
+        assertFalse(pb.haltedOnBudget) // paused on exhausted input, not a budget halt
+    }
+
+    @Test
+    fun outOfRangeChoiceIndexPausesFailSafe() {
+        val choice = ScenarioOp.Choice(prompt = "?", options = listOf(ChoiceOption(text = "only")))
+
+        val pb = ScenarioRunner.run(rScript(listOf(choice, ScenarioOp.FadeOut)), choices = listOf(5))
+
+        assertEquals(emptyList(), pb.events) // out-of-range option => pause, FadeOut not reached
+        assertEquals(choice, pb.pausedAt)
+        assertFalse(pb.haltedOnBudget) // fail-safe pause, not a budget halt
+    }
+
+    @Test
+    fun runWithChoicesIsDeterministic() {
+        val choice = ScenarioOp.Choice(
+            prompt = "pick",
+            options = listOf(
+                ChoiceOption(text = "a", goto = "end", setVars = mapOf("p" to 7)),
+                ChoiceOption(text = "b"),
+            ),
+        )
+        val script = rScript(
+            listOf(
+                choice,
+                ScenarioOp.Dialogue(DialogueLine(text = "skipped")),
+                ScenarioOp.Label("end"),
+                ScenarioOp.FadeOut,
+            ),
+        )
+
+        assertEquals(ScenarioRunner.run(script, choices = listOf(0)), ScenarioRunner.run(script, choices = listOf(0)))
+    }
+
+    @Test
+    fun choiceGotoToUnknownLabelFallsThroughFailSafe() {
+        // goto an unresolvable label (validator guards content; runner must fail-safe like Branch)
+        val choice = ScenarioOp.Choice("?", listOf(ChoiceOption(text = "x", goto = "missing")))
+
+        val pb = ScenarioRunner.run(rScript(listOf(choice, ScenarioOp.FadeOut)), choices = listOf(0))
+
+        assertEquals(listOf(ScenarioOp.FadeOut), pb.events) // unresolvable goto => fall through, not a crash
+        assertNull(pb.pausedAt)
+        assertFalse(pb.haltedOnBudget)
+    }
+
+    @Test
+    fun choiceSetVarsOverwriteExistingVar() {
+        val choice = ScenarioOp.Choice("?", listOf(ChoiceOption(text = "x", setVars = mapOf("path" to 1))))
+
+        val pb = ScenarioRunner.run(
+            rScript(listOf(choice)),
+            vars = mapOf("path" to 99), // pre-existing var the option's setVars must overwrite
+            choices = listOf(0),
+        )
+
+        assertEquals(1, pb.vars["path"]) // putAll overwrites the prior value
+    }
+
+    @Test
+    fun negativeChoiceIndexPausesFailSafe() {
+        val choice = ScenarioOp.Choice("?", listOf(ChoiceOption(text = "only")))
+
+        val pb = ScenarioRunner.run(rScript(listOf(choice, ScenarioOp.FadeOut)), choices = listOf(-1))
+
+        assertEquals(emptyList(), pb.events) // negative index resolves to no option => pause
+        assertEquals(choice, pb.pausedAt)
+    }
+
     private fun rScript(ops: List<ScenarioOp>): RScript = RScript(id = "r", ops = ops)
 }
