@@ -33,7 +33,7 @@
 - 新增规则必须同时新增或更新单测；无法单测的规则必须先拆到可测边界。
 - 大功能完成后必须更新 HANDOFF、runbook、规则/架构文档和验证命令。
 
-> **#6 落地状态** `[review-only]`：当前靠 review 保证「每个规则有单测」，尚无 `assertTestCountEqualsBaseline` 一类机器门。test-count baseline gate 落地后升级为 `[machine-gated]`（见 `docs/runbook/CI.md`）。
+> **#6 落地状态** `[machine-gated]`：`assertTestCountEqualsBaseline`（root gradle task，权威 baseline 在 `android/config/test-count-baseline.txt`）按 `@Test` 严格等值钉死测试数——加/删测试必须同 diff bump baseline，是经审改动。
 
 ## Runtime Direction
 
@@ -133,8 +133,7 @@ ccz-native-pack/
 - missing references（unit→class/skill/item、class→counter/skill、map→terrain）。`[machine-gated]` validateUnits / validateClasses / validateMaps（unknownReferencesFailClosed 测试）。
 - map bounds（尺寸、行列形状、spawn 越界）。`[machine-gated]` validateMaps。
 - unknown enum。`[review-only]` JSON loader 解码边界落地后强制。
-- event op whitelist。`[review-only]` 当前 ContentValidator 不读 content.events，待 validateEvents 接线。
-- trigger condition whitelist。`[review-only]` 同上，待 validateEvents。
+- event op / trigger whitelist。`[type-enforced + machine-gated]` op/触发集是 Kotlin sealed interface，内存里造不出未知 op（未知 op 只可能在未来 JSON 解码边界出现，届时 loader 白名单化）；事件**引用完整性**（unit/item 引用）由 `ContentEventValidator` 校验（eventReferencesFailClosed 测试）。
 
 ## Game Core
 
@@ -149,7 +148,7 @@ ccz-native-pack/
 
 - 战斗公式只用整数。`[review-only]` 类型层面非强制，靠 review + 公式实现；浮点 = 回放不可复现。
 - RNG state 随 battle state 走。`[machine-gated]` ReplayContractTest（同种子同结果）。
-- RNG 消费顺序是规则契约。`[review-only]` 当前只在 `Formula.rollHitProfile` docstring 声明；ReplayContractTest 只测同种子同结果，**不测消费顺序/计数**——一次重排 roll 顺序仍能保持同进程确定性却破坏跨版本回放，无测试捕获。RNG 顺序/计数测试落地后升级。
+- RNG 消费顺序是规则契约（hit→crit→combo→block）。`[machine-gated]` RngContractTest 钉死消费**计数**（命中 4 次 / miss 短路 1 次，靠 splitmix64 state delta）；GoldenReplayTest 钉死固定种子→事件流，重排 roll 顺序会改 golden 即被捕获。
 - Resolver 输入 state + command，输出 state + events。
 - Presentation 只消费 events。
 - Gameplay 负责 command 合法性：移动范围、射程、存活、回合归属。
@@ -250,7 +249,7 @@ save_schema_version
 
 - Save 必须包含 `save_schema_version`。
 - Save 必须包含 `rng_state`。
-- Replay = initial state + command sequence。`[machine-gated]` 部分——同进程回放确定性已由 ReplayContractTest 覆盖；跨 build / 版本回放（golden fixture）待补。
+- Replay = initial state + command sequence。`[machine-gated]` 同进程回放确定性由 ReplayContractTest 覆盖；跨 build/版本回放由 GoldenReplayTest（固定种子→事件流+终态 golden）覆盖。
 - 运行时遇到未来版本 save 必须拒绝。
 - 内容包版本和存档兼容关系必须显式记录。
 
@@ -283,6 +282,7 @@ save_schema_version
 .\gradlew.bat --no-daemon :game-core:test :native-content:test
 .\gradlew.bat --no-daemon :game-core:detektMain :native-content:detektMain
 .\gradlew.bat --no-daemon :game-core:detektTest :native-content:detektTest
+.\gradlew.bat --no-daemon assertTestCountEqualsBaseline
 ```
 
 ## Write & Convert Safety

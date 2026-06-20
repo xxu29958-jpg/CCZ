@@ -65,7 +65,7 @@ Current modules are pure JVM/Kotlin, so the Android app variant tasks do not exi
 
 ```powershell
 cd android
-.\gradlew.bat --no-daemon :game-core:test :native-content:test :game-core:runSelfTest :native-content:runSelfTest :game-core:detektMain :native-content:detektMain :game-core:detektTest :native-content:detektTest
+.\gradlew.bat --no-daemon :game-core:test :native-content:test :game-core:runSelfTest :native-content:runSelfTest :game-core:detektMain :native-content:detektMain :game-core:detektTest :native-content:detektTest assertTestCountEqualsBaseline
 ```
 
 ## Android SDK Tools

@@ -8,7 +8,7 @@
 - `[enforced]` Unknown native format versions are rejected (`native_format_version`).
 - `[enforced]` Missing data references are rejected (unit→class/skill/item, class→counter/skill, map→terrain; `unknownReferencesFailClosed`).
 - `[enforced]` Coordinates and map dimensions are bounds-checked (size, tile shape, spawn bounds).
-- `[pending]` Unknown event ops / trigger conditions must be rejected — `ContentValidator` does not yet read `content.events`; to be enforced by `validateEvents`.
+- `[enforced]` Event reference integrity (unit / item references in S-scripts) is validated by `ContentEventValidator` (`eventReferencesFailClosed`). Op / trigger sets are whitelisted by Kotlin sealed types in memory; a string-keyed op whitelist applies at a future JSON decode boundary.
 - `[pending]` Missing asset references (sprites / portraits / audio) must be rejected — not yet validated; to be enforced when an asset index exists.
 - `[pending]` Unknown enums must be rejected at the JSON decode boundary — pending a JSON loader.
 

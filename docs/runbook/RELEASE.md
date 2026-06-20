@@ -12,7 +12,8 @@ detekt type-resolving 双任务 (:*:detektMain :*:detektTest，未来 :app:detek
 单元测试 (:game-core:test :native-content:test)
 确定性自检 (:game-core:runSelfTest :native-content:runSelfTest)
 native content pack validator 通过
-golden / replay 回归测试通过（fixture 落地后）
+golden / replay 回归测试通过 (GoldenReplayTest)
+test-count 基线一致 (assertTestCountEqualsBaseline)
 release 构建无 debug 入口 / 调试菜单 / 隐藏后门
 版本字段有意更新（engine/native_format/content/converter/save_schema）
 ```

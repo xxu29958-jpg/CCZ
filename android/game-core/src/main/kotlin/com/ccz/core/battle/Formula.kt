@@ -12,6 +12,14 @@ data class BattleRules(
     val damage: DamageRuleSet = DamageRuleSet(),
 ) {
     companion object {
+        /**
+         * Bump whenever a battle formula constant (DamageRuleSet / CounterRuleSet /
+         * Rounding default) or the RNG consumption order changes. GoldenReplayTest is
+         * the tripwire: a changed golden means rules changed, so bump this. Replay/save
+         * envelopes record it so cross-version replays can detect rule drift.
+         */
+        const val RULES_VERSION = 1
+
         val DEFAULT = BattleRules()
     }
 }
