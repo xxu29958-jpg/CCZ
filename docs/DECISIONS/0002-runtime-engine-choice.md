@@ -27,6 +27,10 @@ Godot remains reference/prototype material. Unity and Unreal are not adopted as 
 - Unity runtime fee status: https://unity.com/blog/unity-is-canceling-the-runtime-fee
 - Unreal EULA: https://www.unrealengine.com/eula/unreal
 
+## External Facts (2026-06 核实)
+
+引用的引擎商业条款在 2026-06 仍准确：Unity Runtime Fee 已于 2024-09 彻底取消、回到订阅制（Personal 免费 + Pro/Enterprise 订阅）；Godot 仍 MIT 永久免费、零版税；Unreal 标准 5% 版税（首 $1M 营收豁免，符合条件可降 3.5%）。**即便如此本决策不变**——选 Kotlin 原生的依据是问题形态（确定性规则 / 事件流 / 内容转换 / 存档回放 / 校验），不是引擎价格；定价变化不触发下方任何 Rollback Condition。建 `:app` 前应再核一次官方页面。
+
 ## Rollback Conditions
 
 Reopen this decision if:
