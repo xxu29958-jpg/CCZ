@@ -1,13 +1,17 @@
 package com.ccz.contentpack
 
 import com.ccz.core.event.BattleOp
+import com.ccz.core.event.RScript
 import com.ccz.core.event.SScript
+import com.ccz.core.event.ScenarioOp
 import com.ccz.core.event.TriggerCondition
 import com.ccz.core.event.WinLoseCondition
 
 /**
- * Validates event reference integrity for S-scripts: units / items referenced by
- * battle ops, triggers, and win/lose conditions must resolve to known content ids.
+ * Validates event reference integrity for S-scripts and R-scripts: units / items
+ * referenced by battle ops, triggers, and win/lose conditions must resolve to known
+ * content ids; an R-script's branch/choice jumps must target a label defined in the
+ * same script (labels are unique), and a portrait must name a known unit.
  *
  * Note: the op set itself is whitelisted by Kotlin's sealed interfaces (an unknown
  * op cannot be constructed in memory); a string-keyed op whitelist only becomes
@@ -16,7 +20,8 @@ import com.ccz.core.event.WinLoseCondition
  */
 internal object ContentEventValidator {
     fun validate(events: EventTables, unitIds: Set<String>, itemIds: Set<String>): List<ValidationIssue> =
-        events.sScripts.flatMap { script(it, unitIds, itemIds) }
+        events.sScripts.flatMap { script(it, unitIds, itemIds) } +
+            events.rScripts.flatMap { rScript(it, unitIds) }
 
     private fun script(script: SScript, unitIds: Set<String>, itemIds: Set<String>): List<ValidationIssue> {
         val issues = mutableListOf<ValidationIssue>()
@@ -73,4 +78,42 @@ internal object ContentEventValidator {
             -> emptyList()
         }
     }
+
+    private fun rScript(script: RScript, unitIds: Set<String>): List<ValidationIssue> {
+        val path = "events.rScripts[${script.id}]"
+        val labels = mutableSetOf<String>()
+        val issues = mutableListOf<ValidationIssue>()
+        script.ops.filterIsInstance<ScenarioOp.Label>().forEach { label ->
+            if (!labels.add(label.name)) issues += ValidationIssue(path, "duplicate label: ${label.name}")
+        }
+        script.ops.forEach { issues += scenarioOp(path, it, labels, unitIds) }
+        return issues
+    }
+
+    private fun scenarioOp(
+        path: String,
+        op: ScenarioOp,
+        labels: Set<String>,
+        unitIds: Set<String>,
+    ): List<ValidationIssue> = when (op) {
+        is ScenarioOp.Branch -> listOfNotNull(label(path, op.target, labels))
+        is ScenarioOp.Choice -> op.options.mapNotNull { label(path, it.goto, labels) }
+        is ScenarioOp.Portrait -> listOfNotNull(unit(path, op.unit, unitIds))
+        is ScenarioOp.Dialogue,
+        is ScenarioOp.SetVar,
+        is ScenarioOp.Label,
+        is ScenarioOp.Wait,
+        is ScenarioOp.SceneTransition,
+        is ScenarioOp.PlayBgm,
+        ScenarioOp.FadeIn,
+        ScenarioOp.FadeOut,
+        -> emptyList()
+    }
+
+    private fun label(path: String, target: String?, labels: Set<String>): ValidationIssue? =
+        when {
+            target == null -> null
+            target in labels -> null
+            else -> ValidationIssue(path, "unknown label: $target")
+        }
 }

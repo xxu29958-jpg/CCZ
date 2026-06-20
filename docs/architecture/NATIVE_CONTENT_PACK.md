@@ -43,6 +43,7 @@ ccz-native-pack/
 - IDs are unique.
 - References resolve.
 - Events use known ops and trigger conditions.
+- R-script branch/choice jumps target a label defined in the same script (labels unique); portraits name a known unit.
 - Maps match declared size.
 - Assets referenced by content exist.
 
