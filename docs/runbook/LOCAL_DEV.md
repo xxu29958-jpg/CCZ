@@ -31,7 +31,7 @@ ticketbox_api36_host
 | compileSdk / targetSdk | 无 :app | 37 | developer.android.com/tools/releases/platforms |
 | Google Play targetSdk 底线 | — | ≥35（随平台滚动，发版前复核） | developer.android.com/google/play/requirements/target-sdk |
 | JDK | 17 | 17（AGP 9.x 默认即 min，**不必升 21**） | developer.android.com/build/jdks |
-| kotlinx-serialization-json | 1.7.3（仅 `:native-content`） | 随 Kotlin 升级复核兼容 | github.com/Kotlin/kotlinx.serialization/releases |
+| kotlinx-serialization-json | 1.7.3（`:native-content` + `:game-core`） | 随 Kotlin 升级复核兼容 | github.com/Kotlin/kotlinx.serialization/releases |
 
 ## Core Verification
 
