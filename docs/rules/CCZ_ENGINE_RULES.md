@@ -3,7 +3,7 @@
 > 规则版本 v0.1.0，2026-06-20，自 xiaopiaojia 工程规范 fork 后新建的引擎专属层。
 > 本文件只放 CCZ 现代战棋引擎专属规则。
 >
-> **机器门状态约定**：本文件给硬规则标注落地状态——`[machine-gated]` = 有对应 test/validator 守护；`[review-only]` = 当前只靠 review、尚未机器强制（CI 亦尚未接线，见 `docs/runbook/CI.md`）；`[aspirational]` = 规则描述的对象在 src 中尚未实现。把 review-only / aspirational 逐步变成 machine-gated 是持续目标，不允许给不存在的代码写现在时断言。
+> **机器门状态约定**：本文件给硬规则标注落地状态——`[machine-gated]` = 有对应 test/validator 守护（CI 在每次 push/PR 跑，见 `docs/runbook/CI.md`）；`[review-only]` = 无对应机器门、当前只靠 review；`[aspirational]` = 规则描述的对象在 src 中尚未实现。把 review-only / aspirational 逐步变成 machine-gated 是持续目标，不允许给不存在的代码写现在时断言。
 
 ## Project Boundary
 
@@ -273,9 +273,9 @@ save_schema_version
 
 ## Current Kotlin Gates
 
-> **CI 状态**：当前仓库**没有任何 CI**（见 `docs/runbook/CI.md`），以下 gate 是 **push 前本地必跑**，尚未机器强制。CI lane 接线后这些变成自动门。
+> **CI 状态**：CI（`.github/workflows/ci.yml`）在每次 push/PR 跑以下 gate（见 `docs/runbook/CI.md`）；push 前本地也应先跑（见 `docs/runbook/LOCAL_DEV.md`）。
 
-在 app 建立前，当前模块 push 前必须本地跑过：
+在 app 建立前，当前模块的门（CI + 本地）：
 
 ```powershell
 .\gradlew.bat --no-daemon :game-core:runSelfTest :native-content:runSelfTest

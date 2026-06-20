@@ -53,5 +53,5 @@ skills 层金矿移植（process 层端过来，领域无关）：新增 `advers
 - **JSON loader 的 op 字符串白名单**：内存 op 已由 sealed type 白名单化；JSON 解码边界落地时补 loader 白名单 + 测试。
 - **Save/Replay 信封**：Save 类、`save_schema_version`、拒未来版本测试、`rng_state` 序列化、rulesVersion 入信封——首个 Save 类同 PR 落地。
 - **Converter 模块**：opcode 映射、fail-closed 定位、Evidence Rule 机器化——等真实 MOD 样本（不猜 opcode）。
-- **CI 接线**：第一条 lane 跑 `CI.md` 命令块后，规则里的「push 前本地必跑」升级为自动门。
+- **CI 接线**：已落地（`.github/workflows/ci.yml`，JVM gate 在每次 push/PR 跑全套门）。
 - **工具链升级**：Kotlin/Gradle/AGP/detekt-alpha.5 升级各走独立验证 slice。

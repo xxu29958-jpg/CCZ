@@ -1,6 +1,6 @@
 # Ship Slice
 
-把**一个** CCZ 切片走完整个闭环：off 最新 base 开分支 → 写码 → 跑**真**本地门 → 对抗审 → push →（CI 接线后）红黑分诊 → 合并（需用户授权）→ 同步文档。几件事会本地绿但悄悄咬人：跑了门的**子集**、base 不新、删/加测试没 bump count baseline、自合默认分支没授权。
+把**一个** CCZ 切片走完整个闭环：off 最新 base 开分支 → 写码 → 跑**真**本地门 → 对抗审 → push → CI 红黑分诊 → 合并（需用户授权）→ 同步文档。几件事会本地绿但悄悄咬人：跑了门的**子集**、base 不新、删/加测试没 bump count baseline、自合默认分支没授权。
 
 ## 流程
 
@@ -18,7 +18,7 @@
    detekt 必须是 type-resolving 的 `detektMain`/`detektTest`（见 `android-detekt-discipline`）。
 6. **加/删测试时**，若已有 test-count baseline gate，同 diff bump（镜像 xiaopiaojia 的严格等值 pr-delta lane）。
 7. **对抗审**（codex 缺位时走 `adversarial-review`，并发 ≤2-3）。
-8. push；CI 接线后按 `ci-red-triage` 分诊红。
+8. push；CI（`.github/workflows/ci.yml`）跑 → 按 `ci-red-triage` 分诊红。
 9. **合并需用户显式授权**——不自合默认分支（见 xiaopiaojia 同款纪律）。
 10. 收尾只更新「拥有该知识的那层文档」+ HANDOFF 写当前状态 + 下一步，不写成百科。
 
