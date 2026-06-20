@@ -151,9 +151,15 @@ ccz-native-pack/
 - RNG 消费顺序是规则契约（hit→crit→combo→block）。`[machine-gated]` RngContractTest 钉死消费**计数**（命中 4 次 / miss 短路 1 次，靠 splitmix64 state delta）；GoldenReplayTest 钉死固定种子→事件流，重排 roll 顺序会改 golden 即被捕获。
 - Resolver 输入 state + command，输出 state + events。
 - Presentation 只消费 events。
-- Gameplay 负责 command 合法性：移动范围、射程、存活、回合归属。
-- 规则配置必须以不可变 value object 显式传入。
+- Gameplay 负责 command 合法性：移动范围、射程、存活、回合归属。`[machine-gated]` `CommandValidator.check` 是纯确定性闸门，`Gameplay.submit` 在校验通过前不触 `Resolver`（拒绝零 RNG、不改 state）；`MoveLegalityTest` / `AttackLegalityTest` / `TurnOwnershipTest` / `GameplayOutcomeTest` 覆盖全部 15 个 `RejectReason` + 接受路径。
+- 规则配置必须以不可变 value object 显式传入。`[machine-gated]` 地图 + 规则/内容表收进 `BattleContext`（map / classes / skills / rules），与 `Resolver` 的入参模式一致；`RuleDataTest` 钉死规则注入而非全局可变。
 - 禁止新增全局可变规则开关。
+
+> **合法性层落点（设计决策）**：命令合法性是确定性*规则*，落在 `game-core`（唯一战斗权威），经 `Gameplay.submit` facade 暴露——不放 UI（否则 UI 持有战斗真相），不污染 `Resolver`（保持纯变更，replay 直接重放已接受命令、不重校验）。`ARCHITECTURE.md` 的 "Gameplay 层" 当前即此 facade；独立 `:gameplay` 模块（battle loop / AI / trigger runner）待 P2 渲染半 / P3 落地时再拆。
+>
+> **空间模型**：`BattleMap`（bounds + 每格 `moveCost`/`passable`）是 `game-core` 自有类型，由上层从 native content `MapDef` + terrain 构建后作输入传入；占位（occupancy）从 `BattleState.units` 派生，不另存一份。移动 4 向、进入格扣 `moveCost`（起点免费）、不可通行格与敌方单位阻断通行、友方单位可穿过但不可停、终点须空且在界内（`MoveReachability`）。射程用曼哈顿距离。
+>
+> **回合归属按侧判定**：PLAYER + ALLY 同侧（`sameSide`），ALLY 可在 PLAYER 侧回合行动；`BattleState.active` 只取侧代表（PLAYER / ENEMY，见 `Resolver.nextFaction`），故 `EndTurn` 对 active 精确匹配。`Move` 到自身格 = 原地待命 no-op（合法）。
 
 ## Native Content Module
 

@@ -35,6 +35,11 @@ Native content
   manifest / units / classes / terrain / skills / items / maps / events / text / assets
 ```
 
+Command validation is realized today inside `game-core` (the `Gameplay.submit` facade over
+`CommandValidator`), since legality is a deterministic rule and `game-core` is the sole combat
+authority. A standalone `:gameplay` module (battle loop / AI / trigger runner) is deferred until
+P2 presentation / P3 events need it. See `docs/rules/CCZ_ENGINE_RULES.md` §Game Core.
+
 ## Authority Boundary
 
 `game-core` is the only authority for battle state transitions. Android UI renders state/events and collects input. It may request commands, but it must not compute damage, mutate battle state, consume RNG, or decide battle outcomes.

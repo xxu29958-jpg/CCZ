@@ -14,9 +14,11 @@
 
 ## P2 Minimal Battle Loop
 
-- Display map and units.
-- Move, attack, end turn.
-- Emit events and drive presentation from events.
+- Display map and units. (pending — needs `:app`)
+- Move, attack, end turn. **[engine half done]** `BattleMap` + `Gameplay.submit` / `CommandValidator`
+  in `game-core` validate move range / path / range / aliveness / turn ownership and gate the
+  `Resolver`. Presentation / input still pending the app slice.
+- Emit events and drive presentation from events. (events already emitted by `Resolver`; presentation pending)
 
 ## P3 Event System
 
