@@ -1,10 +1,10 @@
 # Handoff
 
-> 状态：引擎实现阶段。自主扫荡持续 —— P2 引擎半 + P3 事件系统引擎侧 + P1 内容 loader（tables）+ Save/Replay 信封 + 事件脚本 JSON 解码（R/S 多态 op）+ 内容→战斗装配（reserves）+ R 剧本引用校验均**已合并** main，CI 全绿，**无在途任务**。
+> 状态：引擎实现阶段。自主扫荡持续 —— P2 引擎半 + P3 事件系统引擎侧 + P1 内容 loader（tables）+ Save/Replay 信封 + 事件脚本 JSON 解码（R/S 多态 op）+ 内容→战斗装配（reserves）+ R 剧本引用校验 + R 剧本 ScenarioRunner 均**已合并** main，CI 全绿，**无在途任务**。
 
 ## 当前真实状态
 
-- `main` 顶部为 R 剧本引用校验片（合并后），本地 == 远端、工作树干净。CI（`.github/workflows/ci.yml`）每 push/PR 跑全套门。test=110。已合并 PR：#3 P2 合法性、#4 P3a 胜负、#5 P3b 触发器、#6 P1 loader、#7 Save 信封、#8 事件脚本 JSON 解码、#9 内容→战斗装配 reserves，及 R 剧本引用校验 PR。
+- `main` 顶部为 R 剧本 ScenarioRunner 片（合并后），本地 == 远端、工作树干净。CI（`.github/workflows/ci.yml`）每 push/PR 跑全套门。test=121。已合并 PR：#3 P2 合法性、#4 P3a 胜负、#5 P3b 触发器、#6 P1 loader、#7 Save 信封、#8 事件脚本 JSON 解码、#9 内容→战斗装配 reserves、#10 R 剧本引用校验，及 R 剧本 ScenarioRunner PR。
 - **game-core（P2 引擎半）**：`Gameplay.submit` 合法性闸门 + `CommandValidator` + `BattleMap`/`MoveReachability` + `BattleContext` + `Skill.range`。回合归属按侧；Move 自身格 = no-op。
 - **game-core（P3 事件引擎）**：`WinLose`（胜负，OR/lose 优先/sticky）+ `TriggerRunner`（`tick`=触发器→settle，`applyPre/Post`）+ `TriggerConditions`（6 条，整数 HP）+ `BattleOps`（9 ops，纯无 RNG）+ `ScriptContext.reserves`。`once` 经 `BattleProgress.firedTriggers`。`outcome`/`vars`/`firedTriggers` 收进 `BattleProgress`。
 - **game-core（Save/Replay 信封）**：`com.ccz.core.save` —— `SaveEnvelope`/`SaveVersions`（六版本轴）+ `SaveLoader`（fail-closed 拒未来 save schema / 规则漂移，折叠已接受命令确定性回放）。on-disk 序列化 codec 未落地（损坏信封以异常 fail-closed）。
@@ -12,6 +12,7 @@
 - **native-content（事件脚本 JSON 解码，P1 续）**：`EventDto`/`EventMappers` —— R/S 脚本的多态 op 层级（`ScenarioOp` 11 / `TriggerCondition` 6 / `BattleOp` 9 / `WinLoseCondition` 6）经 kotlinx sealed + class-discriminator `type` 解码；discriminator 值（显式 snake_case `@SerialName`）**即 op 字符串白名单**——未知 op 无注册子类 → `SerializationException` → `ContentDecodeException`（fail-closed）。含嵌套多态（`BattleOp.Script` 包 `ScenarioOp`）。embedded faction 走 `decodeFaction` 白名单（fail-closed，直接抛 `ContentDecodeException`）；reference 整性仍在下游 `ContentEventValidator`。`EventTables` 现可从 JSON 装载（`ContentDto.events` 默认空、向后兼容）。每 op/condition/win-lose 变体过 decode→map 结构等值断言（防字段错位）。
 - **native-content（内容→战斗装配，reserves）**：`com.ccz.contentpack.assembly.BattleAssembler` —— 把已验证 `UnitDef` 映射成 off-map `Combatant` 模板（满血入场、`pos=(-1,-1)` 占位由 `SpawnUnit op.at` 覆盖、`stats`/`rates` 直传、`level`/`loadout`/`assets` 不入战斗权威——面板已折算），打包 `ScriptContext.reserves`（按 unit id 索引），让 `SpawnUnit` op 真正取到 reserve（此前 reserves 恒空 = spawn 恒 no-op）。端到端经 `TriggerRunner.applyPre` 公开入口验证（`BattleOps` internal）。装配层单向依赖 game-core，game-core 零改动；selftest 加装配冒烟。
 - **native-content（R 剧本引用校验，fail-closed）**：`ContentEventValidator` 扩展覆盖 `rScripts` —— `Branch.target` / `Choice.option.goto`（非 null）须指向本剧本内存在的 `Label`（两遍扫描，支持前向引用）；`Portrait.unit` 须为已知 unit；同剧本 `Label` 名唯一。穷尽 when（无 else，sealed 编译期兜底）；未知引用 → `ValidationIssue` 不崩。scene/bgm 资源与 scenario 动态变量键无 id 表，故不在引用校验范围。补此前 R 剧本零校验的 fail-open 缺口；为 scenario runner 铺路。
+- **game-core（R 剧本 ScenarioRunner，确定性执行）**：`com.ccz.core.event.ScenarioRunner.run(script, vars)` —— PC 走 `RScript.ops`，控制流（`Label`/`SetVar`/`Branch`）消化为 vars 演化 + 跳转，演出 op（Dialogue/Portrait/Wait/SceneTransition/PlayBgm/Fade）按序进 `Playback.events` 供表现层。纯无 RNG，整数 vars（未设读 0，与 `BattleProgress.vars` 一致）。遇 `Choice` 暂停（`Playback.pausedAt`，选项=可回放 command 留后续片），其后 op 不执行；步数预算（ops×100）防 branch 环（超限 `haltedOnBudget` fail-safe）；未解析 target 视为不跳转而非崩。穷尽 when（sealed 编译期兜底）。`Resolver`/RNG/golden 零碰。
 - 确定性铁律守住：`Resolver`/RNG 消费顺序/伤害公式/`RULES_VERSION`(=1)/golden 全程未动；每片过 2-3 镜头对抗审 0 P1。
 - 主线 Android-first：`game-core`（纯 Kotlin/JVM 唯一战斗权威）+ `native-content`（内容模型 + validator + JSON loader）。仍无 `:app` 模块。
 - 本地全量门 = `docs/runbook/LOCAL_DEV.md` 的 Full Current Local Gate（从 `android/` 内跑）。
@@ -26,7 +27,7 @@
 
 - ~~事件脚本 JSON 解码（P1 续）~~ **已落地**（多态 op + class-discriminator 白名单 + fail-closed，`EventTables` 从 JSON 装载）。
 - ~~从 `UnitDef` 装配 `ScriptContext.reserves`（SpawnUnit 运行期模板）~~ **已落地**（本片：`BattleAssembler` 装配 off-map 满血模板，spawn op 真正取到 reserve）。剩余：`SpawnUnit` 的 `at` 目标格在 event 侧暂不校验边界/占用（既有缺口，非装配层；下游若需可单独立项）。
-- R 剧本 scenario 流执行（scenario runner）：引用完整性校验已**先行落地**（本片，runner 可假设 branch/goto target 有效）。剩余：确定性 PC 执行 R 剧本 ops —— 消化控制流（`Label`/`Branch`/`SetVar`），按序产出演出 op；遇 `Choice` 暂停（选项 = 可回放 command，单独片）；带循环预算防护（goto/branch 环 fail-safe 停）。
+- ~~R 剧本 scenario 流执行（scenario runner）~~ **已落地**（本片：`ScenarioRunner` 确定性 PC 执行 + 控制流消化 + 演出 op 产出 + 循环预算防护）。剩余：`Choice` 玩家选择 = 可回放 command —— 把选项选择接进命令/回放序列（扩 command 契约 + 从 `pausedAt` 续跑 runner），守确定性回放铁律。
 - Save on-disk codec + 原子写：序列化 `SaveEnvelope`（复用 `kotlinx.serialization`），落地时补命令完整性校验 + §Write & Convert Safety 的原子写机器门。
 - P2 渲染半：建 `:app` 壳 + 渲染 map/units + 输入→command（经 `Gameplay.submit`，**不得**绕核改结果）+ 事件驱动表现层。`:app` 落地须补 Android future gates（见 `CCZ_ENGINE_RULES.md` §Android App Future Gates + `docs/runbook/CI.md` Android lane + AVD `ticketbox_api36_host` smoke）。
 - 仍 pending：converter 模块 + opcode fail-closed（等真实 MOD 样本，不猜）。
