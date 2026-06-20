@@ -23,6 +23,7 @@ object ContentValidator {
         issues += validateUnits(content.tables, indexes)
         issues += validateClasses(content.tables, indexes)
         issues += validateMaps(content.tables, indexes.terrainIds)
+        issues += ContentEventValidator.validate(content.events, indexes.unitIds, indexes.itemIds)
 
         return issues
     }
@@ -112,6 +113,7 @@ private data class ContentIndexes(
     val skillIds: Set<String>,
     val itemIds: Set<String>,
     val terrainIds: Set<String>,
+    val unitIds: Set<String>,
 ) {
     companion object {
         fun from(tables: ContentTables): ContentIndexes =
@@ -120,6 +122,7 @@ private data class ContentIndexes(
                 skillIds = tables.skills.map { it.id }.toSet(),
                 itemIds = tables.items.map { it.id }.toSet(),
                 terrainIds = tables.terrain.map { it.id }.toSet(),
+                unitIds = tables.units.map { it.id }.toSet(),
             )
     }
 }
