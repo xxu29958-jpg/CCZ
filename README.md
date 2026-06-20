@@ -26,9 +26,9 @@ The runtime does not parse old MOD formats. Legacy scripts, opcodes, Data tables
 
 ## Repository Note
 
-This repository still contains Godot tactical RPG template material at the root (`assets/`, `data/`, `project.godot`). Treat it as reference/prototype material unless a later decision says otherwise.
+This repository was forked from a Godot tactical RPG template; that template material has been removed entirely — working tree and git history (the engine is Android/Kotlin-first, see `docs/DECISIONS/0002-runtime-engine-choice.md`).
 
-The Android/Kotlin workspace now contains the first two runtime modules:
+The Android/Kotlin workspace contains the first two runtime modules:
 
 ```text
 android/game-core      deterministic battle core

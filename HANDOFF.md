@@ -2,9 +2,8 @@
 
 ## 当前真实状态
 
-- 仓库原本是 Godot tactical RPG 模板，仍保留 `assets/`、`data/`、`project.godot`。
-- 项目主线已定为 Android-first：Android 壳 + Kotlin 确定性核心 + native content pack。
-- Godot 只作为参考 / 样机材料，不作为最终运行时架构。
+- 仓库自 Godot tactical RPG 模板 fork，上游模板素材已彻底移除（含 git 历史，见 `docs/audits/2026-06-20-rules-overhaul-vs-xiaopiaojia.md`）。
+- 项目主线是 Android-first：Android 壳 + Kotlin 确定性核心 + native content pack。
 - 用户提供的 `files.zip` 是核心种子：`Domain.kt`、`Formula.kt`、`Resolver.kt`、`Battle.kt`、`Rng.kt`、`SelfTest.kt`。
 - 文档已按知识分层落位：入口、交接、通用规则、CCZ 专属规则、架构、ADR、runbook、roadmap、audits、skills。
 - 当前 Android workspace 已有 `:game-core` 和 `:native-content` 两个 JVM/Kotlin 模块。
@@ -17,7 +16,6 @@
 ## 在途任务
 
 - 准备下一刀 Android `app` 壳。
-- 不再继续扩旧 Godot 工程。
 - 不在运行时引入老 MOD 格式解析。
 
 ## 下一步

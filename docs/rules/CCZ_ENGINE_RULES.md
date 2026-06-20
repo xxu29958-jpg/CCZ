@@ -49,7 +49,7 @@ Android app shell
 
 不作为主线：
 
-- Godot：只做参考 / 样机。
+- Godot：评估后不采用为主线（上游模板素材已移除）。
 - Unity / Unreal：只作为未来 ADR 重新评估对象。
 - Star 新引擎：不复制、不嵌入。
 
@@ -301,6 +301,6 @@ save_schema_version
 - 不做任意 MOD 即插即跑。
 - 不把 converter 塞进 app。
 - 不让 runtime 读旧格式。
-- 不继续扩旧 Godot 工程当主线。
+- 不采用 Godot 作主线运行时。
 - 不为“以后可能上 3D”提前引 Unity / Unreal。
 - 不把 opcode 猜测写成事实。

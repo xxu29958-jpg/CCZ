@@ -4,7 +4,7 @@ Date: 2026-06-20
 
 ## Context
 
-Candidates include Android native/Kotlin, Godot, Unity, and Unreal. The repository currently contains Godot project material, while the provided core seed is Kotlin.
+Candidates include Android native/Kotlin, Godot, Unity, and Unreal. The repository was forked from a Godot template (since removed), while the provided core seed is Kotlin.
 
 ## Decision
 

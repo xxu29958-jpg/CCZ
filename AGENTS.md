@@ -22,7 +22,7 @@
 - 老 R/S 剧本 opcode、Data 表、Imsg、老图档和 Star 扩展都属于离线转换器。
 - `game-core` 是唯一战斗权威，必须能脱离 Android 单独测试和回放。
 - Android UI 只负责渲染和输入，不能计算伤害、消费 RNG 或直接改战斗状态。
-- 现有 Godot 工程只做参考和样机，不是主线运行时。
+- 上游 Godot 模板素材已彻底移除；主线运行时是 Android/Kotlin（曹操传 MOD 是内容来源，经离线转换器入 native content pack）。
 
 ## 知识归位
 

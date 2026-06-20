@@ -36,8 +36,7 @@ ccz_tactics_engine/
     roadmap/
     audits/
   skills/
-  archive/
-    legacy-godot/        隔离的上游 Godot 模板（非运行时，非主线）
+  archive/               历史素材（当前空）
 ```
 
 Current Android modules:
@@ -55,16 +54,4 @@ android/
     src/main/kotlin/com/ccz/contentpack/
 ```
 
-Existing Godot project material has been quarantined under `archive/legacy-godot/` (moved from repo root via `git mv`, history preserved) so the top level expresses the actual Android/Kotlin architecture:
-
-```text
-archive/legacy-godot/
-  project.godot
-  assets/
-  data/
-  docs-tutorials/            how-to-create-maps tutorial (~76MB)
-  docs-img/
-  docs-asset-lib-preview/
-```
-
-Treat the Godot material as legacy/reference unless a later ADR changes that. See `archive/legacy-godot-template-readme.md`.
+The repository was forked from a Godot tactical RPG template; that material has been removed entirely from both the working tree and git history (`git filter-branch`). See `docs/DECISIONS/0002-runtime-engine-choice.md` and `docs/audits/2026-06-20-rules-overhaul-vs-xiaopiaojia.md`.

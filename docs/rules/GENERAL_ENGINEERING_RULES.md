@@ -153,7 +153,7 @@ ccz_tactics_engine/
   docs/
   scripts/            运维 / 构建 / 自检脚本（禁业务代码）
   skills/
-  archive/            历史 / 遗留素材（含隔离的 Godot 模板）
+  archive/            历史素材（当前空）
   android/            Gradle root
     settings.gradle.kts
     build.gradle.kts
@@ -234,7 +234,7 @@ converter 中间产物 / 生成的 native-pack 缓存
 - 不让业务代码进 `scripts/`。
 - 不把 UI、业务、基础设施搅进一个文件。
 - 不为「以后可能用得上」提前引入大框架。
-- **例外——遗留素材隔离**：上游 Godot 模板素材是有意保留的参考，但必须隔离在 `archive/legacy-godot/`，不散在仓库根冒充活结构（见 `docs/architecture/PROJECT_STRUCTURE.md`）。二进制统一放 `docs/assets/` 或 `archive/`，不散落 `docs/` 根部。
+- 二进制资产统一放 `docs/assets/`，不散落 `docs/` 根部或仓库根。
 
 ## Windows / PowerShell Rules
 
