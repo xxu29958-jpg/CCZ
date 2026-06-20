@@ -8,7 +8,11 @@ import com.ccz.contentpack.SourceInfo
 /** Maps decoded wire DTOs into the pure domain [NativeContent]; enum whitelisting happens in the table mappers. */
 internal object ContentMapper {
     fun toContent(dto: ContentDto): NativeContent =
-        NativeContent(manifest = toManifest(dto.manifest), tables = toTables(dto.tables))
+        NativeContent(
+            manifest = toManifest(dto.manifest),
+            tables = toTables(dto.tables),
+            events = toEvents(dto.events),
+        )
 
     private fun toManifest(dto: ManifestDto): ContentManifest =
         ContentManifest(

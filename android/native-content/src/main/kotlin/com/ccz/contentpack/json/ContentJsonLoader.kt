@@ -12,13 +12,16 @@ import kotlinx.serialization.json.JsonNamingStrategy
  * enum strings are all rejected with a [ContentDecodeException]. Loading does NOT
  * run cross-reference validation — callers pass the result to
  * [com.ccz.contentpack.ContentValidator] (two layers: decode shape here, reference
- * integrity there). JSON keys are snake_case.
+ * integrity there). JSON keys are snake_case. Event-script ops are polymorphic and
+ * decoded by a class-discriminator field ("type") whose value is the op's serial name
+ * (the op whitelist); an unknown op fails closed here (see [EventDto]).
  */
 object ContentJsonLoader {
     @OptIn(ExperimentalSerializationApi::class)
     private val json = Json {
         ignoreUnknownKeys = false
         namingStrategy = JsonNamingStrategy.SnakeCase
+        classDiscriminator = "type"
     }
 
     fun load(text: String): NativeContent =
