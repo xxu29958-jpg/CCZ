@@ -10,7 +10,11 @@ import kotlinx.serialization.Serializable
  * JSON keys are snake_case via the loader's naming strategy.
  */
 @Serializable
-internal data class ContentDto(val manifest: ManifestDto, val tables: TablesDto)
+internal data class ContentDto(
+    val manifest: ManifestDto,
+    val tables: TablesDto,
+    val events: EventsDto = EventsDto(),
+)
 
 @Serializable
 internal data class ManifestDto(
