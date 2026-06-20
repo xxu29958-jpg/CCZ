@@ -22,10 +22,11 @@
 
 ## P3 Event System
 
-- R dialogue flow. (pending)
-- S pre/mid/post triggers. (pending — P3b `TriggerRunner`)
-- Win/lose conditions. **[engine done]** `WinLose.evaluate/settle` in `game-core` decides
-  `BattleOutcome` from the S-script win/lose lists and emits `Event.BattleEnded`.
+- R dialogue flow. (pending — scenario ops are forwarded as `Event.Scenario` for a view layer)
+- S pre/mid/post triggers. **[engine done]** `TriggerRunner` (pre/tick/post) fires mid-triggers
+  (`TriggerConditions`, `once` tracked) and runs `BattleOps` (all 9 battle ops); pure, no RNG.
+- Win/lose conditions. **[engine done]** `WinLose.evaluate/settle` decides `BattleOutcome` from
+  the S-script win/lose lists and emits `Event.BattleEnded`; `tick` settles after firing triggers.
 
 ## P4 Converter Sample
 

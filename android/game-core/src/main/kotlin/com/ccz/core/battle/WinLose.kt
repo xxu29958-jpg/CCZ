@@ -27,7 +27,7 @@ object WinLose {
     fun settle(state: BattleState, script: SScript): Resolution {
         val outcome = evaluate(state, script)
         return if (outcome != state.outcome) {
-            Resolution(state.copy(outcome = outcome), listOf(Event.BattleEnded(outcome)))
+            Resolution(state.withOutcome(outcome), listOf(Event.BattleEnded(outcome)))
         } else {
             Resolution(state, emptyList())
         }
