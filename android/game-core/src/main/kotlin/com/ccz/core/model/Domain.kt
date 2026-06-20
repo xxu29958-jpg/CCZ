@@ -85,9 +85,23 @@ data class Combatant(
     fun withHp(hp: Int): Combatant = copy(vitals = vitals.copy(hp = hp))
 }
 
+/** Inclusive attack-distance band, measured in Manhattan tiles (no diagonals). */
+data class RangeSpec(val min: Int, val max: Int) {
+    init {
+        require(min in 0..max) { "range min ($min) must be in 0..max ($max)" }
+    }
+
+    fun covers(distance: Int): Boolean = distance in min..max
+
+    companion object {
+        val MELEE = RangeSpec(1, 1)
+    }
+}
+
 data class Skill(
     val id: String,
     val name: String,
     val kind: DamageKind,
     val powerCoeff: Int,
+    val range: RangeSpec = RangeSpec.MELEE,
 )
