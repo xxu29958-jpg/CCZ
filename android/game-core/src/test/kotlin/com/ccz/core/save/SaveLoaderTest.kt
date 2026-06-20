@@ -86,4 +86,48 @@ class SaveLoaderTest {
         val second = assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(env, classes))
         assertEquals(first.finalState, second.finalState)
     }
+
+    @Test
+    fun rejectsCommandReferencingAbsentUnitGracefully() {
+        val env = envelope().copy(commands = listOf(Command.Attack("ghost", "e", "atk")))
+        val outcome = SaveLoader.load(env, classes) // clean rejection, not a mid-replay exception
+        assertEquals(SaveRejection.CORRUPT_COMMAND, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
+    }
+
+    @Test
+    fun rejectsCommandReferencingAbsentSkillGracefully() {
+        val env = envelope().copy(commands = listOf(Command.Attack("h", "e", "no_such_skill")))
+        val outcome = SaveLoader.load(env, classes)
+        assertEquals(SaveRejection.CORRUPT_COMMAND, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
+    }
+
+    @Test
+    fun rejectsMoveReferencingAbsentUnitGracefully() {
+        // valid version, so the Move integrity branch is actually exercised (not version-short-circuited)
+        val env = envelope().copy(commands = listOf(Command.Move("ghost", Pos(1, 1))))
+        val outcome = SaveLoader.load(env, classes)
+        assertEquals(SaveRejection.CORRUPT_COMMAND, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
+    }
+
+    @Test
+    fun rejectsAttackReferencingAbsentTargetGracefully() {
+        val env = envelope().copy(commands = listOf(Command.Attack("h", "ghost", "atk")))
+        val outcome = SaveLoader.load(env, classes)
+        assertEquals(SaveRejection.CORRUPT_COMMAND, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
+    }
+
+    @Test
+    fun acceptsEmptyCommandEnvelope() {
+        val env = envelope().copy(commands = emptyList())
+        assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(env, classes))
+    }
+
+    @Test
+    fun versionGatePrecedesCommandIntegrity() {
+        // both a future schema AND a corrupt command — the version gate is checked first
+        val future = versions(schema = SaveVersions.SUPPORTED_SAVE_SCHEMA_VERSION + 1)
+        val env = envelope(future).copy(commands = listOf(Command.Move("ghost", Pos(1, 1))))
+        val outcome = SaveLoader.load(env, classes)
+        assertEquals(SaveRejection.FUTURE_SCHEMA_VERSION, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
+    }
 }

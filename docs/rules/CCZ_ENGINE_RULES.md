@@ -261,8 +261,9 @@ save_schema_version
 - 运行时遇到未来版本 save 必须拒绝。`[machine-gated]` `SaveLoader.check` → `FUTURE_SCHEMA_VERSION`（`rejectsFutureSaveSchemaVersion` 测试，镜像 `ContentValidator` 拒不支持 `native_format_version`）；规则版本漂移另拒 `RULES_VERSION_MISMATCH`（save 在不同战斗公式规则下生成则回放会偏离）。
 - 内容包版本和存档兼容关系必须显式记录。`[machine-gated]` `SaveVersions` 显式记 engine / native_format / content / converter / rules / save_schema 各轴。
 - Save on-disk 序列化必须 fail-closed。`[machine-gated]` `SaveCodec`（`SaveEnvelope`↔JSON，`@Serializable` DTO 隔离、域类型零注解）round-trip 全字段保真 + 坏 JSON / 未知 key / 缺必填字段 / 未知命令 kind / 未知 faction·outcome → `SaveDecodeException`（`SaveCodecTest`）；版本轴 gating 仍独占 `SaveLoader.check`（两层，镜像 ContentJsonLoader+ContentValidator）。
+- 损坏存档命令必须 replay 前优雅拒，不崩。`[machine-gated]` `SaveLoader.commandIntegrity`：命令引用（`Move.unit` / `Attack.attacker·target·skill`）对初始 roster / skill 表不可解析 → `Outcome.Rejected(CORRUPT_COMMAND)`（版本闸优先；`SaveLoaderTest` 钉 Move/Attack 各引用路径 + 版本优先 + 合法放行 + 空命令）。
 
-> 注：on-disk `SaveCodec` 已落地（shape + enum fail-closed）。回放仍假定信封命令良构（记录时已被接受）；损坏信封引用缺失 unit/skill 当前 replay 抛异常 —— 命令完整性优雅拒绝（load 前校验命令引用 vs 初始 state / skill 表）与 §Write & Convert Safety 的原子写仍待。
+> 注：on-disk `SaveCodec`（shape + enum fail-closed）与命令完整性优雅拒绝（`SaveLoader.commandIntegrity` 在 replay 前校验命令引用 vs 初始 state / skill 表，缺失 → `CORRUPT_COMMAND`）均已落地。§Write & Convert Safety 的原子写（IO 层）仍待。
 
 ## Android App Future Gates
 

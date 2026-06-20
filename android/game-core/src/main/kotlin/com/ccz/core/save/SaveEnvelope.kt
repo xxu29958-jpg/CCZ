@@ -35,5 +35,5 @@ data class SaveEnvelope(
     val commands: List<Command>,
 )
 
-/** Why a save cannot be loaded. `null` from [SaveLoader.check] means loadable. */
-enum class SaveRejection { FUTURE_SCHEMA_VERSION, RULES_VERSION_MISMATCH }
+/** Why a save cannot be loaded. `null` from [SaveLoader.check] means version-loadable. */
+enum class SaveRejection { FUTURE_SCHEMA_VERSION, RULES_VERSION_MISMATCH, CORRUPT_COMMAND }
