@@ -262,7 +262,8 @@ save_schema_version
 - 内容包版本和存档兼容关系必须显式记录。`[machine-gated]` `SaveVersions` 显式记 engine / native_format / content / converter / rules / save_schema 各轴。
 - Save on-disk 序列化必须 fail-closed。`[machine-gated]` `SaveCodec`（`SaveEnvelope`↔JSON，`@Serializable` DTO 隔离、域类型零注解）round-trip 全字段保真 + 坏 JSON / 未知 key / 缺必填字段 / 未知命令 kind / 未知 faction·outcome → `SaveDecodeException`（`SaveCodecTest`）；版本轴 gating 仍独占 `SaveLoader.check`（两层，镜像 ContentJsonLoader+ContentValidator）。
 - 损坏存档命令必须 replay 前优雅拒，不崩。`[machine-gated]` `SaveLoader.commandIntegrity`：命令引用（`Move.unit` / `Attack.attacker·target·skill`）对初始 roster / skill 表不可解析 → `Outcome.Rejected(CORRUPT_COMMAND)`（版本闸优先；`SaveLoaderTest` 钉 Move/Attack 各引用路径 + 版本优先 + 合法放行 + 空命令）。
-- Save 须记录 scenario（过场）回放轴。`[machine-gated]` `SaveEnvelope.scenarios`（`ScenarioReplay` = scriptId + 选择索引序列，与战斗 command 并列的第二回放轴）经 `SaveCodec` round-trip 保真；`SUPPORTED_SAVE_SCHEMA_VERSION` 1→2，v1 存档缺 scenarios 字段向后兼容 decode 为空（`SaveCodecTest`）。脚本本体在 content（`contentVersion` 引用），不入存档；scenario 回放执行与 scriptId/choices 完整性待 content 接线。
+- Save 须记录 scenario（过场）回放轴。`[machine-gated]` `SaveEnvelope.scenarios`（`ScenarioReplay` = scriptId + 选择索引序列，与战斗 command 并列的第二回放轴）经 `SaveCodec` round-trip 保真；`SUPPORTED_SAVE_SCHEMA_VERSION` 1→2，v1 存档缺 scenarios 字段向后兼容 decode 为空（`SaveCodecTest`）。脚本本体在 content（`contentVersion` 引用），不入存档；回放执行 + 完整性见下条 `ScenarioReplayer`。
+- Save 的 scenario 回放须 fail-closed。`[machine-gated]` `ScenarioReplayer.replay(scenarios, scripts)`：对每个 `ScenarioReplay` 跑 `ScenarioRunner`（脚本由 content 提供，game-core 不依赖 native-content）；未知 scriptId → `UNKNOWN_SCRIPT`，choices 截断（残留 Choice）或脚本环 → `INCOMPLETE_REPLAY`，整批拒不漏 partial playback（`ScenarioReplayerTest`）。`SaveLoader`（战斗）+ `ScenarioReplayer`（过场）= 两条独立回放轴。
 
 > 注：on-disk `SaveCodec`（shape + enum fail-closed）与命令完整性优雅拒绝（`SaveLoader.commandIntegrity` 在 replay 前校验命令引用 vs 初始 state / skill 表，缺失 → `CORRUPT_COMMAND`）均已落地。§Write & Convert Safety 的原子写（IO 层）仍待。
 
