@@ -214,6 +214,8 @@ win conditions
 lose conditions
 ```
 
+> **落地状态**：win/lose 求值 `[machine-gated]` `WinLose.evaluate/settle`（列表 OR、lose 优先、`BattleOutcome` sticky、纯只读，`WinLoseTest` 覆盖全 6 条件）；mid triggers + pre/post battle ops `[aspirational]`（已建模未执行，P3b 落 `TriggerRunner` 时机器化）。
+
 战中触发条件第一批：
 
 ```text

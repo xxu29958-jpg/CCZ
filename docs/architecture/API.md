@@ -49,6 +49,10 @@ ItemGranted
 BattleEnded
 ```
 
+`BattleEnded(outcome)` is already emitted: `WinLose.settle(state, sScript)` evaluates the
+win/lose lists (OR; lose before win) and emits it once on the `ONGOING -> VICTORY/DEFEAT`
+edge. `BattleOutcome` is sticky on `BattleState`.
+
 ## Command Legality
 
 Commands are submitted through the gameplay gate, not applied directly:

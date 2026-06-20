@@ -22,9 +22,10 @@
 
 ## P3 Event System
 
-- R dialogue flow.
-- S pre/mid/post triggers.
-- Win/lose conditions.
+- R dialogue flow. (pending)
+- S pre/mid/post triggers. (pending — P3b `TriggerRunner`)
+- Win/lose conditions. **[engine done]** `WinLose.evaluate/settle` in `game-core` decides
+  `BattleOutcome` from the S-script win/lose lists and emits `Event.BattleEnded`.
 
 ## P4 Converter Sample
 
