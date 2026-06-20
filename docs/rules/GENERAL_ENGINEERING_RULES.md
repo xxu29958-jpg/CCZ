@@ -1,6 +1,9 @@
 # General Engineering Rules
 
-本文件是跨项目通用规则。项目专属规则写到对应专属规则文件，不要混进这里。
+> 规则版本 v0.1.0，2026-06-20，自 xiaopiaojia 工程规范 v1.7.0 fork 后重锚到 CCZ。
+> 本文件是跨项目通用规则。项目专属规则写到 `CCZ_ENGINE_RULES.md`，不要混进这里。
+> 凡只对「后端 / 网络 API / 数据库」成立的规则，已下沉到文末 `## Appendix: Backend / Network API (deferred)`，CCZ 当前没有这些面（见 `docs/architecture/API.md`），引入前不启用。
+> 变更管理见入口 `ENGINEERING_RULES.md`。
 
 ## Core Idea
 
@@ -8,11 +11,13 @@
 
 不要为了数字洁癖乱拆；但改到哪里，哪里要变清楚、可测、可复算。复杂度不是靠文档解释过去，而是靠分层、helper、policy、resolver、测试和 CI 关进笼子里。
 
-## Python / Backend Quality Gate
+能用测试 / validator / CI gate 检查的约束，优先做成机器门。**只有文字没有机器门的「必须」，是愿望不是约束**——要么补门，要么诚实标注「review 强制 / 尚未机器强制」。
+
+## Python Quality Gate
+
+适用范围：仓库内的 Python 代码（未来 converter / 运维脚本等）。当前 CCZ 主线无 Python；出现时按此配置，不依赖默认值。
 
 工具：`ruff`
-
-规则：
 
 ```text
 select = E, W, F, I, N, UP, B, C4, SIM, C901
@@ -22,13 +27,10 @@ McCabe complexity <= 10 recommended
 McCabe complexity <= 15 tolerated during staged cleanup
 ```
 
-要求：
-
 - 新代码不得新增 `# noqa: C901` 复杂度屏蔽。
 - 旧代码超标按职责拆分逐步收口，不要求一次性全改。
-- 新增 Python 项目必须显式配置 Ruff，不能依赖默认值。
 
-Ruff 官方依据：
+官方依据：
 
 ```text
 https://docs.astral.sh/ruff/configuration/
@@ -37,45 +39,40 @@ https://docs.astral.sh/ruff/rules/complex-structure/
 
 ## Kotlin / Android Quality Gate
 
-工具：`detekt 2.0.0-alpha.3`
+工具：`detekt`（当前 pin 见 `android/build.gradle.kts`；用 alpha 预发布是显式例外，见 `docs/DECISIONS/0003-detekt-alpha-exception.md`，回收条件 = detekt 2.0 stable 即升正式）。
 
-必须跑 type-resolving 任务。当前 JVM/Kotlin 模块：
+必须跑 **type-resolving** 任务，否则需要类型解析的规则（如 `LongParameterList`）会被**静默跳过**而非报错。当前 JVM/Kotlin 模块：
 
 ```powershell
 .\gradlew.bat --no-daemon :game-core:detektMain :native-content:detektMain
 .\gradlew.bat --no-daemon :game-core:detektTest :native-content:detektTest
 ```
 
-未来 Android app 建立后必须跑：
+未来 Android app 建立后跑（type-resolving 变体）：
 
 ```powershell
 .\gradlew.bat --no-daemon :app:detektGrayDebug :app:detektGrayDebugUnitTest
 ```
 
-只启用 6 条 complexity 规则：
-
-```text
-LongMethod: 60
-LargeClass: 600
-LongParameterList.functionThreshold: 5
-LongParameterList.constructorThreshold: 6
-CyclomaticComplexMethod: 14
-NestedBlockDepth: 4
-TooManyFunctions.thresholdInFiles: 11
-```
-
-规则：
+启用的 complexity 规则与阈值的**唯一真相源**是 `android/config/detekt/detekt.yml`（当前六条：LongMethod / LargeClass / LongParameterList(function+constructor) / CyclomaticComplexMethod / NestedBlockDepth / TooManyFunctions）。规则文档**不复列数字**，避免漂移——改阈值改 `detekt.yml`。
 
 - baseline 是冻结旧债，不是新代码许可。
 - 新代码和被改代码必须达标。
-- 当前没有 `:app` 时，不伪造 app 任务；先让已有模块通过 type-resolving detekt。
+- 行数 / 参数数 / 函数数靠肉眼或对抗审都不可靠；以 type-resolving detekt 的判定为准。
 
-Detekt 官方依据：
+官方依据：
 
 ```text
 https://detekt.dev/docs/gettingstarted/gradle/
 https://detekt.dev/docs/gettingstarted/type-resolution/
 ```
+
+## Dependency Governance
+
+- 版本集中管理：依赖清单 / 版本目录 / 锁文件 / Gradle version catalog 统一维护，不在散点写死版本。
+- 禁止 alpha / beta / 停止维护 / 来源不清的依赖进入主线。**唯一例外必须有 ADR**，写明原因、风险、回收条件（当前唯一例外 = detekt 2.0 alpha，见 `0003-detekt-alpha-exception.md`）。
+- 新增依赖前查官方文档、维护状态、许可证；结论写入 `docs/DECISIONS/`。
+- 升级依赖必须跑：单测、关键构建、detekt/lint、依赖审计。
 
 ## Android Extra Gates
 
@@ -84,331 +81,225 @@ Android app 建立后必须补齐：
 ```text
 lintGrayDebug
 assertAndroidTestCountEqualsBaseline
-Room schema drift gate
+Room schema drift gate（若用 Room）
 R8 release build
 apksigner fingerprint pin
+emulator smoke test
 ```
 
-Android lint / Room 官方依据：
+### Version Baseline
+
+具体版本基线（Kotlin / AGP / Gradle / compileSdk / JDK）见 `docs/runbook/LOCAL_DEV.md` 的 `## Version Baseline`（单一真相源，含官方 URL 与核实日期）。Google Play 的 targetSdk 最低线随平台滚动，建 `:app` 时按官方要求复核：
 
 ```text
 https://developer.android.com/studio/write/lint
 https://developer.android.com/training/data-storage/room/migrating-db-versions
+https://developer.android.com/google/play/requirements/target-sdk
 ```
 
 ## PR Rules
 
-- 一 PR 一议题。
-- 不混无关改动。
-- 跨 surface 尽量拆 PR：backend / Android / web / tools。
-- 不设硬行数门槛。
-
-约束点：
-
-```text
-单一议题
-基线变更同 diff 声明
-验证可复算
-CI / audit lane / 对抗审能覆盖
-```
+- 一 PR 一议题，不混无关改动。
+- 跨 surface 尽量拆 PR：game-core / native-content / app / converter / docs。
+- 不设硬行数门槛；约束点是：单一议题、基线变更同 diff 声明、验证可复算、CI / audit lane / 对抗审能覆盖。
 
 ## Commit Rules
 
-采用 Conventional Commits：
+采用 Conventional Commits：`<type>[scope]: <description>`。
 
 ```text
-<type>[scope]: <description>
+feat fix docs refactor test chore build ci perf style
 ```
 
-允许的 type：
+破坏性变更加 `!` 或 footer `BREAKING CHANGE: ...`。
 
-```text
-feat
-fix
-docs
-refactor
-test
-chore
-build
-ci
-perf
-style
-```
+## Module Boundaries
 
-破坏性变更加 `!` 或 footer：
+核心边界原则（CCZ 的固定分层在 `CCZ_ENGINE_RULES.md` §Game Core / §Native Content / 运行时分层）：
 
-```text
-BREAKING CHANGE: ...
-```
+- **纯核模块持有权威逻辑**，不依赖框架（Android / JSON 库 / 网络）。CCZ 里是 `game-core`。
+- **表现层只渲染 state/event、收集输入**，不持有第二套业务真相、不绕过核心改结果。
+- **工具 / 转换器是离线的**，不进入运行时。
+- 禁止跨级调用、把业务逻辑散进 `scripts/`、把 UI / 业务 / 基础设施搅进一个文件。
 
-## Backend Layering
-
-固定分层：
-
-```text
-routes -> services -> models / providers
-```
-
-`routes`：
-
-- 只做参数解析、鉴权、调用 service、返回 schema。
-- 不写业务。
-- 不拼复杂 SQL。
-- 不返回原始异常。
-
-`services`：
-
-- 业务编排、事务、调用 provider。
-- 不依赖 HTTP 层。
-- 不写 UI 文案。
-- 不硬编码凭证。
-
-`models`：
-
-- ORM 实体。
-- 不依赖上层。
-
-`schemas`：
-
-- 请求/响应结构。
-- 不放业务逻辑。
-- 不放 IO。
-
-`providers`：
-
-- OCR / LLM / 分类 / 推送等可替换能力。
-- 只做识别或建议。
-- 不直接确认业务状态。
-
-## Client Layering
-
-固定分层：
-
-```text
-Screen -> ViewModel -> Repository -> ApiService / Dao / SecureStorage
-```
-
-`Screen`：
-
-- 只做 UI 渲染和输入收集。
-
-`ViewModel`：
-
-- 管理 UI State。
-- 调 Repository。
-
-`Repository`：
-
-- 协调远端、本地缓存、失败兜底。
-- 返回领域模型。
-
-`ApiService / Dao / SecureStorage`：
-
-- 纯 IO。
-- 不向 UI 暴露 DTO / Entity / Token。
+> 后端 `routes→services→models/providers` 与客户端 `Screen→ViewModel→Repository→ApiService/Dao/SecureStorage` 这两套网络型分层见文末附录——CCZ 客户端对话的是进程内 `game-core` 而非远端 API，引入网络后端前不适用。
 
 ## Model Boundaries
 
-命名：
+命名约定（有「远端模型 vs 本地存储 vs 领域模型」三态时适用）：
 
 ```text
-XxxDto      远端 API 模型
-XxxEntity   本地数据库模型
+XxxDto      远端 / 序列化模型
+XxxEntity   本地持久化模型
 Xxx         领域模型
 XxxMapper   集中转换
 ```
 
-禁止：
+禁止：原始 DTO / Entity 漏进 UI、跨层调用、UI 直接读写 IO。
 
-- DTO / Entity 进 UI。
-- UI 直连网络。
-- route 直查 DB。
-- 跨层调用。
-- 业务逻辑散进 scripts。
+> CCZ 当前是「单一离线内容包 + 内存战斗状态」，没有「远端 API vs 本地 DB」的双源问题，三态 Mapper 暂不强制；内容包模型见 `native-content`。
 
 ## Directory Rules
 
-通用顶层：
+CCZ 真实顶层：
 
 ```text
-project-root/
+ccz_tactics_engine/
+  AGENTS.md
+  HANDOFF.md
   README.md
   LICENSE
   .gitignore
-  .env.example
   docs/
-  scripts/
-  backend/
-  android/ 或 web/ 或 desktop/ 或 client/
-  tests/
+  scripts/            运维 / 构建 / 自检脚本（禁业务代码）
+  skills/
+  archive/            历史 / 遗留素材（含隔离的 Godot 模板）
+  android/            Gradle root
+    settings.gradle.kts
+    build.gradle.kts
+    gradlew / gradlew.bat
+    gradle/wrapper/
+    config/detekt/
+    game-core/
+    native-content/
+    app/              （未来）
+  tools/              （未来）converter / validators
 ```
 
-后端：
+- **所有 gradle 命令从 `android/` 内运行**（`:game-core:detektMain` 等模块路径相对 `android/` 解析）。
+- 文档分层：`docs/{rules,architecture,DECISIONS,runbook,roadmap,audits,assets}`。
 
-```text
-backend/
-  app/
-    routes/
-    services/
-    models/
-    schemas/
-    providers/
-    config.py 或 config/
-    main.py 或 entrypoints/
-  tests/
-  migrations/
-  scripts/
-  requirements.txt
-```
-
-客户端：
-
-```text
-client/
-  ui/{module}/
-  viewmodel/{module}/
-  repository/
-  data/
-    api/
-    db/
-    storage/
-  domain/
-  di/
-  util/
-```
-
-文档：
-
-```text
-docs/
-  rules/
-  architecture/
-  DECISIONS/
-  runbook/
-  roadmap/
-  audits/
-  assets/
-```
+> 通用 `backend/app/{routes,services,models,schemas,providers}` 目录树见文末附录。
 
 ## Naming Rules
 
-- 目录 / 文件 / 字段 / API 路径：小写下划线。
-- 类 / 类型：大驼峰。
+- 目录 / 非源文件 / 字段 / 配置键：小写下划线。
+- 类 / 类型：大驼峰。**Kotlin 源文件名随其主类用大驼峰**（如 `BattleResolver.kt`），这是「文件小写下划线」的语言级例外。
 - 常量 / 环境变量：大写下划线。
-- 关键规范文档：大写下划线 `.md`。
-- 普通文档：小写连字符 `.md`。
+- 关键规范文档：大写下划线 `.md`；普通文档：小写连字符 `.md`。
 
-例子：
+例子（CCZ 原生）：
 
 ```text
-backend/app/services/receipt_parse_amount.py
-amount_cents
-public_id
-created_at
-OCR_PROVIDER
-ENGINEERING_RULES.md
-postgres-migration-notes.md
+android/game-core/src/main/kotlin/com/ccz/core/battle/BattleResolver.kt
+content_version          内容包版本字段
+save_schema_version      存档 schema 版本字段
+BattleRules              规则值对象类型
+RNG_SEED                 常量
+manifest.json units.json 内容包文件
+docs/runbook/native-pack-validation-notes.md
 ```
 
-## Data Format Rules
+## Data & Determinism Rules
 
-- 内部主键：`id`。
-- 外部稳定标识：`public_id`。
-- 普通 UI 不展示 id / UUID。
+- **任何必须精确或可复现的值禁用 `float` / `double`，用整数**。在 CCZ 这条是承重不变量：战斗公式用浮点 = 回放不可复现，破坏回放契约（见 `CCZ_ENGINE_RULES.md` §Battle Formula Rules）。
+- 单位 / 数值换算集中封装，UI 不散写 `÷N`、不散写取整。
+- 稳定身份：内容包实体用显式 id 且**校验唯一**（见 `CCZ_ENGINE_RULES.md` §Native Content Pack）；版本身份用四元组 `engine_version / native_format_version / content_version / save_schema_version`（见 `docs/architecture/VERSION.md`）。普通 UI 不展示内部 id。
 
-金额：
+> 关系数据库主键 `id/public_id`、UTC 存储 + ISO 8601 API、`created_at/updated_at` 时间字段规则见文末附录——CCZ 无数据库、无返时间戳的 API。
 
-- 全链路用最小货币单位整数。
-- 禁止 `float` / `double`。
-- 单位换算集中封装。
-- 禁止 UI 散写 `/ 100`。
+## Contract Rules
 
-时间：
+CCZ 的「API」是进程内 command / event / save-schema 契约（见 `docs/architecture/API.md`）：
 
-- 数据库存 UTC。
-- API 返回 ISO 8601。
-- 字段固定 `created_at` / `updated_at` / `confirmed_at` 等。
-- 客户端负责本地时区展示。
+- 契约字段命名固定，不随 UI 文案变化。
+- 契约 / 错误信息不返回本机路径、内部 URL、traceback、底层英文异常。
+- 错误词汇锚到 CCZ 真实失败模式，不发明网络面错误码：
 
-## API Format Rules
+```text
+unknown_opcode          未知 opcode（fail closed）
+unsupported_version      内容包 / 存档版本不支持（拒绝）
+content_validation_error 内容包校验失败（定位到文件 / 字段）
+```
 
-- 请求/响应字段命名固定，不跟 UI 文案变化。
-- 排序 / 过滤字段必须白名单。
-- API 不返回本机路径、内部 URL、traceback、底层英文异常。
+> HTTP 分页（`page/page_size/total/items`）、JSON 错误信封、网络错误码（`invalid_token/rate_limited/...`）见文末附录。
+
+## Runtime Artifacts
+
+不进 git：
+
+```text
+build/  dist/  logs/  .gradle/
+本地虚拟环境 / 依赖缓存目录
+converter 中间产物 / 生成的 native-pack 缓存
+```
+
+路径走 config，不写死。
+
+## Forbidden
+
+- 不在根目录散放代码、文档、图片。
+- 不留 `v1/v2/old/backup/tmp` 残留。
+- 不让 git 跟踪运行时产物。
+- 不让业务代码进 `scripts/`。
+- 不把 UI、业务、基础设施搅进一个文件。
+- 不为「以后可能用得上」提前引入大框架。
+- **例外——遗留素材隔离**：上游 Godot 模板素材是有意保留的参考，但必须隔离在 `archive/legacy-godot/`，不散在仓库根冒充活结构（见 `docs/architecture/PROJECT_STRUCTURE.md`）。二进制统一放 `docs/assets/` 或 `archive/`，不散落 `docs/` 根部。
+
+## Windows / PowerShell Rules
+
+- `scripts/*.ps1` 必须 UTF-8 with BOM；`.env` 不带 BOM。
+- PowerShell 读文件必须显式 `Get-Content -Encoding UTF8`（PS 5.1 无 BOM 默认按 ANSI 解析，中文乱码）。
+- PowerShell 5.1 不能用 `&&` / `||` 链接；用 `; if ($?) { ... }`。注意：native 命令（含 git）写 stderr 会让 PS 把 `$?` 置 false，`if ($?)` 链可能误跳——git 操作优先用 Bash 或不靠 `$?` 链。
+- 不依赖 PowerShell 7 / WSL / Docker / Linux shell。
+
+## Kotlin / Android String Rules
+
+（Android app 建立后适用）
+
+- 用户可见中文字面量走 `res/values/strings.xml`，Compose 用 `stringResource`。
+- 命名 `模块_位置_用途`。
+- 只做 string-resourcing，不建第二语言目录、不等于完整 i18n（要翻译另开 ADR）。
+
+---
+
+## Appendix: Backend / Network API (deferred)
+
+> 以下规则只对「有网络后端 / HTTP API / 关系数据库」的项目成立。CCZ 当前没有这些面（`docs/architecture/API.md`：no network API）。**引入 backend 前不启用；引入时先开 ADR**，并把相关条目上提到正文。保留在此是为了 fork 来源的完整性与未来可复用，不是当前约束。
+
+### Backend Layering
+
+固定分层 `routes → services → models / providers`：
+
+- `routes`：参数解析、鉴权、调用 service、返回 schema；不写业务、不拼复杂 SQL、不返回原始异常。
+- `services`：业务编排、事务、调用 provider；不依赖 HTTP 层、不写 UI 文案、不硬编码凭证。
+- `models`：ORM 实体，不依赖上层。
+- `schemas`：请求 / 响应结构，不放业务、不放 IO。
+- `providers`：OCR / LLM / 分类 / 推送等可替换能力，只做识别或建议，不直接确认业务状态。
+
+### Network Client Layering
+
+`Screen → ViewModel → Repository → ApiService / Dao / SecureStorage`：
+
+- `Repository` 协调远端、本地缓存、失败兜底，返回领域模型。
+- `ApiService / Dao / SecureStorage` 纯 IO，不向 UI 暴露 DTO / Entity / Token。
+- 凭证进系统级安全存储；客户端生物识别只解锁本地状态，不替代服务端鉴权。
+
+### HTTP API Format
 
 分页统一：
 
 ```text
-page
-page_size
-total
-items
+page  page_size  total  items
 ```
 
 统一错误：
 
 ```json
-{
-  "error": "错误代码",
-  "message": "中文说明"
-}
+{ "error": "错误代码", "message": "中文说明" }
 ```
-
-常见错误码：
 
 ```text
-invalid_token
-invalid_request
-not_found
-method_not_allowed
-file_too_large
-unsupported_file_type
-amount_required
-state_conflict
-rate_limited
-server_error
+invalid_token  invalid_request  not_found  method_not_allowed
+file_too_large  unsupported_file_type  amount_required
+state_conflict  rate_limited  server_error
 ```
 
-## Runtime Artifacts
+API 必须有版本策略；破坏性变更 bump 大版本；排序 / 过滤字段白名单化；不返回本机路径 / traceback。
 
-这些不能进 git：
+### Persistence & Time
 
-```text
-uploads/
-data/
-logs/
-build/
-dist/
-本地虚拟环境
-依赖缓存目录
-```
-
-路径必须走 config，不能写死。
-
-## Forbidden
-
-- 不在根目录散放代码、文档、图片。
-- 不留 `v1` / `v2` / `old` / `backup` / `tmp` 残留。
-- 不让 git 跟踪运行时产物。
-- 不让业务代码进 scripts。
-- 不让二进制文件散落 docs 根部，统一放 `docs/assets/`。
-- 不把 UI、业务、基础设施搅进一个文件。
-- 不靠前端隐藏代替后端鉴权。
-- 不为“以后可能用得上”提前引入大框架。
-
-## Windows / PowerShell Rules
-
-- `scripts/*.ps1` 和 `backend/scripts/*.ps1` 必须 UTF-8 with BOM。
-- `.env` 不带 BOM。
-- PowerShell 读文件必须显式 `Get-Content -Encoding UTF8`。
-- PowerShell 5.1 脚本不能用 `&&` / `||`。
-- 用 `; if ($?) { ... }`。
-- 不依赖 PowerShell 7 / WSL / Docker / Linux shell。
-
-## Android String Rules
-
-- 用户可见中文字面量走 `res/values/strings.xml`。
-- Compose 中用 `stringResource`。
-- 命名：`模块_位置_用途`。
-- 只做 string-resourcing，不等于完整 i18n。
-- 不建第二语言目录，除非另开 ADR。
+- 内部主键 `id` + 外部稳定标识 `public_id`（UUID）；普通 UI 不展示。
+- 金额全链路用最小货币单位整数（`amount_cents`），禁 `float/double`，换算集中封装。
+- DB 存 UTC，API 返 ISO 8601；字段固定 `created_at / updated_at / confirmed_at` 等；客户端负责本地时区显示。
+- schema 变更走迁移工具，附可执行回滚；新增非空列三步走（可空/默认 → 回填 → 收紧）。
