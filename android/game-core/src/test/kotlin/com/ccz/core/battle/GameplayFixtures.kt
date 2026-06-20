@@ -30,8 +30,8 @@ internal fun combatant(
         rates = CombatRates(accuracy = AccuracyRates(hit = 100)),
     )
 
-internal fun stateOf(vararg units: Combatant, active: Faction = Faction.PLAYER): BattleState =
-    BattleState(units = units.associateBy { it.id }, turn = 1, active = active, rngState = SEED)
+internal fun stateOf(vararg units: Combatant, active: Faction = Faction.PLAYER, turn: Int = 1): BattleState =
+    BattleState(units = units.associateBy { it.id }, turn = turn, active = active, rngState = SEED)
 
 internal fun classesOf(move: Int = 5): Map<String, UnitClass> =
     mapOf("inf" to UnitClass("inf", "Infantry", "foot", move))

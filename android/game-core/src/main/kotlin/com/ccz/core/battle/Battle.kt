@@ -23,13 +23,18 @@ sealed interface Event {
 
     data class Died(val unit: String) : Event
     data class TurnEnded(val faction: Faction) : Event
+    data class BattleEnded(val outcome: BattleOutcome) : Event
 }
+
+/** Battle result from the player side's perspective. Sticky once decided. */
+enum class BattleOutcome { ONGOING, VICTORY, DEFEAT }
 
 data class BattleState(
     val units: Map<String, Combatant>,
     val turn: Int,
     val active: Faction,
     val rngState: Long,
+    val outcome: BattleOutcome = BattleOutcome.ONGOING,
 ) {
     fun unit(id: String): Combatant = units.getValue(id)
     fun withUnit(unit: Combatant): BattleState = copy(units = units + (unit.id to unit))
