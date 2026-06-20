@@ -13,6 +13,7 @@ import com.ccz.contentpack.TerrainDef
 import com.ccz.contentpack.UnitDef
 import com.ccz.contentpack.UnitIdentity
 import com.ccz.contentpack.UnitProfile
+import com.ccz.contentpack.assembly.BattleAssembler
 import com.ccz.core.model.CombatStats
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
@@ -74,4 +75,14 @@ fun main() {
         "expected sample native content to validate, got: $issues"
     }
     println("OK native content validator self-test passed")
+
+    checkReserveAssembly(content)
+}
+
+private fun checkReserveAssembly(content: NativeContent) {
+    val zhaoyun = BattleAssembler.reserves(content.tables.units)["zhaoyun"]
+    check(zhaoyun != null && zhaoyun.hp == 200 && zhaoyun.hp == zhaoyun.hpMax) {
+        "expected assembled reserve zhaoyun at full hp 200, got $zhaoyun"
+    }
+    println("OK native content reserve assembler self-test passed")
 }
