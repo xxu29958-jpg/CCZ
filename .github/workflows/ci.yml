@@ -1,0 +1,54 @@
+name: CI
+
+# 最小 CI lane：跑 docs/runbook/LOCAL_DEV.md 的 Full Current Local Gate。
+# 当前模块是纯 JVM/Kotlin（game-core / native-content），无需 Android SDK，
+# 故跑 ubuntu。未来建 :app（Android）后另加需要 Android SDK 的 lane（见 CI.md）。
+
+on:
+  push:
+    branches:
+      - main
+      - "feat/**"
+      - "fix/**"
+      - "perf/**"
+      - "refactor/**"
+      - "chore/**"
+      - "ci/**"
+      - "docs/**"
+  pull_request:
+
+jobs:
+  jvm-gate:
+    name: JVM gate (test + selfTest + detekt + count baseline)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Full JVM gate
+        run: >
+          ./gradlew --no-daemon
+          :game-core:test :native-content:test
+          :game-core:runSelfTest :native-content:runSelfTest
+          :game-core:detektMain :native-content:detektMain
+          :game-core:detektTest :native-content:detektTest
+          assertTestCountEqualsBaseline
+
+      - name: Upload detekt reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detekt-reports
+          path: android/**/build/reports/detekt/
+          if-no-files-found: ignore

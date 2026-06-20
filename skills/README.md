@@ -9,7 +9,7 @@
 - `ship-slice/` — 一个切片走完闭环：off 最新 base → 写码 → 跑真本地门全套 → 对抗审 → push → CI 分诊 → 合并（需授权）→ 同步文档。
 - `adversarial-review/` — 外部评审缺位时多镜头自审 + finding 处置纪律（CCZ 第一镜头 = 确定性/回放）。
 - `safe-code-change/` — 搬/改名/删/改签名前扫消费面 + 隐藏耦合（含确定性契约变更）。
-- `ci-red-triage/` — CI 接线后真红 vs flake 分诊，别 thrash PR。
+- `ci-red-triage/` — 真红 vs flake 分诊，别 thrash PR。
 - `android-detekt-discipline/` — 改 Kotlin 不踩 detekt 六阈值 / type-resolving / baseline 纪律。
 
 ## 领域层（CCZ 自己挣来，随项目长）

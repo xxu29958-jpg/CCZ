@@ -5,7 +5,7 @@
 
 ## Release Gate（硬清单）
 
-发布前必须全部通过（当前从 `android/` 内本地跑，CI 接线后变自动门——见 `docs/runbook/CI.md`）：
+发布前必须全部通过（CI `.github/workflows/ci.yml` 每次 push/PR 跑，push 前本地也跑——见 `docs/runbook/CI.md`）：
 
 ```text
 detekt type-resolving 双任务 (:*:detektMain :*:detektTest，未来 :app:detektGrayDebug*)

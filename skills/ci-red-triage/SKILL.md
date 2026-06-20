@@ -2,7 +2,7 @@
 
 CI（接线后）红了，先分清真红 vs flake / 幻红，再正确处置。误判两个方向都会上线：把真失败当 flake 放过（回归溜过门），或把良性 flake 当真红、于是 thrash PR（改 base / 空提交 / force-push）去「修」一个幻红。
 
-> 当前 CCZ **尚无 CI**（见 `docs/runbook/CI.md`）。本 skill 在第一条 CI lane 接线后生效；在此之前「门」是 push 前本地跑（见 `ship-slice`）。
+> CI lane = `.github/workflows/ci.yml`（JVM gate，每次 push/PR）。push 前也先本地跑全套门（见 `ship-slice`）。
 
 ## 流程
 

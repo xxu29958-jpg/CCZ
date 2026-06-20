@@ -1,43 +1,40 @@
 # CI Runbook
 
-CI is not configured yet. This file defines the first lane once CI is added.
+CI runs on GitHub Actions: `.github/workflows/ci.yml`.
 
-## Current JVM/Kotlin Lane
+## JVM Gate (current)
 
-```powershell
-cd android
-.\gradlew.bat --no-daemon :game-core:test :native-content:test :game-core:runSelfTest :native-content:runSelfTest :game-core:detektMain :native-content:detektMain :game-core:detektTest :native-content:detektTest
+Triggers: push to `main` / `feat|fix|perf|refactor|chore|ci|docs/**` branches, and every `pull_request`.
+
+Runner: `ubuntu-latest` + JDK 17. Current modules are pure JVM/Kotlin (`game-core` / `native-content`), so no Android SDK is needed. Runs from `android/`:
+
+```bash
+./gradlew --no-daemon \
+  :game-core:test :native-content:test \
+  :game-core:runSelfTest :native-content:runSelfTest \
+  :game-core:detektMain :native-content:detektMain \
+  :game-core:detektTest :native-content:detektTest \
+  assertTestCountEqualsBaseline
 ```
 
-Required properties:
+This is the same gate as `docs/runbook/LOCAL_DEV.md` (Full Current Local Gate). Required properties:
 
-- Use project Gradle Wrapper.
-- Run unit tests for rules and validator behavior.
-- Fail on detekt findings.
-- Do not use detekt baseline for new code.
-- Store reports as CI artifacts when possible:
-  - `android/game-core/build/reports/detekt/`
-  - `android/native-content/build/reports/detekt/`
+- type-resolving detekt (`detektMain`/`detektTest`), not plain `detekt`.
+- fail on detekt findings; baseline is frozen debt, not a license for new code.
+- `@Test` count must equal `android/config/test-count-baseline.txt`.
+- detekt reports uploaded as build artifacts.
 
 ## Future Android App Lane
 
-After `android/app` exists:
+After `android/app` exists, add a lane (will likely need the Android SDK; emulator / instrumented tests may need an SDK-provisioned or Windows runner):
 
-```powershell
-cd android
-.\gradlew.bat --no-daemon :app:detektGrayDebug :app:detektGrayDebugUnitTest
-.\gradlew.bat --no-daemon :app:lintGrayDebug
-.\gradlew.bat --no-daemon :app:assertAndroidTestCountEqualsBaseline
-.\gradlew.bat --no-daemon :app:assembleGrayRelease
+```bash
+./gradlew --no-daemon :app:detektGrayDebug :app:detektGrayDebugUnitTest
+./gradlew --no-daemon :app:lintGrayDebug
+./gradlew --no-daemon :app:assertAndroidTestCountEqualsBaseline
+./gradlew --no-daemon :app:assembleGrayRelease
 ```
 
-Future required gates:
+Future required gates: Room schema drift gate, R8 release build, apksigner fingerprint pin, emulator smoke test.
 
-```text
-Room schema drift gate
-R8 release build
-apksigner fingerprint pin
-emulator smoke test
-```
-
-When CI fails, put durable commands or new gotchas here. Put only current blocking status in `HANDOFF.md`.
+When CI fails, triage with the `ci-red-triage` skill; put durable commands or new gotchas here, not in `HANDOFF.md`.
