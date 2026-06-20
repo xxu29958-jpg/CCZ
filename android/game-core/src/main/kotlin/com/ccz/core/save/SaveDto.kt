@@ -19,6 +19,13 @@ internal data class SaveEnvelopeDto(
     val versions: SaveVersionsDto,
     val initialState: BattleStateDto,
     val commands: List<CommandDto> = emptyList(),
+    val scenarios: List<ScenarioReplayDto> = emptyList(),
+)
+
+@Serializable
+internal data class ScenarioReplayDto(
+    val scriptId: String,
+    val choices: List<Int> = emptyList(),
 )
 
 @Serializable

@@ -18,21 +18,39 @@ data class SaveVersions(
     val converterVersion: String? = null,
 ) {
     companion object {
-        /** The newest save schema this build can read. A future (higher) value is rejected. */
-        const val SUPPORTED_SAVE_SCHEMA_VERSION = 1
+        /**
+         * The newest save schema this build can read; a future (higher) value is rejected.
+         * v2 added the scenario (cutscene) replay axis ([SaveEnvelope.scenarios]); a v1 save
+         * simply omits the field and decodes with an empty list (forward-compatible).
+         */
+        const val SUPPORTED_SAVE_SCHEMA_VERSION = 2
     }
 }
 
 /**
- * A self-contained replay/save: the initial battle state (which carries the RNG state)
- * plus the ordered, already-accepted command sequence. Replaying = folding [commands]
- * through the resolver from [initialState]; see CCZ_ENGINE_RULES: Replay = initial state
- * + command sequence.
+ * A replayable R-script (cutscene) run recorded alongside a battle: which script was
+ * played ([scriptId], resolved against content) and the ordered player [choices] driving
+ * its scenario choices. Replaying = `ScenarioRunner.run(script, vars, choices)`; the
+ * script body itself lives in content (referenced by [SaveVersions.contentVersion]), not
+ * in the save.
+ */
+data class ScenarioReplay(
+    val scriptId: String,
+    val choices: List<Int> = emptyList(),
+)
+
+/**
+ * A self-contained replay/save: the initial battle state (which carries the RNG state),
+ * the ordered already-accepted command sequence, and any cutscene [scenarios] played
+ * (the second, R-script replay axis, save schema v2+). Replaying = folding [commands]
+ * through the resolver from [initialState] and re-running each scenario's choices; see
+ * CCZ_ENGINE_RULES: Replay = initial state + command sequence.
  */
 data class SaveEnvelope(
     val versions: SaveVersions,
     val initialState: BattleState,
     val commands: List<Command>,
+    val scenarios: List<ScenarioReplay> = emptyList(),
 )
 
 /** Why a save cannot be loaded. `null` from [SaveLoader.check] means version-loadable. */
