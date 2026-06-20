@@ -1,6 +1,9 @@
 # CCZ Engine Rules
 
-本文件只放 CCZ 现代战棋引擎专属规则。
+> 规则版本 v0.1.0，2026-06-20，自 xiaopiaojia 工程规范 fork 后新建的引擎专属层。
+> 本文件只放 CCZ 现代战棋引擎专属规则。
+>
+> **机器门状态约定**：本文件给硬规则标注落地状态——`[machine-gated]` = 有对应 test/validator 守护；`[review-only]` = 当前只靠 review、尚未机器强制（CI 亦尚未接线，见 `docs/runbook/CI.md`）；`[aspirational]` = 规则描述的对象在 src 中尚未实现。把 review-only / aspirational 逐步变成 machine-gated 是持续目标，不允许给不存在的代码写现在时断言。
 
 ## Project Boundary
 
@@ -29,6 +32,8 @@
 - Battle state 使用不可变模型，状态演进只能走 resolver。
 - 新增规则必须同时新增或更新单测；无法单测的规则必须先拆到可测边界。
 - 大功能完成后必须更新 HANDOFF、runbook、规则/架构文档和验证命令。
+
+> **#6 落地状态** `[review-only]`：当前靠 review 保证「每个规则有单测」，尚无 `assertTestCountEqualsBaseline` 一类机器门。test-count baseline gate 落地后升级为 `[machine-gated]`（见 `docs/runbook/CI.md`）。
 
 ## Runtime Direction
 
@@ -85,6 +90,8 @@ Runtime 禁止处理：
 - 未知 opcode 必须 fail closed。
 - 转换器错误必须定位到源文件、关卡、指令或表格字段。
 
+> **落地状态** `[aspirational]`：converter 模块尚未入仓（src 当前只有 game-core + native-content）。上述 converter fail-closed / source-location 规则在 converter 落地时适用；落地时复用 `ContentValidator` 的 path-keyed `ValidationIssue`（如 `units[0].class`）作 source-location 范例。运行时侧的 fail-closed 已有现成范例：`ContentValidator` 拒不支持的 `native_format_version`。
+
 优先取料：
 
 ```text
@@ -118,16 +125,16 @@ ccz-native-pack/
   audio/
 ```
 
-必须校验：
+必须校验（标注当前 `ContentValidator` 实现状态——绝不给未实现项写现在时断言，见 `docs/architecture/SECURITY.md`）：
 
-- schema version。
-- required fields。
-- duplicate ids。
-- unknown enum。
-- missing references。
-- map bounds。
-- event op whitelist。
-- trigger condition whitelist。
+- schema version。`[machine-gated]` native_format_version 检查。
+- required fields。`[review-only]` 当前由 Kotlin data class 构造保证；JSON loader 落地后须显式校验。
+- duplicate ids（含空白 id）。`[machine-gated]` validateUniqueIds。
+- missing references（unit→class/skill/item、class→counter/skill、map→terrain）。`[machine-gated]` validateUnits / validateClasses / validateMaps（unknownReferencesFailClosed 测试）。
+- map bounds（尺寸、行列形状、spawn 越界）。`[machine-gated]` validateMaps。
+- unknown enum。`[review-only]` JSON loader 解码边界落地后强制。
+- event op whitelist。`[review-only]` 当前 ContentValidator 不读 content.events，待 validateEvents 接线。
+- trigger condition whitelist。`[review-only]` 同上，待 validateEvents。
 
 ## Game Core
 
@@ -140,9 +147,9 @@ ccz-native-pack/
 
 核心不变量：
 
-- 战斗公式只用整数。
-- RNG state 随 battle state 走。
-- RNG 消费顺序是规则契约。
+- 战斗公式只用整数。`[review-only]` 类型层面非强制，靠 review + 公式实现；浮点 = 回放不可复现。
+- RNG state 随 battle state 走。`[machine-gated]` ReplayContractTest（同种子同结果）。
+- RNG 消费顺序是规则契约。`[review-only]` 当前只在 `Formula.rollHitProfile` docstring 声明；ReplayContractTest 只测同种子同结果，**不测消费顺序/计数**——一次重排 roll 顺序仍能保持同进程确定性却破坏跨版本回放，无测试捕获。RNG 顺序/计数测试落地后升级。
 - Resolver 输入 state + command，输出 state + events。
 - Presentation 只消费 events。
 - Gameplay 负责 command 合法性：移动范围、射程、存活、回合归属。
@@ -168,11 +175,11 @@ ccz-native-pack/
 - 不破防走 chip damage。
 - 取整策略必须显式。
 - 取整、暴击、连击、格挡、相克等规则常量必须进入 `BattleRules` 或 native content pack。
-- 公式常量变化必须视为规则版本变化。
+- 公式常量变化必须视为规则版本变化（联动 `ENGINEERING_RULES.md` 裁决根：宁可破坏手感不可破坏回放）。
 
 禁止：
 
-- 用浮点“更顺手”地重写公式。
+- 用浮点“更顺手”地重写公式（违反整数公式不变量 = 破坏回放）。
 - 让 UI 参与公式。
 - 为了现代化手感擅改平衡。
 
@@ -239,11 +246,11 @@ converter_version
 save_schema_version
 ```
 
-规则：
+规则（**Status `[aspirational]`：save 侧模型尚未实现**——src 中暂无 Save 数据类 / `save_schema_version` 常量；以下为目标契约。首个 Save 类落地时**同 PR** 附 `rejectsFutureSaveSchemaVersion()` 测试，镜像 `ContentValidator` 拒不支持 `native_format_version` 的现成范例）：
 
 - Save 必须包含 `save_schema_version`。
 - Save 必须包含 `rng_state`。
-- Replay = initial state + command sequence。
+- Replay = initial state + command sequence。`[machine-gated]` 部分——同进程回放确定性已由 ReplayContractTest 覆盖；跨 build / 版本回放（golden fixture）待补。
 - 运行时遇到未来版本 save 必须拒绝。
 - 内容包版本和存档兼容关系必须显式记录。
 
@@ -267,14 +274,27 @@ save_schema_version
 
 ## Current Kotlin Gates
 
-在 app 建立前，当前模块必须过：
+> **CI 状态**：当前仓库**没有任何 CI**（见 `docs/runbook/CI.md`），以下 gate 是 **push 前本地必跑**，尚未机器强制。CI lane 接线后这些变成自动门。
+
+在 app 建立前，当前模块 push 前必须本地跑过：
 
 ```powershell
-.\gradlew.bat --no-daemon :game-core:test :native-content:test
 .\gradlew.bat --no-daemon :game-core:runSelfTest :native-content:runSelfTest
+.\gradlew.bat --no-daemon :game-core:test :native-content:test
 .\gradlew.bat --no-daemon :game-core:detektMain :native-content:detektMain
 .\gradlew.bat --no-daemon :game-core:detektTest :native-content:detektTest
 ```
+
+## Write & Convert Safety
+
+写存档与离线转换的安全约束（与模板 §幂等/§事务的 CCZ 映射）：
+
+- 存档写入必须原子：写临时文件再 rename，不就地半写。
+- Converter 重跑同输入必须同输出（幂等批处理），不产生损坏或重复产物。
+- 任何失败 fail-closed 并定位到源（文件 / 关卡 / 指令 / 字段），复用 `ValidationIssue` 的 path-keyed 范式。
+- 部分产物不得被当作有效内容包 / 存档。
+
+> 落地状态 `[aspirational]`：save 与 converter 模块入仓时此节随之机器化。
 
 ## Not Doing
 
