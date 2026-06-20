@@ -58,6 +58,10 @@ the `ONGOING -> VICTORY/DEFEAT` edge; `BattleOutcome` is sticky on `BattleState`
 `TriggerConditions`, `once` tracked) then settles win/lose; `applyPre`/`applyPost` run the
 battle's pre/post op lists. All of this is pure and deterministic (no RNG).
 
+`ScriptContext.reserves` (the off-map spawn templates a `SpawnUnit` op draws from) is assembled by
+native-content's `BattleAssembler` from validated `UnitDef`s — full-HP `Combatant` templates keyed
+by unit id, with a sentinel position the spawn op overwrites when it places the unit on the board.
+
 ## Command Legality
 
 Commands are submitted through the gameplay gate, not applied directly:
