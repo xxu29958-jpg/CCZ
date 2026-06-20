@@ -25,12 +25,14 @@ internal object SaveMappers {
         versions = versionsDto(envelope.versions),
         initialState = stateDto(envelope.initialState),
         commands = envelope.commands.map { commandDto(it) },
+        scenarios = envelope.scenarios.map { ScenarioReplayDto(it.scriptId, it.choices) },
     )
 
     fun toDomain(dto: SaveEnvelopeDto): SaveEnvelope = SaveEnvelope(
         versions = versions(dto.versions),
         initialState = state(dto.initialState),
         commands = dto.commands.map { command(it) },
+        scenarios = dto.scenarios.map { ScenarioReplay(it.scriptId, it.choices) },
     )
 
     // --- encode side (domain -> DTO) ---

@@ -16,6 +16,7 @@ import com.ccz.core.model.Pos
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotEquals
 
 class SaveCodecTest {
     @Test
@@ -84,6 +85,26 @@ class SaveCodecTest {
         assertFailsWith<SaveDecodeException> { SaveCodec.decode(tampered) }
     }
 
+    @Test
+    fun roundTripPreservesScenarioChoices() {
+        val env = sampleEnvelope()
+
+        val decoded = SaveCodec.decode(SaveCodec.encode(env))
+
+        assertEquals(env.scenarios, decoded.scenarios)
+        assertEquals(listOf(1, 0), decoded.scenarios.first().choices) // choice order pinned
+    }
+
+    @Test
+    fun decodesLegacySaveMissingScenariosFieldAsEmpty() {
+        // a v1 save written before the scenario axis has no "scenarios" key — must decode as empty
+        val encoded = SaveCodec.encode(sampleEnvelope().copy(scenarios = emptyList()))
+        val json = encoded.replace(",\"scenarios\":[]", "")
+        assertNotEquals(encoded, json) // guard: the field must actually be stripped, else this test silently degrades
+
+        assertEquals(emptyList(), SaveCodec.decode(json).scenarios)
+    }
+
     private fun sampleEnvelope(): SaveEnvelope = SaveEnvelope(
         versions = SaveVersions(
             saveSchemaVersion = 1,
@@ -111,6 +132,10 @@ class SaveCodecTest {
             Command.Move("zhaoyun", Pos(4, 2)),
             Command.Attack("zhaoyun", "e1", "atk"),
             Command.EndTurn(Faction.PLAYER),
+        ),
+        scenarios = listOf(
+            ScenarioReplay("intro", choices = listOf(1, 0)),
+            ScenarioReplay("epilogue"), // empty choices — pins the default-empty path too
         ),
     )
 
