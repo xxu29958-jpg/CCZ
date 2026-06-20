@@ -70,4 +70,4 @@ The runtime must know only:
 
 Main line: Android native shell + Kotlin deterministic core + custom 2D tactics presentation.
 
-Godot is retained as existing reference/prototype material. Unity and Unreal are not the main line.
+The repository was forked from a Godot template, since removed (working tree and history). Unity and Unreal are not the main line.

@@ -21,7 +21,7 @@ CCZ 的工程规则体系是从上游 Godot 战棋模板 fork、再套用 xiaopi
 | P1-5 | SECURITY 现在时断言「未知 event op 已拒绝」，但校验代码不存在 | 先诚实化标 pending（rules/arch）→ 实现 `ContentEventValidator`（引用完整性）→ 翻转标记 | rules / core |
 | P1-6 | Save/Replay 版本模型纯文档，代码里无 Save 类 | 标 `[aspirational]` + TODO（Save 类落地同 PR 附拒未来版本测试） | rules |
 | P1-7 | 零 CI 却写「必须过」 | 改「push 前本地必跑，CI pending」；CI.md 已自承未配置 | rules |
-| P2-1/3 | Forbidden 禁残留 vs 根目录 78MB Godot 模板；archive 空壳 | `git mv` 隔离到 `archive/legacy-godot/`，Forbidden 加例外，PROJECT_STRUCTURE 更新 | chore |
+| P2-1/3 | Forbidden 禁残留 vs 根目录 78MB Godot 模板；archive 空壳 | 用户拍板彻底删除：移除 Godot 模板 + `git filter-branch` 抹掉全历史 78MB + 删 upstream remote，重建干净历史 | chore |
 | P2-2 | HANDOFF 谎报「已落位」但全 untracked | bootstrap commit 入库 | bootstrap |
 | P2-4 | 命名示例全是小票夹后端/OCR/Python 符号 | 换 CCZ 原生符号 + Kotlin PascalCase 文件名例外 | rules |
 | P2-5/6/7 | Client 层写死网络链 / id+UTC 时间 / backend 目录树 | 改写为 CCZ 进程内核链 / 内容包身份四元组 / android-rooted Gradle 树；网络细节入附录 | rules |
