@@ -40,6 +40,8 @@
 
 - Touch controls.
 - Basic HUD.
-- Save/replay.
+- Save/replay. **[engine core done]** `SaveEnvelope` + `SaveLoader` in `game-core`: version axes,
+  fail-closed reject of future save schema / rules drift, deterministic replay fold. On-disk
+  serialization codec + atomic write still pending.
 - Internal test build.
 

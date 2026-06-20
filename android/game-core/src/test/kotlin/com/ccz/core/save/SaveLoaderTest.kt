@@ -1,0 +1,89 @@
+package com.ccz.core.save
+
+import com.ccz.core.battle.BattleRules
+import com.ccz.core.battle.Command
+import com.ccz.core.battle.Resolver
+import com.ccz.core.battle.combatant
+import com.ccz.core.battle.stateOf
+import com.ccz.core.model.Faction
+import com.ccz.core.model.Pos
+import com.ccz.core.model.UnitClass
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertNotEquals
+
+class SaveLoaderTest {
+    private val classes = mapOf("inf" to UnitClass("inf", "Infantry", "foot", 5))
+
+    // Two attacks consume RNG, so replay determinism is meaningfully exercised (not just a no-op fold).
+    private val commands = listOf(
+        Command.Attack("h", "e", "atk"),
+        Command.Attack("h", "e", "atk"),
+        Command.EndTurn(Faction.PLAYER),
+    )
+
+    private fun versions(
+        schema: Int = SaveVersions.SUPPORTED_SAVE_SCHEMA_VERSION,
+        rules: Int = BattleRules.RULES_VERSION,
+    ): SaveVersions = SaveVersions(
+        saveSchemaVersion = schema,
+        rulesVersion = rules,
+        engineVersion = "0.1",
+        nativeFormatVersion = "1",
+        contentVersion = "0.1.0",
+    )
+
+    private fun envelope(versions: SaveVersions = versions()): SaveEnvelope =
+        SaveEnvelope(
+            versions = versions,
+            initialState = stateOf(
+                combatant("h", Faction.PLAYER, Pos(0, 0)),
+                combatant("e", Faction.ENEMY, Pos(1, 0)),
+            ),
+            commands = commands,
+        )
+
+    @Test
+    fun rejectsFutureSaveSchemaVersion() {
+        val future = versions(schema = SaveVersions.SUPPORTED_SAVE_SCHEMA_VERSION + 1)
+        assertEquals(SaveRejection.FUTURE_SCHEMA_VERSION, SaveLoader.check(future))
+        val outcome = SaveLoader.load(envelope(future), classes)
+        assertEquals(SaveRejection.FUTURE_SCHEMA_VERSION, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
+    }
+
+    @Test
+    fun rejectsRulesVersionMismatch() {
+        val drifted = versions(rules = BattleRules.RULES_VERSION + 1)
+        assertEquals(SaveRejection.RULES_VERSION_MISMATCH, SaveLoader.check(drifted))
+        val outcome = SaveLoader.load(envelope(drifted), classes) // also exercise the full load() gate
+        assertEquals(SaveRejection.RULES_VERSION_MISMATCH, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
+    }
+
+    @Test
+    fun acceptsCurrentAndOlderSchemaButNotFuture() {
+        assertEquals(null, SaveLoader.check(versions()))
+        // only a FUTURE schema is rejected; an older one is loadable (migration is a later concern)
+        assertEquals(null, SaveLoader.check(versions(schema = SaveVersions.SUPPORTED_SAVE_SCHEMA_VERSION - 1)))
+        assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(envelope(), classes))
+    }
+
+    @Test
+    fun replayReproducesManualResolverRun() {
+        val env = envelope()
+        var manual = env.initialState
+        commands.forEach { manual = Resolver.apply(manual, it, classes).state }
+        val loaded = assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(env, classes))
+        assertEquals(manual, loaded.finalState)
+        // prove the replay actually advanced RNG (not a no-op fold that would pass trivially)
+        assertNotEquals(env.initialState.rngState, loaded.finalState.rngState)
+    }
+
+    @Test
+    fun replayIsDeterministicAcrossTwoLoads() {
+        val env = envelope()
+        val first = assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(env, classes))
+        val second = assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(env, classes))
+        assertEquals(first.finalState, second.finalState)
+    }
+}
