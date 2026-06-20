@@ -253,13 +253,15 @@ converter_version
 save_schema_version
 ```
 
-规则（**Status `[aspirational]`：save 侧模型尚未实现**——src 中暂无 Save 数据类 / `save_schema_version` 常量；以下为目标契约。首个 Save 类落地时**同 PR** 附 `rejectsFutureSaveSchemaVersion()` 测试，镜像 `ContentValidator` 拒不支持 `native_format_version` 的现成范例）：
+规则（`SaveEnvelope`/`SaveVersions`/`SaveLoader` 已入 `game-core` 的 `com.ccz.core.save`；on-disk 序列化 codec 尚未落地，见 §Write & Convert Safety）：
 
-- Save 必须包含 `save_schema_version`。
-- Save 必须包含 `rng_state`。
-- Replay = initial state + command sequence。`[machine-gated]` 同进程回放确定性由 ReplayContractTest 覆盖；跨 build/版本回放由 GoldenReplayTest（固定种子→事件流+终态 golden）覆盖。
-- 运行时遇到未来版本 save 必须拒绝。
-- 内容包版本和存档兼容关系必须显式记录。
+- Save 必须包含 `save_schema_version`。`[machine-gated]` `SaveVersions.saveSchemaVersion`。
+- Save 必须包含 `rng_state`。`[machine-gated]` 由 `SaveEnvelope.initialState.rngState` 携带（回放从初始 state 折叠命令，rng 随 state 走）。
+- Replay = initial state + command sequence。`[machine-gated]` `SaveLoader.load` 折叠已接受命令复现终态（`SaveLoaderTest` 断言回放 == 手动 Resolver 折叠且真消费 RNG）；同进程确定性另由 ReplayContractTest、跨 build/版本由 GoldenReplayTest 覆盖。
+- 运行时遇到未来版本 save 必须拒绝。`[machine-gated]` `SaveLoader.check` → `FUTURE_SCHEMA_VERSION`（`rejectsFutureSaveSchemaVersion` 测试，镜像 `ContentValidator` 拒不支持 `native_format_version`）；规则版本漂移另拒 `RULES_VERSION_MISMATCH`（save 在不同战斗公式规则下生成则回放会偏离）。
+- 内容包版本和存档兼容关系必须显式记录。`[machine-gated]` `SaveVersions` 显式记 engine / native_format / content / converter / rules / save_schema 各轴。
+
+> 注：回放假定信封中命令是良构（记录时已被接受）；损坏信封引用缺失 unit/skill 当前以异常 fail-closed，优雅拒绝待 on-disk save codec 落地时补（届时同步机器化 §Write & Convert Safety 的原子写）。
 
 ## Android App Future Gates
 
