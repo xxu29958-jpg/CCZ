@@ -30,7 +30,7 @@ class BattleOpTest {
         val state = stateOf(combatant("h", Faction.PLAYER, Pos(0, 0)))
         val result = BattleOps.applyOp(state, BattleOp.SpawnUnit("missing", Pos(1, 1)), emptyCtx)
         assertEquals(state, result.state)
-        assertEquals(listOf(Event.SpawnRejected("missing", SpawnReject.NO_TEMPLATE)), result.events)
+        assertEquals(listOf(Event.SpawnRejected("missing", PlacementReject.NO_TEMPLATE)), result.events)
     }
 
     @Test
@@ -40,7 +40,7 @@ class BattleOpTest {
         val ctx = ScriptContext(reserves = mapOf("rein" to template))
         val result = BattleOps.applyOp(state, BattleOp.SpawnUnit("rein", Pos(2, 2)), ctx)
         assertEquals(state, result.state)
-        assertEquals(listOf(Event.SpawnRejected("rein", SpawnReject.OCCUPIED)), result.events)
+        assertEquals(listOf(Event.SpawnRejected("rein", PlacementReject.OCCUPIED)), result.events)
     }
 
     @Test
@@ -50,7 +50,7 @@ class BattleOpTest {
         val ctx = ScriptContext(reserves = mapOf("rein" to template), map = flat(3, 3))
         val result = BattleOps.applyOp(state, BattleOp.SpawnUnit("rein", Pos(5, 5)), ctx)
         assertEquals(state, result.state)
-        assertEquals(listOf(Event.SpawnRejected("rein", SpawnReject.OUT_OF_BOUNDS)), result.events)
+        assertEquals(listOf(Event.SpawnRejected("rein", PlacementReject.OUT_OF_BOUNDS)), result.events)
     }
 
     @Test
@@ -63,7 +63,7 @@ class BattleOpTest {
         val ctx = ScriptContext(reserves = mapOf("rein" to template), map = map)
         val result = BattleOps.applyOp(state, BattleOp.SpawnUnit("rein", Pos(1, 1)), ctx)
         assertEquals(state, result.state)
-        assertEquals(listOf(Event.SpawnRejected("rein", SpawnReject.IMPASSABLE)), result.events)
+        assertEquals(listOf(Event.SpawnRejected("rein", PlacementReject.IMPASSABLE)), result.events)
     }
 
     @Test
@@ -103,6 +103,48 @@ class BattleOpTest {
         val result = BattleOps.applyOp(state, BattleOp.MoveUnit("h", Pos(3, 2)), emptyCtx)
         assertEquals(listOf(Event.Moved("h", Pos(0, 0), Pos(3, 2))), result.events)
         assertEquals(Pos(3, 2), result.state.unit("h").pos)
+    }
+
+    @Test
+    fun moveOntoOccupiedTileIsRejected() {
+        val state = stateOf(
+            combatant("h", Faction.PLAYER, Pos(0, 0)),
+            combatant("e", Faction.ENEMY, Pos(1, 0)),
+        )
+        val result = BattleOps.applyOp(state, BattleOp.MoveUnit("h", Pos(1, 0)), emptyCtx)
+        assertEquals(state, result.state)
+        assertEquals(listOf(Event.MoveRejected("h", PlacementReject.OCCUPIED)), result.events)
+    }
+
+    @Test
+    fun moveOutOfBoundsIsRejectedWhenMapKnown() {
+        val state = stateOf(combatant("h", Faction.PLAYER, Pos(0, 0)))
+        val ctx = ScriptContext(map = flat(3, 3))
+        val result = BattleOps.applyOp(state, BattleOp.MoveUnit("h", Pos(5, 5)), ctx)
+        assertEquals(state, result.state)
+        assertEquals(listOf(Event.MoveRejected("h", PlacementReject.OUT_OF_BOUNDS)), result.events)
+    }
+
+    @Test
+    fun moveOntoImpassableTileIsRejectedWhenMapKnown() {
+        val state = stateOf(combatant("h", Faction.PLAYER, Pos(0, 0)))
+        val grass = MapTile("plain", 1)
+        val wall = MapTile("wall", 1, passable = false)
+        val map = BattleMap(2, 2, listOf(listOf(grass, grass), listOf(grass, wall)))
+        val ctx = ScriptContext(map = map)
+        val result = BattleOps.applyOp(state, BattleOp.MoveUnit("h", Pos(1, 1)), ctx)
+        assertEquals(state, result.state)
+        assertEquals(listOf(Event.MoveRejected("h", PlacementReject.IMPASSABLE)), result.events)
+    }
+
+    @Test
+    fun moveOntoOwnCurrentTileIsAllowed() {
+        // exclude-self: a wait-in-place scripted move onto the unit's own tile is not self-blocked.
+        val state = stateOf(combatant("h", Faction.PLAYER, Pos(2, 2)))
+        val ctx = ScriptContext(map = flat(5, 5))
+        val result = BattleOps.applyOp(state, BattleOp.MoveUnit("h", Pos(2, 2)), ctx)
+        assertEquals(listOf(Event.Moved("h", Pos(2, 2), Pos(2, 2))), result.events)
+        assertEquals(Pos(2, 2), result.state.unit("h").pos)
     }
 
     @Test

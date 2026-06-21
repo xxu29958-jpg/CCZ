@@ -3,6 +3,7 @@ package com.ccz.core.battle
 import com.ccz.core.event.BattleOp
 import com.ccz.core.event.ScenarioOp
 import com.ccz.core.model.Combatant
+import com.ccz.core.model.Pos
 
 /**
  * Static inputs the op interpreter needs beyond [BattleState]. [reserves] holds
@@ -40,7 +41,7 @@ internal object BattleOps {
     fun applyOp(state: BattleState, op: BattleOp, ctx: ScriptContext): Resolution = when (op) {
         is BattleOp.SpawnUnit -> spawn(state, op, ctx)
         is BattleOp.RemoveUnit -> remove(state, op.unit)
-        is BattleOp.MoveUnit -> move(state, op)
+        is BattleOp.MoveUnit -> move(state, op, ctx)
         is BattleOp.SetHp -> setHp(state, op)
         is BattleOp.SetStatus -> setStatus(state, op)
         is BattleOp.GiveItem -> Resolution(state, listOf(Event.ItemGranted(op.to, op.item)))
@@ -50,31 +51,38 @@ internal object BattleOps {
     }
 
     private fun spawn(state: BattleState, op: BattleOp.SpawnUnit, ctx: ScriptContext): Resolution {
-        val template = ctx.reserves[op.unit] ?: return rejected(state, op.unit, SpawnReject.NO_TEMPLATE)
-        val obstruction = obstruction(state, op, ctx.map)
-        if (obstruction != null) return rejected(state, op.unit, obstruction)
+        val template = ctx.reserves[op.unit]
+            ?: return Resolution(state, listOf(Event.SpawnRejected(op.unit, PlacementReject.NO_TEMPLATE)))
+        val blocked = blockedTile(state, op.at, excludeUnit = op.unit, map = ctx.map)
+        if (blocked != null) return Resolution(state, listOf(Event.SpawnRejected(op.unit, blocked)))
         val faction = op.faction ?: template.identity.faction
         val placed = template.copy(pos = op.at, identity = template.identity.copy(faction = faction))
         return Resolution(state.withUnit(placed), listOf(Event.UnitSpawned(placed.id)))
     }
 
-    /**
-     * First reason [op] cannot place onto its target tile, or null when clear.
-     * Bounds/passability need the [map] (skipped when it is null); occupancy is
-     * derived from living units other than the spawned id (a same-id respawn may
-     * land on its own current tile, mirroring [CommandValidator]'s move check).
-     */
-    private fun obstruction(state: BattleState, op: BattleOp.SpawnUnit, map: BattleMap?): SpawnReject? {
-        if (map != null) {
-            if (!map.inBounds(op.at)) return SpawnReject.OUT_OF_BOUNDS
-            if (!map.tileAt(op.at).passable) return SpawnReject.IMPASSABLE
-        }
-        if (op.at in occupancyOf(state, exclude = op.unit)) return SpawnReject.OCCUPIED
-        return null
+    private fun move(state: BattleState, op: BattleOp.MoveUnit, ctx: ScriptContext): Resolution {
+        val unit = state.units[op.unit] ?: return Resolution(state, emptyList())
+        val blocked = blockedTile(state, op.to, excludeUnit = op.unit, map = ctx.map)
+        if (blocked != null) return Resolution(state, listOf(Event.MoveRejected(op.unit, blocked)))
+        return Resolution(state.withUnit(unit.copy(pos = op.to)), listOf(Event.Moved(unit.id, unit.pos, op.to)))
     }
 
-    private fun rejected(state: BattleState, unit: String, reason: SpawnReject): Resolution =
-        Resolution(state, listOf(Event.SpawnRejected(unit, reason)))
+    /**
+     * First reason a unit cannot be placed onto [at], or null when the tile is clear.
+     * Shared by SpawnUnit and the scripted MoveUnit so both honor one occupancy
+     * invariant. Bounds/passability need the [map] (skipped when it is null);
+     * occupancy is derived from living units other than [excludeUnit], so a unit
+     * targeting its own current tile is not self-blocked (mirrors [CommandValidator]).
+     * NO_TEMPLATE is never returned here — it is a spawn-only, pre-placement reason.
+     */
+    private fun blockedTile(state: BattleState, at: Pos, excludeUnit: String, map: BattleMap?): PlacementReject? {
+        if (map != null) {
+            if (!map.inBounds(at)) return PlacementReject.OUT_OF_BOUNDS
+            if (!map.tileAt(at).passable) return PlacementReject.IMPASSABLE
+        }
+        if (at in occupancyOf(state, exclude = excludeUnit)) return PlacementReject.OCCUPIED
+        return null
+    }
 
     private fun remove(state: BattleState, unit: String): Resolution =
         if (unit in state.units) {
@@ -82,11 +90,6 @@ internal object BattleOps {
         } else {
             Resolution(state, emptyList())
         }
-
-    private fun move(state: BattleState, op: BattleOp.MoveUnit): Resolution {
-        val unit = state.units[op.unit] ?: return Resolution(state, emptyList())
-        return Resolution(state.withUnit(unit.copy(pos = op.to)), listOf(Event.Moved(unit.id, unit.pos, op.to)))
-    }
 
     private fun setHp(state: BattleState, op: BattleOp.SetHp): Resolution {
         val unit = state.units[op.unit] ?: return Resolution(state, emptyList())
