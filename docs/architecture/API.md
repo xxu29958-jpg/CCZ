@@ -93,6 +93,29 @@ Reject reasons (initial set): `NOT_ACTIVE_FACTION`, `UNIT_NOT_FOUND`, `UNIT_DEAD
 `TARGET_DEAD`, `SELF_TARGET`, `TARGET_FRIENDLY`, `OUT_OF_ATTACK_RANGE`,
 `WRONG_END_TURN_FACTION`.
 
+## Save / Replay
+
+A save is a `SaveEnvelope` — the initial battle state (carrying `rngState`) plus two replayable input
+axes: the accepted battle `commands` and the cutscene `scenarios` (R-script `scriptId` + player `choices`,
+save schema v2+). The two axes replay through independent, decoupled entry points:
+
+```text
+SaveLoader.load(envelope, classes, skills, rules) -> Outcome   // battle axis
+  Loaded(finalState)   // version-OK + commands resolve: folded through Resolver
+  Rejected(reason)     // SaveRejection: FUTURE_SCHEMA_VERSION / RULES_VERSION_MISMATCH / CORRUPT_COMMAND
+
+ScenarioReplayer.replay(scenarios, scripts) -> Outcome         // cutscene axis
+  Replayed(playbacks)  // each scenario run to completion through ScenarioRunner
+  Rejected(reason)     // ScenarioRejection: UNKNOWN_SCRIPT / INCOMPLETE_REPLAY
+```
+
+`SaveLoader.load` runs two gates: version (`check`) then command integrity (`commandIntegrity`, replay-time
+references resolve against the initial roster / skill table). On-disk serialization is a separate concern:
+`SaveCodec.encode`/`decode` maps `SaveEnvelope` <-> JSON through a `@Serializable` DTO layer (game-core
+domain types carry no serialization annotations). Decoding is fail-closed — unknown keys / missing fields /
+unknown command kind / unknown faction·outcome raise `SaveDecodeException`; version-axis gating stays in
+`SaveLoader.check`. Atomic on-disk write (temp file + rename) is an IO concern for a future layer, not game-core.
+
 ## Contract Rule
 
 Presentation consumes events. It must not infer hidden state by reaching around the core.

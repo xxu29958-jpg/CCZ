@@ -11,12 +11,13 @@ import com.ccz.core.model.UnitClass
  * Loads a [SaveEnvelope] by validating its version axes fail-closed, then replaying
  * the recorded command sequence through the [Resolver] from the initial state.
  *
- * Three reject gates (CCZ_ENGINE_RULES §Save/Replay): a FUTURE save schema version this
- * build cannot understand, a rules-version mismatch (the save was produced under
- * different battle-formula rules, so a replay would diverge — 宁可拒绝也不破坏回放), and a
- * corrupt command referencing a unit/skill absent from the initial state or skill table.
- * Replay re-applies already-accepted commands directly, exactly like the live flow's
- * accepted path, so it consumes RNG identically and is deterministic.
+ * Two load gates (CCZ_ENGINE_RULES §Save/Replay), three reject reasons: a version check
+ * (rejecting a FUTURE save schema this build cannot understand, or a rules-version mismatch
+ * — the save was produced under different battle-formula rules, so a replay would diverge,
+ * 宁可拒绝也不破坏回放) then a command-integrity check (a corrupt command referencing a
+ * unit/skill absent from the initial state or skill table). On-disk shape/enum decoding is a
+ * separate, earlier concern in [SaveCodec]. Replay re-applies already-accepted commands directly,
+ * exactly like the live flow's accepted path, so it consumes RNG identically and is deterministic.
  *
  * Commands were accepted when recorded, so a well-formed envelope always resolves; a
  * tampered/corrupt envelope is caught fail-closed by [commandIntegrity] BEFORE replay,

@@ -5,8 +5,12 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNamingStrategy
 
-/** Thrown when on-disk save text cannot be decoded into a [SaveEnvelope] (fail-closed). */
-class SaveDecodeException(message: String, cause: Throwable? = null) : Exception(message, cause)
+/**
+ * Thrown when on-disk save text cannot be decoded into a [SaveEnvelope] (fail-closed).
+ * A [RuntimeException] (corrupt data is unrecoverable), mirroring native-content's
+ * `ContentDecodeException` so both decode boundaries share one exception style.
+ */
+class SaveDecodeException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
 /**
  * On-disk codec for [SaveEnvelope] <-> JSON text. Strict and fail-closed: unknown keys,
