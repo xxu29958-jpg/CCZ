@@ -9,9 +9,15 @@ import com.ccz.core.model.Combatant
  * off-map unit templates a SpawnUnit op can place, keyed by the unit id the op
  * references ([BattleOp.SpawnUnit.unit]); built from validated content at a higher
  * layer (ContentEventValidator already checks spawn references), so a missing
- * template is a no-op here rather than a crash.
+ * template is rejected here rather than crashing. [map] is the battle's static
+ * spatial model used to fail-closed a spawn onto an off-map or impassable tile; it
+ * is optional because occupancy (the dynamic check) is always derivable from state,
+ * so a null map only relaxes the bounds/passability checks, never the occupancy one.
  */
-data class ScriptContext(val reserves: Map<String, Combatant> = emptyMap())
+data class ScriptContext(
+    val reserves: Map<String, Combatant> = emptyMap(),
+    val map: BattleMap? = null,
+)
 
 /**
  * Interprets [BattleOp]s into state transitions + events. Pure and deterministic
@@ -44,11 +50,31 @@ internal object BattleOps {
     }
 
     private fun spawn(state: BattleState, op: BattleOp.SpawnUnit, ctx: ScriptContext): Resolution {
-        val template = ctx.reserves[op.unit] ?: return Resolution(state, emptyList())
+        val template = ctx.reserves[op.unit] ?: return rejected(state, op.unit, SpawnReject.NO_TEMPLATE)
+        val obstruction = obstruction(state, op, ctx.map)
+        if (obstruction != null) return rejected(state, op.unit, obstruction)
         val faction = op.faction ?: template.identity.faction
         val placed = template.copy(pos = op.at, identity = template.identity.copy(faction = faction))
         return Resolution(state.withUnit(placed), listOf(Event.UnitSpawned(placed.id)))
     }
+
+    /**
+     * First reason [op] cannot place onto its target tile, or null when clear.
+     * Bounds/passability need the [map] (skipped when it is null); occupancy is
+     * derived from living units other than the spawned id (a same-id respawn may
+     * land on its own current tile, mirroring [CommandValidator]'s move check).
+     */
+    private fun obstruction(state: BattleState, op: BattleOp.SpawnUnit, map: BattleMap?): SpawnReject? {
+        if (map != null) {
+            if (!map.inBounds(op.at)) return SpawnReject.OUT_OF_BOUNDS
+            if (!map.tileAt(op.at).passable) return SpawnReject.IMPASSABLE
+        }
+        if (op.at in occupancyOf(state, exclude = op.unit)) return SpawnReject.OCCUPIED
+        return null
+    }
+
+    private fun rejected(state: BattleState, unit: String, reason: SpawnReject): Resolution =
+        Resolution(state, listOf(Event.SpawnRejected(unit, reason)))
 
     private fun remove(state: BattleState, unit: String): Resolution =
         if (unit in state.units) {
