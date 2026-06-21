@@ -53,12 +53,17 @@ object SaveFileStore {
         } catch (e: IOException) {
             throw SaveIoException("cannot create temp file in: $dir", e)
         }
+        var moved = false
         try {
             Files.writeString(temp, text)
             Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE)
+            moved = true
         } catch (e: IOException) {
-            runCatching { Files.deleteIfExists(temp) } // best-effort cleanup; preserve original failure
             throw SaveIoException("failed to write save atomically: $target", e)
+        } finally {
+            // any non-success exit (IOException, unchecked exception, Error) leaves no stray temp;
+            // best-effort so cleanup never masks the original failure
+            if (!moved) runCatching { Files.deleteIfExists(temp) }
         }
     }
 
