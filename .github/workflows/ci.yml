@@ -39,10 +39,10 @@ jobs:
       - name: Full JVM gate
         run: >
           ./gradlew --no-daemon
-          :game-core:test :native-content:test
-          :game-core:runSelfTest :native-content:runSelfTest
-          :game-core:detektMain :native-content:detektMain
-          :game-core:detektTest :native-content:detektTest
+          :game-core:test :native-content:test :save-io:test
+          :game-core:runSelfTest :native-content:runSelfTest :save-io:runSelfTest
+          :game-core:detektMain :native-content:detektMain :save-io:detektMain
+          :game-core:detektTest :native-content:detektTest :save-io:detektTest
           assertTestCountEqualsBaseline
 
       - name: Upload detekt reports
