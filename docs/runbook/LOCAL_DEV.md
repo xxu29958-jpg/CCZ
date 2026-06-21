@@ -39,8 +39,8 @@ From `android/`:
 
 ```powershell
 cd android
-.\gradlew.bat --no-daemon :game-core:runSelfTest :native-content:runSelfTest
-.\gradlew.bat --no-daemon :game-core:test :native-content:test
+.\gradlew.bat --no-daemon :game-core:runSelfTest :native-content:runSelfTest :save-io:runSelfTest
+.\gradlew.bat --no-daemon :game-core:test :native-content:test :save-io:test
 ```
 
 Expected output includes:
@@ -48,6 +48,7 @@ Expected output includes:
 ```text
 OK deterministic game-core self-test passed
 OK native content validator self-test passed
+OK save-io atomic write/read self-test passed
 ```
 
 ## Kotlin Quality Gate
@@ -56,8 +57,8 @@ Run type-resolving detekt tasks:
 
 ```powershell
 cd android
-.\gradlew.bat --no-daemon :game-core:detektMain :native-content:detektMain
-.\gradlew.bat --no-daemon :game-core:detektTest :native-content:detektTest
+.\gradlew.bat --no-daemon :game-core:detektMain :native-content:detektMain :save-io:detektMain
+.\gradlew.bat --no-daemon :game-core:detektTest :native-content:detektTest :save-io:detektTest
 ```
 
 Current modules are pure JVM/Kotlin, so the Android app variant tasks do not exist yet.
@@ -66,7 +67,7 @@ Current modules are pure JVM/Kotlin, so the Android app variant tasks do not exi
 
 ```powershell
 cd android
-.\gradlew.bat --no-daemon :game-core:test :native-content:test :game-core:runSelfTest :native-content:runSelfTest :game-core:detektMain :native-content:detektMain :game-core:detektTest :native-content:detektTest assertTestCountEqualsBaseline
+.\gradlew.bat --no-daemon :game-core:test :native-content:test :save-io:test :game-core:runSelfTest :native-content:runSelfTest :save-io:runSelfTest :game-core:detektMain :native-content:detektMain :save-io:detektMain :game-core:detektTest :native-content:detektTest :save-io:detektTest assertTestCountEqualsBaseline
 ```
 
 ## Android SDK Tools

@@ -18,3 +18,4 @@ rootProject.name = "ccz-android"
 
 include(":game-core")
 include(":native-content")
+include(":save-io")

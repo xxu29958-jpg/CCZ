@@ -253,7 +253,7 @@ converter_version
 save_schema_version
 ```
 
-规则（`SaveEnvelope`/`SaveVersions`/`SaveLoader` + on-disk `SaveCodec` 已入 `game-core` 的 `com.ccz.core.save`；原子写仍待，见 §Write & Convert Safety）：
+规则（`SaveEnvelope`/`SaveVersions`/`SaveLoader` + on-disk `SaveCodec` 已入 `game-core` 的 `com.ccz.core.save`；存档原子写已落地于 `:save-io`，见 §Write & Convert Safety）：
 
 - Save 必须包含 `save_schema_version`。`[machine-gated]` `SaveVersions.saveSchemaVersion`。
 - Save 必须包含 `rng_state`。`[machine-gated]` 由 `SaveEnvelope.initialState.rngState` 携带（回放从初始 state 折叠命令，rng 随 state 走）。
@@ -264,8 +264,9 @@ save_schema_version
 - 损坏存档命令必须 replay 前优雅拒，不崩。`[machine-gated]` `SaveLoader.commandIntegrity`：命令引用（`Move.unit` / `Attack.attacker·target·skill`）对初始 roster / skill 表不可解析 → `Outcome.Rejected(CORRUPT_COMMAND)`（版本闸优先；`SaveLoaderTest` 钉 Move/Attack 各引用路径 + 版本优先 + 合法放行 + 空命令）。
 - Save 须记录 scenario（过场）回放轴。`[machine-gated]` `SaveEnvelope.scenarios`（`ScenarioReplay` = scriptId + 选择索引序列，与战斗 command 并列的第二回放轴）经 `SaveCodec` round-trip 保真；`SUPPORTED_SAVE_SCHEMA_VERSION` 1→2，v1 存档缺 scenarios 字段向后兼容 decode 为空（`SaveCodecTest`）。脚本本体在 content（`contentVersion` 引用），不入存档；回放执行 + 完整性见下条 `ScenarioReplayer`。
 - Save 的 scenario 回放须 fail-closed。`[machine-gated]` `ScenarioReplayer.replay(scenarios, scripts)`：对每个 `ScenarioReplay` 跑 `ScenarioRunner`（脚本由 content 提供，game-core 不依赖 native-content）；未知 scriptId → `UNKNOWN_SCRIPT`，choices 截断（残留 Choice）或脚本环 → `INCOMPLETE_REPLAY`，整批拒不漏 partial playback（`ScenarioReplayerTest`）。`SaveLoader`（战斗）+ `ScenarioReplayer`（过场）= 两条独立回放轴。
+- 存档写入必须原子，部分产物不得当有效存档。`[machine-gated]` `:save-io` 的 `SaveFileStore.save` 写同目录临时文件 + `ATOMIC_MOVE` rename（读者/崩溃永不见半写），失败清理临时文件不留半文件；`load` 缺文件 → `SaveIoException`、坏内容 → `SaveDecodeException`（`SaveFileStoreTest` + selftest 钉 round-trip / 覆盖原子 / 无残留临时文件 / 缺文件·坏内容 fail-closed）。game-core 纯逻辑不碰文件系统，IO 隔离在此独立模块（CCZ_ENGINE_RULES §Write & Convert Safety）。
 
-> 注：on-disk `SaveCodec`（shape + enum fail-closed）与命令完整性优雅拒绝（`SaveLoader.commandIntegrity` 在 replay 前校验命令引用 vs 初始 state / skill 表，缺失 → `CORRUPT_COMMAND`）均已落地。§Write & Convert Safety 的原子写（IO 层）仍待。
+> 注：on-disk `SaveCodec`（shape + enum fail-closed）、命令完整性优雅拒绝（`SaveLoader.commandIntegrity` 在 replay 前校验命令引用 vs 初始 state / skill 表，缺失 → `CORRUPT_COMMAND`）、存档原子写（`:save-io` 的 `SaveFileStore`，临时文件 + ATOMIC_MOVE）均已落地。§Write & Convert Safety 的 converter 幂等批处理（IO 层）仍待。
 
 ## Android App Future Gates
 
@@ -303,12 +304,12 @@ save_schema_version
 
 写存档与离线转换的安全约束（与模板 §幂等/§事务的 CCZ 映射）：
 
-- 存档写入必须原子：写临时文件再 rename，不就地半写。
-- Converter 重跑同输入必须同输出（幂等批处理），不产生损坏或重复产物。
+- 存档写入必须原子：写临时文件再 rename，不就地半写。`[machine-gated]` `:save-io` 的 `SaveFileStore.save`（同目录临时文件 + `ATOMIC_MOVE`）。
+- Converter 重跑同输入必须同输出（幂等批处理），不产生损坏或重复产物。`[aspirational]`（待 converter 模块入仓）。
 - 任何失败 fail-closed 并定位到源（文件 / 关卡 / 指令 / 字段），复用 `ValidationIssue` 的 path-keyed 范式。
-- 部分产物不得被当作有效内容包 / 存档。
+- 部分产物不得被当作有效内容包 / 存档。`[machine-gated]`（存档侧：`SaveFileStore` 失败清理临时文件不留半文件、`load` 缺文件/坏内容 fail-closed）；converter 侧 `[aspirational]`。
 
-> 落地状态 `[aspirational]`：save 与 converter 模块入仓时此节随之机器化。
+> 落地状态：**存档原子写** `[machine-gated]`（`:save-io` 的 `SaveFileStore`，临时文件 + `ATOMIC_MOVE`，`SaveFileStoreTest` + selftest）；**converter** 幂等批处理仍 `[aspirational]`（待 converter 模块入仓时机器化）。
 
 ## Not Doing
 

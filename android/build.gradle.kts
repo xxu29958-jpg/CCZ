@@ -11,7 +11,7 @@ tasks.register("assertTestCountEqualsBaseline") {
     group = "verification"
     description = "Fails if the @Test method count drifts from config/test-count-baseline.txt."
     val baselineFile = file("config/test-count-baseline.txt")
-    val testRoots = listOf("game-core", "native-content").map { file("$it/src/test") }
+    val testRoots = listOf("game-core", "native-content", "save-io").map { file("$it/src/test") }
     val testAnnotation = Regex("""(?m)^\s*@Test\b""")
     doLast {
         val actual = testRoots
