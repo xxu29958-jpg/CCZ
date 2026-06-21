@@ -26,6 +26,7 @@ sealed interface Event {
     data class TurnEnded(val faction: Faction) : Event
     data class BattleEnded(val outcome: BattleOutcome) : Event
     data class UnitSpawned(val unit: String) : Event
+    data class SpawnRejected(val unit: String, val reason: SpawnReject) : Event
     data class UnitRemoved(val unit: String) : Event
     data class HpSet(val unit: String, val hp: Int) : Event
     data class StatusApplied(val unit: String, val status: String) : Event
@@ -36,6 +37,18 @@ sealed interface Event {
 
 /** Battle result from the player side's perspective. Sticky once decided. */
 enum class BattleOutcome { ONGOING, VICTORY, DEFEAT }
+
+/**
+ * Why a [Command]/op-driven SpawnUnit could not place its unit; the spawn is a
+ * fail-closed no-op (state untouched) that surfaces [Event.SpawnRejected] so the
+ * presentation layer can see why the reinforcement never appeared instead of a unit
+ * silently stacking on an occupied tile. [NO_TEMPLATE] and [OCCUPIED] are always
+ * enforced (occupancy derives from state); [OUT_OF_BOUNDS] and [IMPASSABLE] fire
+ * only when a [ScriptContext.map] is supplied, which the content-assembly path does
+ * not yet thread in (it arrives with the battle driver layer), so those two are
+ * dormant in production today.
+ */
+enum class SpawnReject { NO_TEMPLATE, OUT_OF_BOUNDS, IMPASSABLE, OCCUPIED }
 
 /**
  * Script/event-driven progression carried alongside the tactical state: the

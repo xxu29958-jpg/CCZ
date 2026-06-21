@@ -26,11 +26,67 @@ class BattleOpTest {
     }
 
     @Test
-    fun spawnWithoutTemplateIsNoOp() {
+    fun spawnWithoutTemplateIsRejected() {
         val state = stateOf(combatant("h", Faction.PLAYER, Pos(0, 0)))
         val result = BattleOps.applyOp(state, BattleOp.SpawnUnit("missing", Pos(1, 1)), emptyCtx)
         assertEquals(state, result.state)
-        assertTrue(result.events.isEmpty())
+        assertEquals(listOf(Event.SpawnRejected("missing", SpawnReject.NO_TEMPLATE)), result.events)
+    }
+
+    @Test
+    fun spawnOntoOccupiedTileIsRejected() {
+        val template = combatant("rein", Faction.ENEMY, Pos(0, 0))
+        val state = stateOf(combatant("h", Faction.PLAYER, Pos(2, 2)))
+        val ctx = ScriptContext(reserves = mapOf("rein" to template))
+        val result = BattleOps.applyOp(state, BattleOp.SpawnUnit("rein", Pos(2, 2)), ctx)
+        assertEquals(state, result.state)
+        assertEquals(listOf(Event.SpawnRejected("rein", SpawnReject.OCCUPIED)), result.events)
+    }
+
+    @Test
+    fun spawnOutOfBoundsIsRejectedWhenMapKnown() {
+        val template = combatant("rein", Faction.ENEMY, Pos(0, 0))
+        val state = stateOf(combatant("h", Faction.PLAYER, Pos(0, 0)))
+        val ctx = ScriptContext(reserves = mapOf("rein" to template), map = flat(3, 3))
+        val result = BattleOps.applyOp(state, BattleOp.SpawnUnit("rein", Pos(5, 5)), ctx)
+        assertEquals(state, result.state)
+        assertEquals(listOf(Event.SpawnRejected("rein", SpawnReject.OUT_OF_BOUNDS)), result.events)
+    }
+
+    @Test
+    fun spawnOntoImpassableTileIsRejectedWhenMapKnown() {
+        val template = combatant("rein", Faction.ENEMY, Pos(0, 0))
+        val state = stateOf(combatant("h", Faction.PLAYER, Pos(0, 0)))
+        val grass = MapTile("plain", 1)
+        val wall = MapTile("wall", 1, passable = false)
+        val map = BattleMap(2, 2, listOf(listOf(grass, grass), listOf(grass, wall)))
+        val ctx = ScriptContext(reserves = mapOf("rein" to template), map = map)
+        val result = BattleOps.applyOp(state, BattleOp.SpawnUnit("rein", Pos(1, 1)), ctx)
+        assertEquals(state, result.state)
+        assertEquals(listOf(Event.SpawnRejected("rein", SpawnReject.IMPASSABLE)), result.events)
+    }
+
+    @Test
+    fun spawnSucceedsOntoInBoundsPassableEmptyTile() {
+        val template = combatant("rein", Faction.ENEMY, Pos(0, 0))
+        val state = stateOf(combatant("h", Faction.PLAYER, Pos(0, 0)))
+        val ctx = ScriptContext(reserves = mapOf("rein" to template), map = flat(5, 5))
+        val result = BattleOps.applyOp(state, BattleOp.SpawnUnit("rein", Pos(3, 3), Faction.ALLY), ctx)
+        assertEquals(listOf(Event.UnitSpawned("rein")), result.events)
+        assertEquals(Pos(3, 3), result.state.unit("rein").pos)
+        assertEquals(Faction.ALLY, result.state.unit("rein").faction)
+    }
+
+    @Test
+    fun respawnOntoSameUnitsOwnTileIsAllowed() {
+        // A same-id respawn excludes itself from occupancy, so it may overwrite in place.
+        val template = combatant("rein", Faction.ENEMY, Pos(0, 0))
+        val onBoard = combatant("rein", Faction.ALLY, Pos(2, 2), hp = 30)
+        val state = stateOf(onBoard)
+        val ctx = ScriptContext(reserves = mapOf("rein" to template), map = flat(5, 5))
+        val result = BattleOps.applyOp(state, BattleOp.SpawnUnit("rein", Pos(2, 2)), ctx)
+        assertEquals(listOf(Event.UnitSpawned("rein")), result.events)
+        assertEquals(100, result.state.unit("rein").hp) // overwritten by full-hp template
     }
 
     @Test
