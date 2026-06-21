@@ -6,14 +6,14 @@ CI runs on GitHub Actions: `.github/workflows/ci.yml`.
 
 Triggers: push to `main` / `feat|fix|perf|refactor|chore|ci|docs/**` branches, and every `pull_request`.
 
-Runner: `ubuntu-latest` + JDK 17. Current modules are pure JVM/Kotlin (`game-core` / `native-content`), so no Android SDK is needed. Runs from `android/`:
+Runner: `ubuntu-latest` + JDK 17. Current modules are pure JVM/Kotlin (`game-core` / `native-content` / `save-io`), so no Android SDK is needed. Runs from `android/`:
 
 ```bash
 ./gradlew --no-daemon \
-  :game-core:test :native-content:test \
-  :game-core:runSelfTest :native-content:runSelfTest \
-  :game-core:detektMain :native-content:detektMain \
-  :game-core:detektTest :native-content:detektTest \
+  :game-core:test :native-content:test :save-io:test \
+  :game-core:runSelfTest :native-content:runSelfTest :save-io:runSelfTest \
+  :game-core:detektMain :native-content:detektMain :save-io:detektMain \
+  :game-core:detektTest :native-content:detektTest :save-io:detektTest \
   assertTestCountEqualsBaseline
 ```
 

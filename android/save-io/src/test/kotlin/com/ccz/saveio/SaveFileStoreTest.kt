@@ -26,21 +26,29 @@ class SaveFileStoreTest {
     }
 
     @Test
-    fun saveOverwritesExistingFileAtomically() {
+    fun saveOverwritesExistingFileWithCompleteContent() {
         val target = dir.resolve("slot.save")
         SaveFileStore.save(target, envelopeAtTurn(1))
-        SaveFileStore.save(target, envelopeAtTurn(7))
-        assertEquals(7, SaveFileStore.load(target).initialState.turn)
+        val second = envelopeAtTurn(7)
+        SaveFileStore.save(target, second)
+        // the whole envelope is replaced (not a partial/merged write) and no temp lingers
+        assertEquals(second, SaveFileStore.load(target))
+        assertEquals(0L, tempFileCount())
+    }
+
+    @Test
+    fun saveFailingToPlaceFailsClosedAndLeavesNoTemp() {
+        // target is an existing directory, so the atomic move cannot place the file over it
+        val target = dir.resolve("occupied")
+        Files.createDirectory(target)
+        assertFailsWith<SaveIoException> { SaveFileStore.save(target, envelopeAtTurn(1)) }
+        assertEquals(0L, tempFileCount()) // the failed write left no stray temp behind
     }
 
     @Test
     fun saveLeavesNoTempFileBehind() {
-        val target = dir.resolve("slot.save")
-        SaveFileStore.save(target, envelopeAtTurn(1))
-        val tempCount = Files.list(dir).use { stream ->
-            stream.filter { it.fileName.toString().endsWith(".tmp") }.count()
-        }
-        assertEquals(0L, tempCount)
+        SaveFileStore.save(dir.resolve("slot.save"), envelopeAtTurn(1))
+        assertEquals(0L, tempFileCount())
     }
 
     @Test
@@ -62,6 +70,11 @@ class SaveFileStoreTest {
         Files.writeString(target, "not a save {{{")
         assertFailsWith<SaveDecodeException> { SaveFileStore.load(target) }
     }
+
+    private fun tempFileCount(): Long =
+        Files.list(dir).use { stream ->
+            stream.filter { it.fileName.toString().endsWith(".tmp") }.count()
+        }
 
     private fun envelopeAtTurn(turn: Int): SaveEnvelope =
         SaveEnvelope(

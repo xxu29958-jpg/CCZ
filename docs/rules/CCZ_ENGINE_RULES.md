@@ -293,10 +293,10 @@ save_schema_version
 在 app 建立前，当前模块的门（CI + 本地）：
 
 ```powershell
-.\gradlew.bat --no-daemon :game-core:runSelfTest :native-content:runSelfTest
-.\gradlew.bat --no-daemon :game-core:test :native-content:test
-.\gradlew.bat --no-daemon :game-core:detektMain :native-content:detektMain
-.\gradlew.bat --no-daemon :game-core:detektTest :native-content:detektTest
+.\gradlew.bat --no-daemon :game-core:runSelfTest :native-content:runSelfTest :save-io:runSelfTest
+.\gradlew.bat --no-daemon :game-core:test :native-content:test :save-io:test
+.\gradlew.bat --no-daemon :game-core:detektMain :native-content:detektMain :save-io:detektMain
+.\gradlew.bat --no-daemon :game-core:detektTest :native-content:detektTest :save-io:detektTest
 .\gradlew.bat --no-daemon assertTestCountEqualsBaseline
 ```
 
