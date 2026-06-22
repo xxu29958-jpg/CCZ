@@ -13,10 +13,11 @@
 | **baseline 叠债 tripwire** | #41 | `GENERAL §Kotlin Quality Gate`（超阈值冻结单元不得加新功能） |
 | **`RejectReason→phrase` 层** | #42 | `:app RejectPhrase.kt`，穷尽 when fail-closed（比 `errors.py` dict+fallback 更强：编译期强制） |
 | **detekt `ignoreSingleWhenExpression`** | #42 | `detekt.yml` 门细化（穷尽映射 when 不被圈复杂度误伤） |
+| **依赖方向门** | #44 | 根 gradle `assertModuleDependencyDirection`，模块集从 `settings.gradle.kts` 驱动 fail-closed，强制 `native-content/save-io/app → game-core` 单向 DAG；**把高内聚低耦合总纲从 `[review-only]` 升 `[machine-gated]`**。对抗审抓到初版 over-claim fail-closed（只扫硬编码模块）已修。 |
 
 ## 待移植（adapt-then-port，需改造适配引擎域；按优先级）
 
-1. **依赖方向门**（P2，机器门）—— 根 gradle `assertModuleDependencyDirection`，静态强制 `app → game-core → native-content` 单向 DAG（解析各 `build.gradle.kts` 的 `project(":...")` 依赖，反向即 fail）。**这是把 #41 的高内聚低耦合 `[review-only]` 总纲升成机器门** —— 兑现元规则「规则要么有门要么诚实标注」，是"标杆 = 规则有牙"的直接体现。建议下一片。
+1. ~~依赖方向门~~ **已落地（#44，见上「已移植」）** —— 高内聚低耦合总纲已升 `[machine-gated]`，兑现「规则要么有门要么诚实标注」元规则（"标杆 = 规则有牙"）。
 2. **文本/编码 lint 门**（P1，机器门）—— gradle `verifyTextEncoding`：UTF-8 有效性 + `.ps1` UTF-8-BOM + mojibake 标记扫描（CCZ 是 Windows + 中文文档，已有 `§Windows / PowerShell Rules` 但无机器门）。
 3. **依赖版本审计门**（P1，机器门）—— 禁 alpha/beta/rc/snapshot 进主线。**注意**：CCZ 已有 detekt alpha ADR 例外（`0003`），门必须尊重该豁免，否则自相矛盾。
 4. **per-slice report 习惯**（P1，doc）—— 缓解 `HANDOFF.md` 顶部 run-on（line 3 ~1800 字每轮重述全部 PR）。可做成 ship-slice 收尾产出或 `docs/reports/`。
