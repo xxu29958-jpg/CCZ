@@ -11,15 +11,19 @@ Initial command set:
 ```text
 Move(unit, to)
 Attack(attacker, target, skill)
+Wait(unit)
 EndTurn(faction)
 ```
+
+`Wait` stands a unit down for the turn (the Fire-Emblem move-then-no-attack path). It is part of the
+action economy: each unit may Move once then take one action — Attack or Wait — per turn (tracked by
+`BattleProgress.moved`/`acted`, cleared on `EndTurn`); the validator rejects a second move or action.
 
 Future command set:
 
 ```text
 CastStrategy
 UseItem
-Wait
 TriggerEvent
 ForceWin
 ForceLose
@@ -34,6 +38,7 @@ Moved
 Missed
 Damaged
 Died
+Waited
 TurnEnded
 ```
 

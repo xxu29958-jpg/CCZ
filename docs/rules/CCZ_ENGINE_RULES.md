@@ -151,7 +151,8 @@ ccz-native-pack/
 - RNG 消费顺序是规则契约（hit→crit→combo→block）。`[machine-gated]` RngContractTest 钉死消费**计数**（命中 4 次 / miss 短路 1 次，靠 splitmix64 state delta）；GoldenReplayTest 钉死固定种子→事件流，重排 roll 顺序会改 golden 即被捕获。
 - Resolver 输入 state + command，输出 state + events。
 - Presentation 只消费 events。
-- Gameplay 负责 command 合法性：移动范围、射程、存活、回合归属。`[machine-gated]` `CommandValidator.check` 是纯确定性闸门，`Gameplay.submit` 在校验通过前不触 `Resolver`（拒绝零 RNG、不改 state）；`MoveLegalityTest` / `AttackLegalityTest` / `TurnOwnershipTest` / `GameplayOutcomeTest` 覆盖全部 15 个 `RejectReason` + 接受路径。
+- Gameplay 负责 command 合法性：移动范围、射程、存活、回合归属。`[machine-gated]` `CommandValidator.check` 是纯确定性闸门，`Gameplay.submit` 在校验通过前不触 `Resolver`（拒绝零 RNG、不改 state）；`MoveLegalityTest` / `AttackLegalityTest` / `TurnOwnershipTest` / `GameplayOutcomeTest` 覆盖全部 18 个 `RejectReason` + 接受路径。
+- 行动经济：每单位每回合可移动一次、再行动一次（攻击或待机），不可二动，移动后仍可攻（move-then-attack，Fire-Emblem 式）。`[machine-gated]` `BattleProgress.moved`/`acted`（回合作用域，`Command.EndTurn` 经 `Resolver` 清空）+ `CommandValidator` 的 `UNIT_ALREADY_MOVED`/`UNIT_ALREADY_ACTED` + `Command.Wait` 耗尽该单位；`Gameplay.legal*` 查询加经济守卫（query⟺submit parity）；`ActionEconomyTest` 覆盖一移一动 / move-then-attack / 二动拒 / Wait 耗尽 / EndTurn 重置 / 查询空。`moved`/`acted` 回合作用域不入存档（replay 折命令重导出，见 §Save / Replay 的 `SaveMappers` 注）。
 - 规则配置必须以不可变 value object 显式传入。`[machine-gated]` 地图 + 规则/内容表收进 `BattleContext`（map / classes / skills / rules），与 `Resolver` 的入参模式一致；`RuleDataTest` 钉死规则注入而非全局可变。
 - 禁止新增全局可变规则开关。
 
