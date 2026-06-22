@@ -1,6 +1,6 @@
 # General Engineering Rules
 
-> 规则版本 v0.1.0，2026-06-20，自 xiaopiaojia 工程规范 v1.7.0 fork 后重锚到 CCZ。
+> 规则版本 v0.2.0，2026-06-22，自 xiaopiaojia 工程规范 v1.7.0 fork 后重锚到 CCZ。
 > 本文件是跨项目通用规则。项目专属规则写到 `CCZ_ENGINE_RULES.md`，不要混进这里。
 > 凡只对「后端 / 网络 API / 数据库」成立的规则，已下沉到文末 `## Appendix: Backend / Network API (deferred)`，CCZ 当前没有这些面（见 `docs/architecture/API.md`），引入前不启用。
 > 变更管理见入口 `ENGINEERING_RULES.md`。
@@ -58,6 +58,7 @@ https://docs.astral.sh/ruff/rules/complex-structure/
 
 - baseline 是冻结旧债，不是新代码许可。
 - 新代码和被改代码必须达标。
+- 超阈值的 baseline 冻结单元（文件 / 函数）可保持冻结，但**不得再往里加新功能**——要加先拆到达标边界再加。即「不在旧债之上叠新债」：baseline 是被动冻结，不是继续扩张的许可。
 - 行数 / 参数数 / 函数数靠肉眼或对抗审都不可靠；以 type-resolving detekt 的判定为准。
 
 官方依据：
@@ -114,6 +115,8 @@ feat fix docs refactor test chore build ci perf style
 破坏性变更加 `!` 或 footer `BREAKING CHANGE: ...`。
 
 ## Module Boundaries
+
+本项目强制 **高内聚、低耦合、边界清晰、可替换**：模块只暴露契约、隐藏实现；禁止跨级调用、把同一业务真相散进多处、把 UI / 业务 / IO 搅进一个文件。下列具体边界规则都挂在这条总纲之下。`[review-only]`（耦合无法机器判定；detekt 的 LongMethod / LargeClass / TooManyFunctions 只是内聚的弱代理——review 强制，尚未机器强制）。
 
 核心边界原则（CCZ 的固定分层在 `CCZ_ENGINE_RULES.md` §Game Core / §Native Content / 运行时分层）：
 
@@ -189,6 +192,15 @@ RNG_SEED                 常量
 manifest.json units.json 内容包文件
 docs/runbook/native-pack-validation-notes.md
 ```
+
+## Comment Discipline
+
+`[review-only]`（无机器门，靠 review 守）。注释服务可读性，不淹没代码。
+
+- 注释解释 **WHY**——不变量、契约、fail-closed 的理由、为何不是显然写法；**不复述 WHAT**（代码已表达的别再用文字重说一遍）。
+- 能用更清楚的命名 / 拆函数表达的，不靠注释补救——注释不是坏代码的创可贴。
+- 承重的 WHY 锚到确定性契约（RNG 消费顺序、整数公式、save/replay 的 `rng_state` 随 state，见 `CCZ_ENGINE_RULES.md` §Battle Formula Rules / §Save / Replay）。范例：`Formula.kt` 的 `RULES_VERSION`（GoldenReplayTest 是 tripwire）、`BattleOps.kt` 的 `ScriptContext` KDoc（为何 map 可空、为何缺模板是拒不是崩）。
+- 删代码同删其注释，不留孤儿注释 / 失效 TODO。
 
 ## Data & Determinism Rules
 
