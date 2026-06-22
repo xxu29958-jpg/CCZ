@@ -66,9 +66,35 @@ internal object ContentEventValidator {
                 unit(path, op.to, unitIds),
                 if (op.item in itemIds) null else ValidationIssue(path, "unknown item: ${op.item}"),
             )
-            is BattleOp.Script, BattleOp.ForceWin, BattleOp.ForceLose -> emptyList()
+            is BattleOp.Script -> embeddedScenarioOp(path, op.op, unitIds)
+            BattleOp.ForceWin, BattleOp.ForceLose -> emptyList()
         }
     }
+
+    /**
+     * Reference / support check for a scenario op embedded in an S-script via
+     * [BattleOp.Script]. Unlike an R-script, an S-script has no label table and
+     * [com.ccz.core.battle.BattleOps] only interprets [ScenarioOp.SetVar]; every other
+     * embedded op is surfaced as a presentation event. So a Portrait still needs its unit
+     * reference checked (the R-script path already does), while a Branch / Choice is
+     * provably inert control flow here (its label target can never resolve) and is flagged
+     * fail-closed rather than silently dropped. Presentation ops carry no reference.
+     */
+    private fun embeddedScenarioOp(path: String, op: ScenarioOp, unitIds: Set<String>): List<ValidationIssue> =
+        when (op) {
+            is ScenarioOp.Portrait -> listOfNotNull(unit(path, op.unit, unitIds))
+            is ScenarioOp.Branch -> listOf(ValidationIssue(path, "branch unsupported in s-script op"))
+            is ScenarioOp.Choice -> listOf(ValidationIssue(path, "choice unsupported in s-script op"))
+            is ScenarioOp.Dialogue,
+            is ScenarioOp.SetVar,
+            is ScenarioOp.Label,
+            is ScenarioOp.Wait,
+            is ScenarioOp.SceneTransition,
+            is ScenarioOp.PlayBgm,
+            ScenarioOp.FadeIn,
+            ScenarioOp.FadeOut,
+            -> emptyList()
+        }
 
     private fun trigger(id: String, cond: TriggerCondition, unitIds: Set<String>): List<ValidationIssue> {
         val path = "events.sScripts[$id].trigger"

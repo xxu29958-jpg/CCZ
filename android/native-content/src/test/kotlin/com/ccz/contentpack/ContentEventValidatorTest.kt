@@ -149,6 +149,44 @@ class ContentEventValidatorTest {
         assertEquals(emptyList(), ContentValidator.validate(sScriptWith(pre = listOf(BattleOp.SpawnUnit("zhaoyun", at = Pos(0, 0))))))
     }
 
+    @Test
+    fun embeddedPortraitUnknownUnitFailClosed() {
+        val content = sScriptWith(pre = listOf(BattleOp.Script(ScenarioOp.Portrait("ghost"))))
+
+        assertTrue(ContentValidator.validate(content).any { it.message.contains("unknown unit: ghost") })
+    }
+
+    @Test
+    fun embeddedBranchInSScriptFailClosed() {
+        val content = sScriptWith(
+            pre = listOf(BattleOp.Script(ScenarioOp.Branch(variable = "flag", equals = 1, target = "x"))),
+        )
+
+        assertTrue(ContentValidator.validate(content).any { it.message.contains("branch unsupported in s-script op") })
+    }
+
+    @Test
+    fun embeddedChoiceInSScriptFailClosed() {
+        val content = sScriptWith(
+            pre = listOf(BattleOp.Script(ScenarioOp.Choice(prompt = "?", options = listOf(ChoiceOption(text = "a", goto = "x"))))),
+        )
+
+        assertTrue(ContentValidator.validate(content).any { it.message.contains("choice unsupported in s-script op") })
+    }
+
+    @Test
+    fun embeddedPresentationAndKnownPortraitValidate() {
+        val content = sScriptWith(
+            pre = listOf(
+                BattleOp.Script(ScenarioOp.SetVar("flag", 1)),
+                BattleOp.Script(ScenarioOp.Portrait("zhaoyun")),
+                BattleOp.Script(ScenarioOp.FadeIn),
+            ),
+        )
+
+        assertEquals(emptyList(), ContentValidator.validate(content))
+    }
+
     private fun trig(cond: TriggerCondition): BattleTrigger =
         BattleTrigger(id = "t1", whenCondition = cond, actions = emptyList())
 
