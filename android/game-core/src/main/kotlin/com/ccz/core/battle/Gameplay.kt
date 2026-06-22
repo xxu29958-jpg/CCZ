@@ -44,4 +44,30 @@ object Gameplay {
         val occupancy = occupancyOf(state, exclude = unit.id)
         return MoveReachability.reachableStops(unit.pos, unitClass.move, context.map, occupancy, unit.faction)
     }
+
+    /**
+     * Read-only query: the ids of units a unit may legally [Command.Attack] with [skillId], so the
+     * presentation layer can highlight valid targets without owning the targeting rule — the answer
+     * is computed here, in the authority, exactly as [CommandValidator] would accept it. Pure:
+     * consumes no RNG and never mutates state. Returns an empty set when the attacker is unknown,
+     * dead, not on the active side, or [skillId] is unknown — i.e. when no [Command.Attack] for it
+     * could be accepted right now. Only living enemy-side units within the skill's range are
+     * reported; the attacker itself and same-side units are never targets. [submit] remains the
+     * sole authority that mutates state; this only previews which targets it would allow.
+     */
+    fun legalTargets(state: BattleState, attackerId: String, skillId: String, context: BattleContext): Set<String> {
+        val attacker = state.units[attackerId] ?: return emptySet()
+        if (!attacker.alive) return emptySet()
+        if (!sameSide(attacker.faction, state.active)) return emptySet()
+        val skill = context.skills[skillId] ?: return emptySet()
+        return state.units.values
+            .filter { target ->
+                target.alive &&
+                    target.id != attacker.id &&
+                    !sameSide(attacker.faction, target.faction) &&
+                    skill.range.covers(manhattan(attacker.pos, target.pos))
+            }
+            .map { it.id }
+            .toSet()
+    }
 }

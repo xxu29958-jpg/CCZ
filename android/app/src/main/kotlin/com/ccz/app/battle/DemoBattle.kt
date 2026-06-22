@@ -25,6 +25,13 @@ object DemoBattle {
     const val WIDTH = 7
     const val HEIGHT = 6
 
+    /**
+     * Skill id a tapped basic attack is submitted with. Matches the entry in the demo
+     * context's skill table ([com.ccz.core.battle.Resolver.DEMO_SKILLS]); the skill's range
+     * lives there, in the authority — this is just which skill the demo's basic attack uses.
+     */
+    const val BASIC_ATTACK = "atk"
+
     fun context(): BattleContext = BattleContext(map = demoMap(), classes = classes())
 
     fun initialState(): BattleState =
@@ -48,8 +55,10 @@ object DemoBattle {
     )
 
     private fun units(): List<Combatant> = listOf(
+        // Guan (cavalry) is still maneuvering up the left flank; Zhang (infantry) has reached
+        // the front line adjacent to the enemy archer, so a basic attack is legal from turn one.
         unit(CombatIdentity("guan", "Guan Yu", "cavalry", Faction.PLAYER), Pos(1, 1), hp = 240),
-        unit(CombatIdentity("zhang", "Zhang Fei", "infantry", Faction.PLAYER), Pos(1, 4), hp = 220),
+        unit(CombatIdentity("zhang", "Zhang Fei", "infantry", Faction.PLAYER), Pos(4, 2), hp = 220),
         unit(CombatIdentity("foe", "Enemy Archer", "archer", Faction.ENEMY), Pos(5, 2), hp = 180),
     )
 
