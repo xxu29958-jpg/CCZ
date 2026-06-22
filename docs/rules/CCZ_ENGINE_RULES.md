@@ -274,12 +274,13 @@ save_schema_version
 
 ```powershell
 .\gradlew.bat --no-daemon :app:detektGrayDebug :app:detektGrayDebugUnitTest
+.\gradlew.bat --no-daemon :app:testGrayDebugUnitTest
 .\gradlew.bat --no-daemon :app:lintGrayDebug
 .\gradlew.bat --no-daemon :app:assertAndroidTestCountEqualsBaseline
 .\gradlew.bat --no-daemon :app:assembleGrayRelease
 ```
 
-`assembleGrayRelease` 当前产**未签名** APK（不 minify）——R8/签名是下面的未来门。
+`testGrayDebugUnitTest` **执行** `:app` 的 JVM 单测（如 `BattleReducerTest`，在无设备的 JVM 上跑表现层 reducer 逻辑）；`assertAndroidTestCountEqualsBaseline` 只静态点 `@Test` 数，故两者都需要——计数门钉住测试不被偷删，执行门钉住断言真过。`assembleGrayRelease` 当前产**未签名** APK（不 minify）——R8/签名是下面的未来门。
 
 仍 `[aspirational]`（待对应能力入仓后翻 machine-gated）：
 

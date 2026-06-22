@@ -89,10 +89,13 @@ jobs:
       - name: Android :app gate
         # Mirrors docs/rules/CCZ_ENGINE_RULES.md §Android App Gates and the
         # Full Current Local Gate's :app tail. detekt is type-resolving (detektGrayDebug /
-        # detektGrayDebugUnitTest), release assemble is unsigned (R8/signing are future gates).
+        # detektGrayDebugUnitTest); testGrayDebugUnitTest actually RUNS the JVM unit tests
+        # (the count gate only counts @Test methods); release assemble is unsigned
+        # (R8/signing are future gates).
         run: >
           ./gradlew --no-daemon
           :app:detektGrayDebug :app:detektGrayDebugUnitTest
+          :app:testGrayDebugUnitTest
           :app:lintGrayDebug
           :app:assertAndroidTestCountEqualsBaseline
           :app:assembleGrayRelease
