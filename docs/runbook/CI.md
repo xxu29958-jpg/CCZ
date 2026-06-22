@@ -14,7 +14,8 @@ Runner: `ubuntu-latest` + JDK 17. The three modules it gates (`game-core` / `nat
   :game-core:runSelfTest :native-content:runSelfTest :save-io:runSelfTest \
   :game-core:detektMain :native-content:detektMain :save-io:detektMain \
   :game-core:detektTest :native-content:detektTest :save-io:detektTest \
-  assertTestCountEqualsBaseline
+  assertTestCountEqualsBaseline assertModuleDependencyDirection verifyTextEncoding \
+  assertStableDependencyVersions
 ```
 
 This is the same gate as `docs/runbook/LOCAL_DEV.md` (Full Current Local Gate). Required properties:
@@ -22,6 +23,9 @@ This is the same gate as `docs/runbook/LOCAL_DEV.md` (Full Current Local Gate). 
 - type-resolving detekt (`detektMain`/`detektTest`), not plain `detekt`.
 - fail on detekt findings; baseline is frozen debt, not a license for new code.
 - `@Test` count must equal `android/config/test-count-baseline.txt`.
+- module dependency direction obeys the `native-content/save-io/app → game-core` DAG (`assertModuleDependencyDirection`).
+- tracked text is valid UTF-8 / `.ps1` BOM / no mojibake (`verifyTextEncoding`).
+- no alpha/beta/rc/snapshot dependency, plugin, or wrapper version except an ADR-sanctioned exception (`assertStableDependencyVersions` — see `docs/DECISIONS/0003`).
 - detekt reports uploaded as build artifacts.
 
 ## Android App Lane (current)

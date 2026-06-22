@@ -1,6 +1,6 @@
 # General Engineering Rules
 
-> 规则版本 v0.2.0，2026-06-22，自 xiaopiaojia 工程规范 v1.7.0 fork 后重锚到 CCZ。
+> 规则版本 v0.2.1，2026-06-23，自 xiaopiaojia 工程规范 v1.7.0 fork 后重锚到 CCZ。
 > 本文件是跨项目通用规则。项目专属规则写到 `CCZ_ENGINE_RULES.md`，不要混进这里。
 > 凡只对「后端 / 网络 API / 数据库」成立的规则，已下沉到文末 `## Appendix: Backend / Network API (deferred)`，CCZ 当前没有这些面（见 `docs/architecture/API.md`），引入前不启用。
 > 变更管理见入口 `ENGINEERING_RULES.md`。
@@ -70,8 +70,8 @@ https://detekt.dev/docs/gettingstarted/type-resolution/
 
 ## Dependency Governance
 
-- 版本集中管理：依赖清单 / 版本目录 / 锁文件 / Gradle version catalog 统一维护，不在散点写死版本。
-- 禁止 alpha / beta / 停止维护 / 来源不清的依赖进入主线。**唯一例外必须有 ADR**，写明原因、风险、回收条件（当前唯一例外 = detekt 2.0 alpha，见 `0003-detekt-alpha-exception.md`）。
+- 版本集中管理：依赖清单 / 版本目录 / 锁文件 / Gradle version catalog 统一维护，不在散点写死版本。`[review-only]`：CCZ 当前版本写在各 `build.gradle.kts` 内联（无 version catalog），集中化尚未采纳——引入 version catalog 是独立 slice，届时 `assertStableDependencyVersions` 的扫描形式须同步扩展（见门注释覆盖边界）。
+- 禁止 alpha / beta / rc / snapshot（及其它预发布）依赖进入主线。**唯一例外必须有 ADR**，写明原因、风险、回收条件（当前唯一例外 = detekt 2.0 alpha，见 `0003-detekt-alpha-exception.md`）。`[machine-gated]`：根 gradle `assertStableDependencyVersions`（在 jvm-gate 与本地全量门跑）扫描所有 Gradle 构建脚本（root + settings + 各 settings 登记模块的 `build.gradle.kts`，模块集从 `settings.gradle.kts` 读取，新模块自动入门 fail-closed）+ wrapper `gradle-wrapper.properties` 的版本字面量；版本须纯数字点分或带 RELEASE/FINAL/GA 关键字，否则视为预发布而 fail——除非其精确版本串在门内 `adrSanctioned` 白名单（与 ADR 锁步：升级被豁免的预发布须同 diff 改 ADR + 白名单）。覆盖边界（诚实）见 `android/build.gradle.kts` 门注释：只识别内联字面形式，不识别 version catalog / 动态版本（`1.+`）/ BOM 传递版本——引入须扩门。停止维护 / 来源不清的依赖仍 `[review-only]`（机器判不了维护状态）。
 - 新增依赖前查官方文档、维护状态、许可证；结论写入 `docs/DECISIONS/`。
 - 升级依赖必须跑：单测、关键构建、detekt/lint、依赖审计。
 
