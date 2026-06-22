@@ -22,11 +22,11 @@
 1. ~~依赖方向门~~ **已落地（#44，见上）** —— 高内聚低耦合总纲已升 `[machine-gated]`，兑现「规则要么有门要么诚实标注」元规则（"标杆 = 规则有牙"）。
 2. ~~文本/编码 lint 门~~ **已落地（#46，见上）** —— `verifyTextEncoding` 把 `§Windows/PowerShell Rules` 升 `[machine-gated]`。
 3. ~~依赖版本审计门~~ **已落地（#48，见上）** —— `assertStableDependencyVersions` 禁 alpha/beta/rc/snapshot 进主线，`adrSanctioned` 白名单尊重 detekt alpha ADR-0003 豁免（锁步：升级被豁免预发布须同 diff 改 ADR + 白名单），把 `§Dependency Governance` 禁预发布条升 `[machine-gated]`。
-4. **per-slice report 习惯**（P1，doc）—— 缓解 `HANDOFF.md` 顶部 run-on（line 3 ~1800 字每轮重述全部 PR）。可做成 ship-slice 收尾产出或 `docs/reports/`。
+4. ~~per-slice report 习惯~~ **已落地（#62）** —— line 3 run-on 已 terse 化（去掉每轮重述全部 PR，改指向「已合并 PR」列表 + 分片记录 + PR 描述/git log）；逐 PR 明细的单一真相源是 squash-merge 的 PR 描述 + git log（每片一 commit），不再在状态行重述。ship-slice step 8（#61）已立「码/文档/测试三对账」防漂移。
 5. ~~`KNOWN_ISSUES.md` 分级 ledger~~ **已落地（#60）** —— `docs/KNOWN_ISSUES.md`：P0/P1/P2 + design-contract-vs-defect 判定，收口散在 handoff / 规则 / KDoc 的 dormant caveat / defer 项。
 6. ~~rollback runbook 具体步骤~~ **已落地（#61）** —— `docs/runbook/BACKUP_RESTORE.md`（顺带修其「无存档系统」stale 态）加编号 rollback 步骤（git revert merged slice）+ save-schema 回滚风险边界。
 7. ~~ship-slice 加 code-doc-test reconciliation step~~ **已落地（#61）** —— `skills/ship-slice/SKILL.md` step 8「码 / 文档 / 测试三对账」（push 前对账行为↔测试、契约↔规则/KDoc/HANDOFF/API/KNOWN_ISSUES），不建 per-slice 文件。
-8. **`BRANCH_BASELINE.md`**（P3，doc）—— 精简版（非源 176 行）：mainline SHA + squash-merge caveat，抵抗 stale-branch 混乱。
+8. ~~`BRANCH_BASELINE.md`~~ **已落地（#62）** —— `docs/runbook/BRANCH_BASELINE.md`（精简版）：main 唯一 baseline + squash-merge（每片一 commit）+ 每片 off 最新 main 开分支 + 不复用 stale 分支 + 不改写 main 历史。
 
 ## 等阶段（defer，带触发器）
 
