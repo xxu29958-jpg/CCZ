@@ -35,10 +35,18 @@ fun BattleScreen(map: BattleMap, reducer: BattleReducer, initial: BattleUiState,
         Hud(ui = ui, onEndTurn = { ui = reducer.endTurn(ui) })
         Spacer(modifier = Modifier.height(12.dp))
         SkillBar(ui = ui, skillLabel = skillLabel, onSelectSkill = { ui = reducer.selectSkill(ui, it) })
+        WaitButton(ui = ui, onWait = { ui = reducer.wait(ui) })
         BattleBoard(map = map, ui = ui, onTapTile = { pos -> ui = reducer.tapTile(ui, pos) })
         Spacer(modifier = Modifier.height(12.dp))
         EventLog(log = ui.log)
     }
+}
+
+/** "Wait" stands the selected unit down for the turn; shown only while a unit is selected. */
+@Composable
+private fun WaitButton(ui: BattleUiState, onWait: () -> Unit) {
+    if (ui.selection == null) return
+    Button(onClick = onWait, modifier = Modifier.padding(bottom = 12.dp)) { Text(text = "Wait") }
 }
 
 /** Victory/defeat banner; renders nothing while the battle is ongoing. */

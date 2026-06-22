@@ -39,6 +39,8 @@ object Gameplay {
      */
     fun legalDestinations(state: BattleState, unitId: String, context: BattleContext): Set<Pos> {
         if (actorEligibility(state, unitId, state.active) != null) return emptySet()
+        // Action economy: a unit that already moved or acted this turn has no legal destinations.
+        if (state.hasMoved(unitId) || state.hasActed(unitId)) return emptySet()
         val unit = state.units.getValue(unitId)
         val unitClass = context.classes[unit.classId] ?: return emptySet()
         val occupancy = occupancyOf(state, exclude = unit.id)
@@ -57,6 +59,8 @@ object Gameplay {
      */
     fun legalTargets(state: BattleState, attackerId: String, skillId: String, context: BattleContext): Set<String> {
         if (actorEligibility(state, attackerId, state.active) != null) return emptySet()
+        // Action economy: an exhausted unit (already acted this turn) can attack no one.
+        if (state.hasActed(attackerId)) return emptySet()
         val attacker = state.units.getValue(attackerId)
         val skill = context.skills[skillId] ?: return emptySet()
         if (!context.loadoutAllows(attackerId, skillId)) return emptySet()
@@ -83,6 +87,8 @@ object Gameplay {
      */
     fun legalSkills(state: BattleState, attackerId: String, context: BattleContext): List<String> {
         if (actorEligibility(state, attackerId, state.active) != null) return emptyList()
+        // Action economy: an exhausted unit has no attack skills available this turn.
+        if (state.hasActed(attackerId)) return emptyList()
         val loadout = context.loadouts[attackerId] ?: context.skills.keys.toList()
         return loadout.filter { it in context.skills }
     }

@@ -117,8 +117,11 @@ class BattleReducer(private val context: BattleContext, private val script: SScr
 
     private fun selectUnit(ui: BattleUiState, unitId: String): BattleUiState {
         val destinations = Gameplay.legalDestinations(ui.state, unitId, context)
-        if (destinations.isEmpty()) return clearSelection(ui)
         val skills = Gameplay.legalSkills(ui.state, unitId, context)
+        // Selectable while the unit can still do something this turn: a fresh unit has destinations and
+        // skills; a unit that has only MOVED has no destinations but keeps its skills (move-then-attack)
+        // and can Wait; a fully-acted (or off-side / dead) unit has neither, so it cannot be selected.
+        if (destinations.isEmpty() && skills.isEmpty()) return clearSelection(ui)
         val skill = skills.firstOrNull()
         return ui.copy(
             selection = Selection(
@@ -150,11 +153,31 @@ class BattleReducer(private val context: BattleContext, private val script: SScr
         when (val result = Gameplay.submit(ui.state, Command.Move(unitId, to), context)) {
             is Gameplay.Outcome.Accepted -> {
                 val next = result.resolution.state
-                clearSelection(ui).withVerdict(next, appendLog(ui.log, describeMoves(result.resolution.events, next)))
+                val moved = clearSelection(ui).withVerdict(next, appendLog(ui.log, describeMoves(result.resolution.events, next)))
+                // Move-then-act: keep the unit selected so it can still attack or Wait this turn. selectUnit
+                // now reports empty destinations (it has moved) but its skills/targets, so the attack UX is
+                // reachable; if the battle just ended, leave the selection cleared.
+                if (moved.outcome == BattleOutcome.ONGOING) selectUnit(moved, unitId) else moved
             }
             is Gameplay.Outcome.Rejected ->
                 clearSelection(ui).copy(log = appendLog(ui.log, "Move rejected: ${phraseOf(result.reason)}"))
         }
+
+    /**
+     * Stands the selected unit down for the turn (Fire-Emblem "wait"), exhausting it without attacking —
+     * the move-then-no-attack path and the way a unit with nothing to hit finishes. No-op when nothing is
+     * selected or the battle is decided; a rejection (e.g. the unit already acted) only logs.
+     */
+    fun wait(ui: BattleUiState): BattleUiState {
+        if (ui.outcome != BattleOutcome.ONGOING) return ui
+        val selection = ui.selection ?: return ui
+        return when (val result = Gameplay.submit(ui.state, Command.Wait(selection.unit), context)) {
+            is Gameplay.Outcome.Accepted ->
+                clearSelection(ui).withVerdict(result.resolution.state, appendLog(ui.log, "${unitName(ui.state, selection.unit)} waits"))
+            is Gameplay.Outcome.Rejected ->
+                clearSelection(ui).copy(log = appendLog(ui.log, "Wait rejected: ${phraseOf(result.reason)}"))
+        }
+    }
 
     private fun submitAttack(ui: BattleUiState, selection: Selection, targetId: String): BattleUiState {
         // The tapped target came from this selection's active-skill target set, so selectedSkill is

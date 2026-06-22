@@ -6,7 +6,7 @@ import com.ccz.core.battle.Event
 internal const val MAX_LOG_LINES = 6
 
 /** Human-readable name for a unit id, falling back to the id when it is unknown to state. */
-private fun unitName(state: BattleState, id: String): String = state.units[id]?.name ?: id
+internal fun unitName(state: BattleState, id: String): String = state.units[id]?.name ?: id
 
 /** One log line describing the move events of an accepted command, against the resulting state. */
 internal fun describeMoves(events: List<Event>, state: BattleState): String =

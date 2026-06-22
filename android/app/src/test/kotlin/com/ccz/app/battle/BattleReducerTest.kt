@@ -82,15 +82,45 @@ class BattleReducerTest {
     }
 
     @Test
-    fun tappingLegalDestinationMovesUnitAndClearsSelection() {
+    fun tappingLegalDestinationMovesUnitAndKeepsItSelectedToAct() {
         val ui = start()
         val player = playerUnit(ui.state)
         val selected = reducer.tapTile(ui, player.pos)
         val destination = selected.selection!!.destinations.first { it != player.pos }
         val moved = reducer.tapTile(selected, destination)
         assertEquals("authority placed the unit on the tapped tile", destination, moved.state.units.getValue(player.id).pos)
-        assertNull("selection clears after a move", moved.selection)
+        // Move-then-act: the unit stays selected so it can still attack or wait this turn.
+        assertEquals("the moved unit stays selected", player.id, moved.selection?.unit)
+        assertTrue("a moved unit has no further destinations", moved.selection!!.destinations.isEmpty())
         assertTrue("the move is logged", moved.log.size > ui.log.size)
+    }
+
+    @Test
+    fun aUnitCanMoveThenAttackInOneTurn() {
+        val ui = start()
+        // Guan moves adjacent to the southern spearman (foe2 at (1,4)), then strikes it — move-then-act.
+        val selected = reducer.tapTile(ui, ui.state.units.getValue("guan").pos)
+        val moved = reducer.tapTile(selected, Pos(1, 3))
+        assertEquals("guan stays selected to act after moving", "guan", moved.selection?.unit)
+        assertTrue("the adjacent spearman is now a target", "foe2" in (moved.selection?.targets ?: emptySet()))
+        val attacked = reducer.tapTile(moved, Pos(1, 4))
+        assertTrue("move-then-attack consumed guan's action", attacked.state.hasActed("guan"))
+        assertNull("after attacking, the exhausted unit is deselected", attacked.selection)
+    }
+
+    @Test
+    fun waitingStandsTheSelectedUnitDown() {
+        val selected = reducer.tapTile(start(), start().state.units.getValue("guan").pos)
+        val waited = reducer.wait(selected)
+        assertTrue("guan is exhausted after waiting", waited.state.hasActed("guan"))
+        assertNull("waiting deselects", waited.selection)
+    }
+
+    @Test
+    fun anExhaustedUnitCannotBeReselected() {
+        val waited = reducer.wait(reducer.tapTile(start(), start().state.units.getValue("guan").pos))
+        val reTap = reducer.tapTile(waited, waited.state.units.getValue("guan").pos)
+        assertNull("a unit that already acted this turn cannot be selected again", reTap.selection)
     }
 
     @Test
@@ -197,16 +227,18 @@ class BattleReducerTest {
 
     @Test
     fun defeatingAUnitSurfacesADefeatedEffect() {
-        var ui = start()
-        // No per-unit action budget yet, so re-select and strike until the archer falls.
-        repeat(5) {
-            val selected = reducer.tapTile(ui, ui.state.units.getValue("zhang").pos)
-            ui = reducer.tapTile(selected, selected.state.units.getValue("foe").pos)
+        // With the one-action-per-turn economy, a unit strikes once; put the archer at 1 hp so zhang's
+        // single (seed-deterministic) hit downs it — the same attack the test above shows lands.
+        val nearDead = DemoBattle.initialState().let { s ->
+            s.copy(units = s.units.mapValues { (id, u) -> if (id == "foe") u.copy(vitals = u.vitals.copy(hp = 1)) else u })
         }
-        assertFalse("the archer is defeated after enough strikes", ui.state.units.getValue("foe").alive)
+        val ui = reducer.initial(nearDead)
+        val selected = reducer.tapTile(ui, ui.state.units.getValue("zhang").pos)
+        val attacked = reducer.tapTile(selected, selected.state.units.getValue("foe").pos)
+        assertFalse("the archer is defeated by the strike", attacked.state.units.getValue("foe").alive)
         assertTrue(
             "a KO badge is surfaced for the defeated unit",
-            ui.effects.any { it is BattleEffect.Defeated && it.unit == "foe" },
+            attacked.effects.any { it is BattleEffect.Defeated && it.unit == "foe" },
         )
     }
 

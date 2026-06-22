@@ -18,6 +18,8 @@ enum class RejectReason {
     TARGET_FRIENDLY,
     OUT_OF_ATTACK_RANGE,
     WRONG_END_TURN_FACTION,
+    UNIT_ALREADY_MOVED,
+    UNIT_ALREADY_ACTED,
 }
 
 /**
@@ -38,12 +40,16 @@ object CommandValidator {
     fun check(state: BattleState, command: Command, context: BattleContext): RejectReason? = when (command) {
         is Command.Move -> checkMove(state, command, context)
         is Command.Attack -> checkAttack(state, command, context)
+        is Command.Wait -> checkWait(state, command)
         is Command.EndTurn ->
             if (command.faction == state.active) null else RejectReason.WRONG_END_TURN_FACTION
     }
 
     private fun checkMove(state: BattleState, command: Command.Move, context: BattleContext): RejectReason? {
         actorEligibility(state, command.unit, state.active)?.let { return it }
+        // Action economy: a unit may move once, and not after it has acted (attacked/waited).
+        if (state.hasActed(command.unit)) return RejectReason.UNIT_ALREADY_ACTED
+        if (state.hasMoved(command.unit)) return RejectReason.UNIT_ALREADY_MOVED
         val unit = state.units.getValue(command.unit)
         val unitClass = context.classes[unit.classId] ?: return RejectReason.UNKNOWN_CLASS
         if (!context.map.inBounds(command.to)) return RejectReason.DESTINATION_OUT_OF_BOUNDS
@@ -56,6 +62,8 @@ object CommandValidator {
 
     private fun checkAttack(state: BattleState, command: Command.Attack, context: BattleContext): RejectReason? {
         actorEligibility(state, command.attacker, state.active)?.let { return it }
+        // Action economy: one action per unit per turn (moving first is allowed; acting twice is not).
+        if (state.hasActed(command.attacker)) return RejectReason.UNIT_ALREADY_ACTED
         val attacker = state.units.getValue(command.attacker)
         val skill = context.skills[command.skill] ?: return RejectReason.UNKNOWN_SKILL
         if (!context.loadoutAllows(command.attacker, command.skill)) return RejectReason.SKILL_NOT_IN_LOADOUT
@@ -65,5 +73,11 @@ object CommandValidator {
         if (sameSide(attacker.faction, target.faction)) return RejectReason.TARGET_FRIENDLY
         val distance = manhattan(attacker.pos, target.pos)
         return if (skill.range.covers(distance)) null else RejectReason.OUT_OF_ATTACK_RANGE
+    }
+
+    /** Wait stands the unit down for the turn; legal for an eligible unit that has not yet acted. */
+    private fun checkWait(state: BattleState, command: Command.Wait): RejectReason? {
+        actorEligibility(state, command.unit, state.active)?.let { return it }
+        return if (state.hasActed(command.unit)) RejectReason.UNIT_ALREADY_ACTED else null
     }
 }

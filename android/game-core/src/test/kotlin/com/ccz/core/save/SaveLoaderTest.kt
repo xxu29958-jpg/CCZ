@@ -118,6 +118,14 @@ class SaveLoaderTest {
     }
 
     @Test
+    fun rejectsWaitReferencingAbsentUnitGracefully() {
+        // The Wait integrity branch mirrors Move: a unit ref absent from the initial roster is corrupt.
+        val env = envelope().copy(commands = listOf(Command.Wait("ghost")))
+        val outcome = SaveLoader.load(env, classes)
+        assertEquals(SaveRejection.CORRUPT_COMMAND, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
+    }
+
+    @Test
     fun acceptsEmptyCommandEnvelope() {
         val env = envelope().copy(commands = emptyList())
         assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(env, classes))

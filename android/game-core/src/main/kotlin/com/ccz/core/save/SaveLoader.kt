@@ -72,6 +72,7 @@ object SaveLoader {
                 is Command.Move -> command.unit !in unitIds
                 is Command.Attack ->
                     command.attacker !in unitIds || command.target !in unitIds || command.skill !in skills
+                is Command.Wait -> command.unit !in unitIds
                 is Command.EndTurn -> false
             }
         }
