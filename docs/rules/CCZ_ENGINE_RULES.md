@@ -268,9 +268,9 @@ save_schema_version
 
 > 注：on-disk `SaveCodec`（shape + enum fail-closed）、命令完整性优雅拒绝（`SaveLoader.commandIntegrity` 在 replay 前校验命令引用 vs 初始 state / skill 表，缺失 → `CORRUPT_COMMAND`）、存档原子写（`:save-io` 的 `SaveFileStore`，临时文件 + ATOMIC_MOVE）均已落地。§Write & Convert Safety 的 converter 幂等批处理（IO 层）仍待。
 
-## Android App Future Gates
+## Android App Gates
 
-当前还没有 app 模块。建立 app 后必须补齐：
+`:app` 模块已建立（Compose 壳，P2 渲染半起步）。以下四门 `[machine-gated]`——CI 的 `android-gate` lane（见 `docs/runbook/CI.md`）每 push/PR 跑，本地在 `docs/runbook/LOCAL_DEV.md` Full Current Local Gate 跑：
 
 ```powershell
 .\gradlew.bat --no-daemon :app:detektGrayDebug :app:detektGrayDebugUnitTest
@@ -279,18 +279,20 @@ save_schema_version
 .\gradlew.bat --no-daemon :app:assembleGrayRelease
 ```
 
-还必须补：
+`assembleGrayRelease` 当前产**未签名** APK（不 minify）——R8/签名是下面的未来门。
 
-- Room schema drift gate。
-- R8 release 编译。
-- apksigner 指纹钉。
-- emulator smoke test。
+仍 `[aspirational]`（待对应能力入仓后翻 machine-gated）：
+
+- Room schema drift gate（`:app` 尚无 DB）。
+- R8 release 编译（`isMinifyEnabled` 现 false）。
+- apksigner 指纹钉（尚无 signingConfig/keystore）。
+- emulator smoke test（AVD `ticketbox_api36_host`；尚无 instrumented test）。
 
 ## Current Kotlin Gates
 
 > **CI 状态**：CI（`.github/workflows/ci.yml`）在每次 push/PR 跑以下 gate（见 `docs/runbook/CI.md`）；push 前本地也应先跑（见 `docs/runbook/LOCAL_DEV.md`）。
 
-在 app 建立前，当前模块的门（CI + 本地）：
+JVM 模块（`game-core` / `native-content` / `save-io`）的门（CI `jvm-gate` + 本地）；`:app` 的门见上 §Android App Gates：
 
 ```powershell
 .\gradlew.bat --no-daemon :game-core:runSelfTest :native-content:runSelfTest :save-io:runSelfTest

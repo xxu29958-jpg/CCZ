@@ -1,0 +1,4 @@
+<resources>
+    <!-- Framework Material theme (no AppCompat/material dependency); Compose draws the UI. -->
+    <style name="Theme.CCZ" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

@@ -1,6 +1,12 @@
 plugins {
     kotlin("jvm") version "2.2.21" apply false
     kotlin("plugin.serialization") version "2.2.21" apply false
+    // AGP 9.0+ ships built-in Kotlin (the kotlin-android plugin is removed); :app compiles
+    // Kotlin via AGP's bundled compiler (2.3.10). The Compose compiler plugin must match that
+    // compiler version, so it is pinned to 2.3.10 here (the JVM modules stay on 2.2.21 — a
+    // uniform Kotlin bump is a separate slice per the version-baseline discipline).
+    kotlin("plugin.compose") version "2.3.10" apply false
+    id("com.android.application") version "9.2.0" apply false
     id("dev.detekt") version "2.0.0-alpha.3" apply false
 }
 
