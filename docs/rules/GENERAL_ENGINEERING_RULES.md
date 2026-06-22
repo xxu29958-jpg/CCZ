@@ -116,7 +116,7 @@ feat fix docs refactor test chore build ci perf style
 
 ## Module Boundaries
 
-本项目强制 **高内聚、低耦合、边界清晰、可替换**：模块只暴露契约、隐藏实现；禁止跨级调用、把同一业务真相散进多处、把 UI / 业务 / IO 搅进一个文件。下列具体边界规则都挂在这条总纲之下。`[review-only]`（耦合无法机器判定；detekt 的 LongMethod / LargeClass / TooManyFunctions 只是内聚的弱代理——review 强制，尚未机器强制）。
+本项目强制 **高内聚、低耦合、边界清晰、可替换**：模块只暴露契约、隐藏实现；禁止跨级调用、把同一业务真相散进多处、把 UI / 业务 / IO 搅进一个文件。下列具体边界规则都挂在这条总纲之下。其中**模块间依赖方向**已机器门化 `[machine-gated]`：根 gradle `assertModuleDependencyDirection`（在 jvm-gate 与本地全量门跑）强制 `native-content / save-io / app → game-core` 单向 DAG，`game-core` 零内部依赖。模块集从 `settings.gradle.kts` 读取，新模块未登记进 allowed 即 fail（fail-closed），登记模块经 `project(":...")` 声明的反向/越界边即 fail。覆盖边界（诚实）：只识别 `include(":x")` / `project(":x")` 字面形式，不识别 type-safe `projects.*` accessor 等其它依赖形式——迁移须同步更新此门（见 `android/build.gradle.kts` 门注释）。内聚的其余面（同一业务真相不散多处、UI/业务/IO 不搅一处）仍 `[review-only]`——耦合的这些维度无法机器判定，detekt 的 LongMethod / LargeClass / TooManyFunctions 只是弱代理，靠 review 强制。
 
 核心边界原则（CCZ 的固定分层在 `CCZ_ENGINE_RULES.md` §Game Core / §Native Content / 运行时分层）：
 

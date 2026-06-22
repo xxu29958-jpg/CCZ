@@ -32,3 +32,54 @@ tasks.register("assertTestCountEqualsBaseline") {
         println("OK test count == baseline ($actual)")
     }
 }
+
+// Module dependency-direction gate — machine-enforces the high-cohesion/low-coupling 总纲
+// (GENERAL_ENGINEERING_RULES §Module Boundaries) for the inter-module DAG: game-core is the pure
+// authority core and may depend on NO other module; native-content / save-io / app may depend only
+// on game-core. The module set is read from settings.gradle.kts (the topology source of truth), so a
+// module added there but NOT registered in `allowed` fails closed ("unregistered module") rather than
+// being silently un-gated; a registered module whose build script declares an out-of-DAG project(":...")
+// edge — especially a reverse edge into game-core — also fails. Coverage boundary (honest): it
+// recognizes the literal include(":x") / project(":x") string forms CCZ uses today; it does NOT see
+// type-safe `projects.*` accessors, project(path = ...), version-catalog, or convention-plugin edges —
+// migrating to any of those means updating this gate. Parses build-script TEXT (same style as
+// assertTestCountEqualsBaseline above), not cross-project Gradle configurations, to stay
+// configuration-cache-friendly and API-stable.
+tasks.register("assertModuleDependencyDirection") {
+    group = "verification"
+    description = "Fails if a settings.gradle.kts module is unregistered or has a project(\":...\") edge " +
+        "violating the allowed native-content/save-io/app -> game-core DAG (game-core depends on nothing)."
+    val allowed = mapOf(
+        "game-core" to emptySet<String>(),
+        "native-content" to setOf("game-core"),
+        "save-io" to setOf("game-core"),
+        "app" to setOf("game-core"),
+    )
+    val settingsFile = file("settings.gradle.kts")
+    val includeRe = Regex("""include\(["']:([\w-]+)["']\)""")
+    val projectDep = Regex("""project\(["']:([\w-]+)["']\)""")
+    doLast {
+        val modules = includeRe.findAll(settingsFile.readText()).map { it.groupValues[1] }.toList()
+        val violations = mutableListOf<String>()
+        modules.forEach { module ->
+            val permitted = allowed[module]
+            if (permitted == null) {
+                violations += "unregistered module '$module' (register it in the allowed DAG in build.gradle.kts)"
+                return@forEach
+            }
+            val buildFile = file("$module/build.gradle.kts")
+            if (buildFile.exists()) {
+                val deps = projectDep.findAll(buildFile.readText()).map { it.groupValues[1] }.toSet()
+                (deps - permitted).forEach { bad -> violations += "$module -> $bad" }
+            }
+        }
+        (allowed.keys - modules.toSet()).forEach { stale ->
+            violations += "stale allowed entry '$stale' (no such module in settings.gradle.kts)"
+        }
+        check(violations.isEmpty()) {
+            "module dependency-direction violations (allowed DAG: native-content/save-io/app -> " +
+                "game-core; game-core depends on nothing): $violations"
+        }
+        println("OK module dependency direction (${modules.size} modules from settings, DAG enforced)")
+    }
+}
