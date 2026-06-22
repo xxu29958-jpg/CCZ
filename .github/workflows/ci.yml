@@ -49,7 +49,7 @@ jobs:
           :game-core:runSelfTest :native-content:runSelfTest :save-io:runSelfTest
           :game-core:detektMain :native-content:detektMain :save-io:detektMain
           :game-core:detektTest :native-content:detektTest :save-io:detektTest
-          assertTestCountEqualsBaseline
+          assertTestCountEqualsBaseline assertModuleDependencyDirection
 
       - name: Upload detekt reports
         if: always()
