@@ -96,7 +96,7 @@ private fun rowCells(map: BattleMap, ui: BattleUiState, y: Int): List<CellModel>
     (0 until map.width).map { x -> cellAt(map, ui, Pos(x, y)) }
 
 private fun cellAt(map: BattleMap, ui: BattleUiState, pos: Pos): CellModel {
-    val unit = ui.state.units.values.firstOrNull { it.alive && it.pos == pos }
+    val unit = ui.state.unitAt(pos)
     val selection = ui.selection
     val mark = when {
         unit != null && unit.id == selection?.unit -> CellMark.SELECTED

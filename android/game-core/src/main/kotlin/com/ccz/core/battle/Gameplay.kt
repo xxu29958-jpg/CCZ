@@ -37,9 +37,8 @@ object Gameplay {
      * remains the sole authority that mutates state; this only previews what it would allow.
      */
     fun legalDestinations(state: BattleState, unitId: String, context: BattleContext): Set<Pos> {
-        val unit = state.units[unitId] ?: return emptySet()
-        if (!unit.alive) return emptySet()
-        if (!sameSide(unit.faction, state.active)) return emptySet()
+        if (actorEligibility(state, unitId, state.active) != null) return emptySet()
+        val unit = state.units.getValue(unitId)
         val unitClass = context.classes[unit.classId] ?: return emptySet()
         val occupancy = occupancyOf(state, exclude = unit.id)
         return MoveReachability.reachableStops(unit.pos, unitClass.move, context.map, occupancy, unit.faction)
@@ -56,9 +55,8 @@ object Gameplay {
      * sole authority that mutates state; this only previews which targets it would allow.
      */
     fun legalTargets(state: BattleState, attackerId: String, skillId: String, context: BattleContext): Set<String> {
-        val attacker = state.units[attackerId] ?: return emptySet()
-        if (!attacker.alive) return emptySet()
-        if (!sameSide(attacker.faction, state.active)) return emptySet()
+        if (actorEligibility(state, attackerId, state.active) != null) return emptySet()
+        val attacker = state.units.getValue(attackerId)
         val skill = context.skills[skillId] ?: return emptySet()
         if (!context.loadoutAllows(attackerId, skillId)) return emptySet()
         return state.units.values
@@ -83,9 +81,7 @@ object Gameplay {
      * with [legalTargets] per skill to know which actually have something to hit.
      */
     fun legalSkills(state: BattleState, attackerId: String, context: BattleContext): List<String> {
-        val attacker = state.units[attackerId] ?: return emptyList()
-        if (!attacker.alive) return emptyList()
-        if (!sameSide(attacker.faction, state.active)) return emptyList()
+        if (actorEligibility(state, attackerId, state.active) != null) return emptyList()
         val loadout = context.loadouts[attackerId] ?: context.skills.keys.toList()
         return loadout.filter { it in context.skills }
     }

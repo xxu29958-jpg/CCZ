@@ -18,3 +18,20 @@ internal fun occupancyOf(state: BattleState, exclude: String? = null): Map<Pos, 
     state.units.values
         .filter { it.alive && it.id != exclude }
         .associate { it.pos to it.faction }
+
+/**
+ * The actor-eligibility preconditions shared by every command and every read-only preview query:
+ * the unit must exist, be alive, and be on the side whose turn it is ([active]). Returns the first
+ * failing [RejectReason], or null when the unit may act. Single-sourced here so [CommandValidator]
+ * (which surfaces the reason) and the [Gameplay] preview queries (which treat any non-null as
+ * "cannot act → empty result") agree BY CONSTRUCTION: a new actor precondition added here can never
+ * be enforced by one path and missed by the other, which is what keeps query⟺submit parity. Only
+ * the actor gate lives here; command-specific checks (class/skill lookup, destination/target,
+ * range) stay with their command.
+ */
+internal fun actorEligibility(state: BattleState, unitId: String, active: Faction): RejectReason? {
+    val unit = state.units[unitId] ?: return RejectReason.UNIT_NOT_FOUND
+    if (!unit.alive) return RejectReason.UNIT_DEAD
+    if (!sameSide(unit.faction, active)) return RejectReason.NOT_ACTIVE_FACTION
+    return null
+}

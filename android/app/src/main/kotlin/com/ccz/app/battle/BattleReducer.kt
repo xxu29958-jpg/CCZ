@@ -4,6 +4,7 @@ import com.ccz.core.battle.BattleContext
 import com.ccz.core.battle.BattleState
 import com.ccz.core.battle.Command
 import com.ccz.core.battle.Gameplay
+import com.ccz.core.model.Combatant
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
 
@@ -12,6 +13,14 @@ internal fun sideLabel(faction: Faction): String = when (faction) {
     Faction.PLAYER, Faction.ALLY -> "Player"
     Faction.ENEMY -> "Enemy"
 }
+
+/**
+ * The living unit occupying [pos], if any — the single presentation-side reading of board
+ * occupancy (alive, same tile; at most one by core's single-occupant invariant). Shared by tap
+ * routing and rendering so they never disagree about what stands on a tile. Stays in :app
+ * (Android-free) reading authoritative state; legality still lives in [Gameplay].
+ */
+internal fun BattleState.unitAt(pos: Pos): Combatant? = units.values.firstOrNull { it.alive && it.pos == pos }
 
 /**
  * What game-core reported about the currently selected unit: where it may move, which attack
@@ -60,7 +69,7 @@ class BattleReducer(private val context: BattleContext) {
      * highlighted destination while a unit is selected moves it; anything else clears the selection.
      */
     fun tapTile(ui: BattleUiState, pos: Pos): BattleUiState {
-        val unitHere = ui.state.units.values.firstOrNull { it.alive && it.pos == pos }
+        val unitHere = ui.state.unitAt(pos)
         val selection = ui.selection
         if (selection != null && unitHere != null && unitHere.id in selection.targets) {
             return submitAttack(ui, selection, unitHere.id)
