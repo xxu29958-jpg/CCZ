@@ -250,6 +250,8 @@ converter 中间产物 / 生成的 native-pack 缓存
 
 ## Windows / PowerShell Rules
 
+文本编码已机器门化 `[machine-gated]`：根 gradle `verifyTextEncoding`（在 jvm-gate 与本地全量门跑）扫 `git ls-files` 的文本文件，强制有效 UTF-8、`.ps1` 带 UTF-8 BOM、无 U+FFFD 乱码符。覆盖边界见 `android/build.gradle.kts` 门注释。
+
 - `scripts/*.ps1` 必须 UTF-8 with BOM；`.env` 不带 BOM。
 - PowerShell 读文件必须显式 `Get-Content -Encoding UTF8`（PS 5.1 无 BOM 默认按 ANSI 解析，中文乱码）。
 - PowerShell 5.1 不能用 `&&` / `||` 链接；用 `; if ($?) { ... }`。注意：native 命令（含 git）写 stderr 会让 PS 把 `$?` 置 false，`if ($?)` 链可能误跳——git 操作优先用 Bash 或不靠 `$?` 链。

@@ -83,3 +83,58 @@ tasks.register("assertModuleDependencyDirection") {
         println("OK module dependency direction (${modules.size} modules from settings, DAG enforced)")
     }
 }
+
+// Text-encoding gate — machine-enforces §Windows / PowerShell Rules: every git-tracked text file must
+// be valid UTF-8, every .ps1 must be UTF-8 with BOM (PowerShell 5.1 reads a BOM-less file as ANSI →
+// 中文乱码), and no file may contain a U+FFFD replacement char (the tell-tale of mojibake already
+// baked into the file by a bad decode-then-save). Scans `git ls-files` — tracked content only, so
+// tool-chain / build / .tools dirs are out of scope — and runs cross-platform (CI ubuntu + Windows
+// local both have git). Coverage boundary: the text extensions listed below; binaries and untracked
+// files are not checked.
+tasks.register("verifyTextEncoding") {
+    group = "verification"
+    description = "Fails if a git-tracked text file is not valid UTF-8, a .ps1 lacks a UTF-8 BOM, " +
+        "or contains a U+FFFD replacement char (mojibake)."
+    val repoRoot = rootDir.parentFile
+    val exts = setOf("md", "kt", "kts", "txt", "yml", "yaml", "ps1", "properties")
+    doLast {
+        // -z NUL-delimits output and -c core.quotepath=false keeps non-ASCII paths (e.g. Chinese
+        // filenames) verbatim, so they are NOT octal-escaped and then silently skipped — those are
+        // exactly the files an encoding gate must inspect. Exit code is checked so a broken git /
+        // non-checkout fails loudly instead of yielding an empty (vacuous-pass) scan.
+        val proc = ProcessBuilder("git", "-c", "core.quotepath=false", "ls-files", "-z")
+            .directory(repoRoot)
+            .redirectErrorStream(true)
+            .start()
+        val raw = proc.inputStream.readBytes().toString(Charsets.UTF_8)
+        check(proc.waitFor() == 0) { "git ls-files failed (exit ${proc.exitValue()}): $raw" }
+        val tracked = raw.split(Char(0)).filter { it.isNotEmpty() }
+        val bom = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte())
+        val decoder = Charsets.UTF_8.newDecoder()
+            .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+            .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+        val violations = mutableListOf<String>()
+        var checked = 0
+        tracked.forEach { rel ->
+            val ext = rel.substringAfterLast('.', "").lowercase()
+            if (ext !in exts) return@forEach
+            val target = repoRoot.resolve(rel)
+            if (!target.isFile) return@forEach
+            checked++
+            val bytes = target.readBytes()
+            val text = try {
+                decoder.reset().decode(java.nio.ByteBuffer.wrap(bytes)).toString()
+            } catch (e: java.nio.charset.CharacterCodingException) {
+                violations += "$rel: not valid UTF-8 (${e.message})"
+                return@forEach
+            }
+            if (text.any { it.code == 0xFFFD }) violations += "$rel: contains U+FFFD replacement char (mojibake)"
+            val hasBom = bytes.size >= 3 && bytes.copyOfRange(0, 3).contentEquals(bom)
+            if (ext == "ps1" && !hasBom) violations += "$rel: .ps1 must be UTF-8 with BOM"
+        }
+        // Fail closed on a vacuous scan: a discipline gate must not pass green having inspected zero files.
+        check(checked > 0) { "verifyTextEncoding scanned 0 files — git ls-files returned nothing (broken checkout?)" }
+        check(violations.isEmpty()) { "text-encoding violations:\n  " + violations.joinToString("\n  ") }
+        println("OK text encoding ($checked tracked text files: UTF-8 valid, .ps1 BOM, no mojibake)")
+    }
+}
