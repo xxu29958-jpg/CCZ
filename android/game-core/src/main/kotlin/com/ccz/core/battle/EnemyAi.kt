@@ -2,6 +2,7 @@ package com.ccz.core.battle
 
 import com.ccz.core.model.Combatant
 import com.ccz.core.model.Pos
+import com.ccz.core.model.Skill
 
 /**
  * Deterministic, aggressive enemy-turn planner. [nextCommand] yields the NEXT single [Command] for the
@@ -18,8 +19,10 @@ import com.ccz.core.model.Pos
  *
  * Policy (aggressive, v1): for the next un-exhausted active-side unit (in id order — a stable tie-break;
  * HP / unit-class priority like the source game is a later refinement), attack the nearest in-range foe
- * with the first skill that can reach one; else step toward the nearest foe (the legal destination that
- * minimizes Manhattan distance to it); if it cannot get closer, Wait.
+ * with the first skill that can reach one; else reposition — prefer a reachable tile it could ATTACK a
+ * foe from, nearest by Manhattan (so a ranged unit takes its range band, even backing away from a
+ * too-close foe, and a melee unit closes to striking distance), falling back to simply closing on the
+ * nearest foe; if it can do neither, Wait.
  */
 object EnemyAi {
     fun nextCommand(state: BattleState, context: BattleContext): Command {
@@ -45,15 +48,28 @@ object EnemyAi {
         return null
     }
 
-    /** The reachable tile strictly closer to the nearest foe than the actor's current tile, or null. */
+    /** The tile to reposition to: a firing position if any is reachable, else strictly closer to the
+     *  nearest foe; null if neither helps (the caller then Waits). All tie-breaks are deterministic. */
     private fun stepTowardNearestFoe(state: BattleState, context: BattleContext, actor: Combatant): Pos? {
-        val foe = nearestUnit(state, actor.pos, foesOf(state, actor).map { it.id }.toSet()) ?: return null
+        val foes = foesOf(state, actor)
         val destinations = Gameplay.legalDestinations(state, actor.id, context)
-        if (destinations.isEmpty()) return null
-        // Closest reachable tile to the foe; stable tie-break by (x, y) so the plan is deterministic.
+        if (foes.isEmpty() || destinations.isEmpty()) return null
+        val skills = Gameplay.legalSkills(state, actor.id, context).mapNotNull { context.skills[it] }
+        // Prefer a reachable tile the unit could attack a foe from, nearest by Manhattan (a cheap proxy
+        // for least movement — exact on uniform terrain) — so ranged units take their range band (even
+        // backing up) and melee units close to striking distance. The current tile is never one (the
+        // caller already found no in-range target there), so this only ever yields a real move.
+        val firing = destinations.filter { canAttackFrom(it, skills, foes) }
+        if (firing.isNotEmpty()) return firing.minWith(compareBy({ manhattan(it, actor.pos) }, { it.x }, { it.y }))
+        // No firing position reachable: close on the nearest foe (only if a tile is strictly closer).
+        val foe = nearestUnit(state, actor.pos, foes.map { it.id }.toSet()) ?: return null
         val best = destinations.minWith(compareBy({ manhattan(it, foe.pos) }, { it.x }, { it.y }))
         return if (manhattan(best, foe.pos) < manhattan(actor.pos, foe.pos)) best else null
     }
+
+    /** True if from [tile] some skill's range covers some foe — i.e. the unit could attack after moving there. */
+    private fun canAttackFrom(tile: Pos, skills: List<Skill>, foes: List<Combatant>): Boolean =
+        skills.any { skill -> foes.any { foe -> skill.range.covers(manhattan(tile, foe.pos)) } }
 
     private fun foesOf(state: BattleState, actor: Combatant): List<Combatant> =
         state.units.values.filter { it.alive && !sameSide(it.faction, actor.faction) }
