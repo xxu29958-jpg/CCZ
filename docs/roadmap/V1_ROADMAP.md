@@ -25,7 +25,11 @@
   no combat authority (#32/#33/#37). A Fire-Emblem action economy is enforced (#54): each unit may move
   once then act once (Attack or `Wait`) per turn — move-then-attack allowed, double-move/double-act
   rejected, cleared on `EndTurn`. This is the prerequisite for enemy AI (a turn loop needs a per-unit
-  budget to terminate).
+  budget to terminate). A deterministic aggressive enemy AI now drives the opposing side automatically
+  on `EndTurn` (#56: `EnemyAi` plans, `:app` submits through `Gameplay`), so the minimal battle loop is
+  end-to-end playable — move/attack/wait under the economy, an auto enemy turn, and win/lose resolution
+  (the protagonist can now be downed → DEFEAT). Remaining P2 polish: per-blow enemy-turn animation, and
+  richer AI heuristics (HP/class priority, ranged kiting).
 - Emit events and drive presentation from events. **[done]** `effectsOf` projects the authority's
   `Event` stream into floating Damaged / Missed / Defeated badges; the view layer never recomputes them (#35).
 
