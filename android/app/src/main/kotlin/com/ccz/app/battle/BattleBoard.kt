@@ -31,6 +31,7 @@ private data class CellModel(
     val unit: Combatant?,
     val highlighted: Boolean,
     val selected: Boolean,
+    val targetable: Boolean,
 )
 
 /** Draws the static map plus units, selection ring, and the move highlights from state. */
@@ -57,7 +58,7 @@ private fun GridCell(cell: CellModel, onTap: (Pos) -> Unit) {
             .padding(1.dp)
             .size(CELL_SIZE)
             .background(tileColor(cell))
-            .border(width = if (cell.selected) 3.dp else 1.dp, color = borderColor(cell))
+            .border(width = borderWidth(cell), color = borderColor(cell))
             .clickable { onTap(cell.pos) },
         contentAlignment = Alignment.Center,
     ) {
@@ -84,18 +85,29 @@ private fun cellAt(map: BattleMap, ui: BattleUiState, pos: Pos): CellModel {
         unit = unit,
         highlighted = pos in ui.destinations,
         selected = unit != null && unit.id == ui.selected,
+        targetable = unit != null && unit.id in ui.targets,
     )
 }
 
 private fun tileColor(cell: CellModel): Color = when {
     !cell.tile.passable -> Color(0xFF37474F)
+    cell.targetable -> Color(0xFFEF9A9A)
     cell.highlighted -> Color(0xFF9CCC65)
     cell.tile.moveCost > 1 -> Color(0xFF558B2F)
     else -> Color(0xFFCFD8DC)
 }
 
-private fun borderColor(cell: CellModel): Color =
-    if (cell.selected) Color(0xFFFFC107) else Color(0xFF90A4AE)
+private fun borderWidth(cell: CellModel) = when {
+    cell.selected -> 3.dp
+    cell.targetable -> 2.dp
+    else -> 1.dp
+}
+
+private fun borderColor(cell: CellModel): Color = when {
+    cell.selected -> Color(0xFFFFC107)
+    cell.targetable -> Color(0xFFD32F2F)
+    else -> Color(0xFF90A4AE)
+}
 
 private fun factionColor(faction: Faction): Color = when (faction) {
     Faction.PLAYER, Faction.ALLY -> Color(0xFF1565C0)

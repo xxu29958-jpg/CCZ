@@ -18,7 +18,7 @@ import org.junit.Test
  */
 class BattleReducerTest {
     private val context = DemoBattle.context()
-    private val reducer = BattleReducer(context)
+    private val reducer = BattleReducer(context, DemoBattle.BASIC_ATTACK)
 
     private fun start(): BattleUiState = reducer.initial(DemoBattle.initialState())
     private fun playerUnit(state: BattleState): Combatant = state.units.values.first { it.faction == Faction.PLAYER }
@@ -95,5 +95,51 @@ class BattleReducerTest {
         repeat(MAX_LOG_LINES + 1) { ui = reducer.endTurn(ui) } // overflow the cap
         assertEquals("log is capped at MAX_LOG_LINES", MAX_LOG_LINES, ui.log.size)
         assertFalse("the oldest line is dropped past the cap", ui.log.any { it.startsWith("Battle start") })
+    }
+
+    @Test
+    fun selectingAFrontlineUnitExposesAnInRangeEnemyAsTarget() {
+        val ui = start()
+        val zhang = ui.state.units.getValue("zhang")
+        val after = reducer.tapTile(ui, zhang.pos)
+        assertEquals(zhang.id, after.selected)
+        assertTrue("the adjacent enemy is reported as a legal attack target", "foe" in after.targets)
+    }
+
+    @Test
+    fun tappingAnInRangeEnemyAttacksItThroughTheAuthority() {
+        val ui = start()
+        val foeHpBefore = ui.state.units.getValue("foe").hp
+        val selected = reducer.tapTile(ui, ui.state.units.getValue("zhang").pos)
+        assertTrue("precondition: the enemy is in range", "foe" in selected.targets)
+        val attacked = reducer.tapTile(selected, selected.state.units.getValue("foe").pos)
+        assertTrue(
+            "the authority applied damage the reducer never computed",
+            attacked.state.units.getValue("foe").hp < foeHpBefore,
+        )
+        assertNull("selection clears after an attack", attacked.selected)
+        assertTrue("the attack is logged", attacked.log.size > ui.log.size)
+    }
+
+    @Test
+    fun selectingAUnitWithNoEnemyInRangeExposesNoTargets() {
+        val ui = start()
+        val guan = ui.state.units.getValue("guan")
+        val after = reducer.tapTile(ui, guan.pos)
+        assertEquals("the unit is still selectable to move", guan.id, after.selected)
+        assertTrue("no enemy sits within its basic-attack range", after.targets.isEmpty())
+    }
+
+    @Test
+    fun staleTargetTapFailsClosedWithoutMutatingState() {
+        val base = start()
+        // Guan is far out of melee range of the enemy, so a targets set naming the enemy is stale.
+        // tapTile routes it to submitAttack, which must defer to the authority's rejection rather
+        // than fabricate damage.
+        val stale = base.copy(selected = "guan", targets = setOf("foe"))
+        val after = reducer.tapTile(stale, base.state.units.getValue("foe").pos)
+        assertEquals("the reducer never damages a unit the authority rejected", base.state.units, after.state.units)
+        assertNull("selection clears after a rejected submit", after.selected)
+        assertTrue("the rejection is surfaced in the log", after.log.any { it.contains("rejected") })
     }
 }
