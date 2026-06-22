@@ -4,11 +4,17 @@ import com.ccz.core.battle.BattleContext
 import com.ccz.core.battle.BattleOutcome
 import com.ccz.core.battle.BattleState
 import com.ccz.core.battle.Command
+import com.ccz.core.battle.EnemyAi
+import com.ccz.core.battle.Event
 import com.ccz.core.battle.Gameplay
+import com.ccz.core.battle.Resolution
 import com.ccz.core.event.SScript
 import com.ccz.core.model.Combatant
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
+
+/** Fail-safe bound on enemy-turn commands; the action economy makes a real turn far shorter. */
+private const val ENEMY_TURN_STEP_CAP = 256
 
 /** Side label for a faction; PLAYER and ALLY share the player's turn (see sameSide in core). */
 internal fun sideLabel(faction: Faction): String = when (faction) {
@@ -137,16 +143,71 @@ class BattleReducer(private val context: BattleContext, private val script: SScr
 
     fun endTurn(ui: BattleUiState): BattleUiState {
         if (ui.outcome != BattleOutcome.ONGOING) return ui
-        return when (val result = Gameplay.submit(ui.state, Command.EndTurn(ui.state.active), context)) {
+        val afterPlayer = when (val result = Gameplay.submit(ui.state, Command.EndTurn(ui.state.active), context)) {
             // Recompute the verdict: advancing the turn can satisfy a SurviveTurns condition.
-            is Gameplay.Outcome.Accepted -> {
-                val next = result.resolution.state
-                clearSelection(ui).withVerdict(next, appendLog(ui.log, "—— ${sideLabel(next.active)}'s turn (turn ${next.turn}) ——"))
-            }
+            is Gameplay.Outcome.Accepted ->
+                clearSelection(ui).withVerdict(result.resolution.state, appendLog(ui.log, turnBanner(result.resolution.state)))
             // Defensive: EndTurn(state.active) is always legal, so this branch is unreachable by
             // construction today; kept fail-safe in case the active-side seam ever changes.
-            is Gameplay.Outcome.Rejected -> ui.copy(log = appendLog(ui.log, "End turn rejected: ${phraseOf(result.reason)}"))
+            is Gameplay.Outcome.Rejected -> return ui.copy(log = appendLog(ui.log, "End turn rejected: ${phraseOf(result.reason)}"))
         }
+        return runEnemyTurn(afterPlayer)
+    }
+
+    /**
+     * Drives the enemy side automatically once the player's turn ends: each [EnemyAi] command is
+     * submitted through the same [Gameplay] gate a player uses (the reducer owns no AI authority — the
+     * plan is game-core's), until the turn flips back to the player or the battle is decided. The action
+     * economy bounds the loop (each unit acts at most once); [ENEMY_TURN_STEP_CAP] is a fail-safe against
+     * an unexpected non-terminating plan. Intermediate damage badges are kept (an attack's effects carry
+     * forward) so the player sees the last blow; per-blow animation is a later (event-timed) slice.
+     */
+    private fun runEnemyTurn(start: BattleUiState): BattleUiState {
+        var ui = start
+        var steps = 0
+        while (ui.outcome == BattleOutcome.ONGOING && ui.state.active == Faction.ENEMY && steps < ENEMY_TURN_STEP_CAP) {
+            steps++
+            val command = EnemyAi.nextCommand(ui.state, context)
+            ui = when (val result = Gameplay.submit(ui.state, command, context)) {
+                is Gameplay.Outcome.Accepted -> applyEnemyCommand(ui, command, result.resolution)
+                // The AI only issues commands its own legality queries reported, so a rejection is a
+                // should-never bug; hand control back to the player rather than spin or strand them.
+                is Gameplay.Outcome.Rejected -> return handBackToPlayer(ui, "Enemy command rejected: ${phraseOf(result.reason)}")
+            }
+        }
+        // Fail-safe: if the loop bailed on the step cap with the enemy still active, return control to
+        // the player rather than leave them able to command enemy units (the cap can't trip on a real
+        // roster — the action economy bounds the turn — so this is defense-in-depth).
+        return if (ui.outcome == BattleOutcome.ONGOING && ui.state.active == Faction.ENEMY) {
+            handBackToPlayer(ui, "Enemy turn exceeded its step budget")
+        } else {
+            ui
+        }
+    }
+
+    /** Applies one accepted enemy command: carry the last blow's badges forward, log it, refresh verdict. */
+    private fun applyEnemyCommand(ui: BattleUiState, command: Command, resolution: Resolution): BattleUiState {
+        val effects = effectsOf(resolution.events).ifEmpty { ui.effects }
+        return ui.copy(selection = null, effects = effects)
+            .withVerdict(resolution.state, appendLog(ui.log, enemyLogLine(command, resolution.events, resolution.state)))
+    }
+
+    /** Fail-safe used only on an unexpected enemy-turn bail: force the active side's EndTurn so control
+     *  returns to the player instead of stranding them able to command enemy units. */
+    private fun handBackToPlayer(ui: BattleUiState, note: String): BattleUiState =
+        when (val result = Gameplay.submit(ui.state, Command.EndTurn(ui.state.active), context)) {
+            is Gameplay.Outcome.Accepted ->
+                ui.copy(selection = null).withVerdict(result.resolution.state, appendLog(appendLog(ui.log, note), turnBanner(result.resolution.state)))
+            is Gameplay.Outcome.Rejected -> ui.copy(log = appendLog(ui.log, note))
+        }
+
+    private fun turnBanner(state: BattleState): String = "—— ${sideLabel(state.active)}'s turn (turn ${state.turn}) ——"
+
+    private fun enemyLogLine(command: Command, events: List<Event>, state: BattleState): String = when (command) {
+        is Command.Move -> describeMoves(events, state)
+        is Command.Attack -> describeAttack(events, state)
+        is Command.Wait -> "${unitName(state, command.unit)} waits"
+        is Command.EndTurn -> turnBanner(state)
     }
 
     private fun submitMove(ui: BattleUiState, unitId: String, to: Pos): BattleUiState =
