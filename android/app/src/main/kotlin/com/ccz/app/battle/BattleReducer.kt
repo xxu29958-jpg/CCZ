@@ -20,13 +20,15 @@ internal fun sideLabel(faction: Faction): String = when (faction) {
  * Immutable snapshot the battle UI renders: the authoritative [BattleState] (owned by
  * game-core and replaced wholesale on every accepted command — never edited here), plus
  * the transient selection, the move destinations and attack-target ids game-core reported
- * for it, and a short human-readable event log.
+ * for it, the presentation effects from the last accepted command (floating damage/miss/KO
+ * badges, a pure translation of the authority's events), and a short human-readable event log.
  */
 data class BattleUiState(
     val state: BattleState,
     val selected: String? = null,
     val destinations: Set<Pos> = emptySet(),
     val targets: Set<String> = emptySet(),
+    val effects: List<BattleEffect> = emptyList(),
     val log: List<String> = emptyList(),
 )
 
@@ -64,6 +66,7 @@ class BattleReducer(private val context: BattleContext, private val basicAttackS
                 selected = unitHere.id,
                 destinations = destinations,
                 targets = Gameplay.legalTargets(ui.state, unitHere.id, basicAttackSkill, context),
+                effects = emptyList(),
             )
         }
         return if (selected != null && pos in ui.destinations) submitMove(ui, selected, pos)
@@ -97,15 +100,19 @@ class BattleReducer(private val context: BattleContext, private val basicAttackS
     private fun submitAttack(ui: BattleUiState, attackerId: String, targetId: String): BattleUiState =
         when (val outcome = Gameplay.submit(ui.state, Command.Attack(attackerId, targetId, basicAttackSkill), context)) {
             is Gameplay.Outcome.Accepted -> {
-                val next = outcome.resolution.state
-                clearSelection(ui).copy(state = next, log = appendLog(ui.log, describeAttack(outcome.resolution.events, next)))
+                val resolution = outcome.resolution
+                clearSelection(ui).copy(
+                    state = resolution.state,
+                    effects = effectsOf(resolution.events),
+                    log = appendLog(ui.log, describeAttack(resolution.events, resolution.state)),
+                )
             }
             is Gameplay.Outcome.Rejected ->
                 clearSelection(ui).copy(log = appendLog(ui.log, "Attack rejected: ${outcome.reason}"))
         }
 
     private fun clearSelection(ui: BattleUiState): BattleUiState =
-        ui.copy(selected = null, destinations = emptySet(), targets = emptySet())
+        ui.copy(selected = null, destinations = emptySet(), targets = emptySet(), effects = emptyList())
 }
 
 private fun unitName(state: BattleState, id: String): String = state.units[id]?.name ?: id
