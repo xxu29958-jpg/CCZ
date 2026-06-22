@@ -53,6 +53,15 @@ class ContentJsonLoaderTest {
         """.trimIndent()
 
     @Test
+    fun terrainPassableDecodesExplicitFalseAndDefaultsTrueWhenOmitted() {
+        // The sample's terrain omits `passable`, so it must default true (passable terrain).
+        assertTrue(ContentJsonLoader.load(samplePack()).tables.terrain.first().passable)
+        // An explicit `"passable": false` (a wall) must carry through the DTO + mapper.
+        val withWall = samplePack().replace("\"move_cost\": 1", "\"move_cost\": 1, \"passable\": false")
+        assertEquals(false, ContentJsonLoader.load(withWall).tables.terrain.first().passable)
+    }
+
+    @Test
     fun loadsValidPackThatValidatesCleanWithFaithfulNestedValues() {
         val content = ContentJsonLoader.load(samplePack())
         assertEquals("sample", content.manifest.contentId)
