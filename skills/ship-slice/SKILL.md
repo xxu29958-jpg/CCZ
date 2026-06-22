@@ -18,9 +18,10 @@
    detekt 必须是 type-resolving 的 `detektMain`/`detektTest`（见 `android-detekt-discipline`）。
 6. **加/删测试时**，若已有 test-count baseline gate，同 diff bump（镜像 xiaopiaojia 的严格等值 pr-delta lane）。
 7. **对抗审**（codex 缺位时走 `adversarial-review`，并发 ≤2-3）。
-8. push；CI（`.github/workflows/ci.yml`）跑 → 按 `ci-red-triage` 分诊红。
-9. **合并需用户显式授权**——不自合默认分支（见 xiaopiaojia 同款纪律）。
-10. 收尾只更新「拥有该知识的那层文档」+ HANDOFF 写当前状态 + 下一步，不写成百科。
+8. **码 / 文档 / 测试三对账**（push 前一遍过，不建 per-slice 文件）：改了**行为**就有测试覆盖（且 bump count baseline）；改了**契约**（命令 / 事件 / RejectReason / save 字段 / 规则）就同步穷尽 `when`、规则文档的 `[machine-gated]/[review-only]/[aspirational]` 标注、相关 KDoc，以及 `HANDOFF` / `API.md` / `KNOWN_ISSUES.md`；新增 dormant / defer 项就进 `docs/KNOWN_ISSUES.md`。三者任一不一致 = 漏，补齐再 push。
+9. push；CI（`.github/workflows/ci.yml`）跑 → 按 `ci-red-triage` 分诊红。
+10. **合并需用户显式授权**——不自合默认分支（见 xiaopiaojia 同款纪律）。
+11. 收尾只更新「拥有该知识的那层文档」+ HANDOFF 写当前状态 + 下一步，不写成百科。
 
 ## 暗雷
 
