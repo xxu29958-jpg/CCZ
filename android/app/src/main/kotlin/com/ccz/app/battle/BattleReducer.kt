@@ -1,9 +1,11 @@
 package com.ccz.app.battle
 
 import com.ccz.core.battle.BattleContext
+import com.ccz.core.battle.BattleOutcome
 import com.ccz.core.battle.BattleState
 import com.ccz.core.battle.Command
 import com.ccz.core.battle.Gameplay
+import com.ccz.core.event.SScript
 import com.ccz.core.model.Combatant
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
@@ -12,6 +14,13 @@ import com.ccz.core.model.Pos
 internal fun sideLabel(faction: Faction): String = when (faction) {
     Faction.PLAYER, Faction.ALLY -> "Player"
     Faction.ENEMY -> "Enemy"
+}
+
+/** Log banner for a decided battle; empty while ONGOING (never appended — see logVerdict). */
+internal fun verdictBanner(outcome: BattleOutcome): String = when (outcome) {
+    BattleOutcome.VICTORY -> "★ 胜利！"
+    BattleOutcome.DEFEAT -> "✖ 战败"
+    BattleOutcome.ONGOING -> ""
 }
 
 /**
@@ -48,6 +57,7 @@ data class BattleUiState(
     val selection: Selection? = null,
     val effects: List<BattleEffect> = emptyList(),
     val log: List<String> = emptyList(),
+    val outcome: BattleOutcome = BattleOutcome.ONGOING,
 )
 
 /**
@@ -57,10 +67,18 @@ data class BattleUiState(
  * mutates [BattleState]; every state change is exactly what [Gameplay.submit] returns and every
  * option in a [Selection] is exactly what a [Gameplay] read-only query reported. Kept free of
  * Android types so it runs under the plain-JVM unit-test gate.
+ *
+ * [script] is the S-script whose win/lose lists decide the battle outcome; the reducer polls
+ * [Gameplay.outcome] (read-only, never settling state itself) after every accepted command and surfaces
+ * the verdict on [BattleUiState.outcome]. Once decided, input is ignored — a finished battle is terminal.
  */
-class BattleReducer(private val context: BattleContext) {
+class BattleReducer(private val context: BattleContext, private val script: SScript) {
     fun initial(state: BattleState): BattleUiState =
-        BattleUiState(state = state, log = listOf("Battle start — ${sideLabel(state.active)}'s turn"))
+        BattleUiState(
+            state = state,
+            log = listOf("Battle start — ${sideLabel(state.active)}'s turn"),
+            outcome = Gameplay.outcome(state, script),
+        )
 
     /**
      * Tap routing, in priority order: while a unit is selected, tapping a tile that holds one of
@@ -69,6 +87,7 @@ class BattleReducer(private val context: BattleContext) {
      * highlighted destination while a unit is selected moves it; anything else clears the selection.
      */
     fun tapTile(ui: BattleUiState, pos: Pos): BattleUiState {
+        if (ui.outcome != BattleOutcome.ONGOING) return ui
         val unitHere = ui.state.unitAt(pos)
         val selection = ui.selection
         if (selection != null && unitHere != null && unitHere.id in selection.targets) {
@@ -85,6 +104,7 @@ class BattleReducer(private val context: BattleContext) {
      * skill game-core listed for this unit — the loadout stays the authority on what it may use.
      */
     fun selectSkill(ui: BattleUiState, skillId: String): BattleUiState {
+        if (ui.outcome != BattleOutcome.ONGOING) return ui
         val selection = ui.selection ?: return ui
         if (skillId !in selection.skills) return ui
         return ui.copy(
@@ -112,46 +132,55 @@ class BattleReducer(private val context: BattleContext) {
         )
     }
 
-    fun endTurn(ui: BattleUiState): BattleUiState =
-        when (val outcome = Gameplay.submit(ui.state, Command.EndTurn(ui.state.active), context)) {
+    fun endTurn(ui: BattleUiState): BattleUiState {
+        if (ui.outcome != BattleOutcome.ONGOING) return ui
+        return when (val result = Gameplay.submit(ui.state, Command.EndTurn(ui.state.active), context)) {
+            // Recompute the verdict: advancing the turn can satisfy a SurviveTurns condition.
             is Gameplay.Outcome.Accepted -> {
-                val next = outcome.resolution.state
-                clearSelection(ui).copy(
-                    state = next,
-                    log = appendLog(ui.log, "—— ${sideLabel(next.active)}'s turn (turn ${next.turn}) ——"),
-                )
+                val next = result.resolution.state
+                clearSelection(ui).withVerdict(next, appendLog(ui.log, "—— ${sideLabel(next.active)}'s turn (turn ${next.turn}) ——"))
             }
             // Defensive: EndTurn(state.active) is always legal, so this branch is unreachable by
             // construction today; kept fail-safe in case the active-side seam ever changes.
-            is Gameplay.Outcome.Rejected -> ui.copy(log = appendLog(ui.log, "End turn rejected: ${phraseOf(outcome.reason)}"))
+            is Gameplay.Outcome.Rejected -> ui.copy(log = appendLog(ui.log, "End turn rejected: ${phraseOf(result.reason)}"))
         }
+    }
 
     private fun submitMove(ui: BattleUiState, unitId: String, to: Pos): BattleUiState =
-        when (val outcome = Gameplay.submit(ui.state, Command.Move(unitId, to), context)) {
+        when (val result = Gameplay.submit(ui.state, Command.Move(unitId, to), context)) {
             is Gameplay.Outcome.Accepted -> {
-                val next = outcome.resolution.state
-                clearSelection(ui).copy(state = next, log = appendLog(ui.log, describeMoves(outcome.resolution.events, next)))
+                val next = result.resolution.state
+                clearSelection(ui).withVerdict(next, appendLog(ui.log, describeMoves(result.resolution.events, next)))
             }
             is Gameplay.Outcome.Rejected ->
-                clearSelection(ui).copy(log = appendLog(ui.log, "Move rejected: ${phraseOf(outcome.reason)}"))
+                clearSelection(ui).copy(log = appendLog(ui.log, "Move rejected: ${phraseOf(result.reason)}"))
         }
 
     private fun submitAttack(ui: BattleUiState, selection: Selection, targetId: String): BattleUiState {
         // The tapped target came from this selection's active-skill target set, so selectedSkill is
         // set; the elvis is a fail-safe that never fabricates an attack with an unchosen skill.
         val skill = selection.selectedSkill ?: return clearSelection(ui)
-        return when (val outcome = Gameplay.submit(ui.state, Command.Attack(selection.unit, targetId, skill), context)) {
+        return when (val result = Gameplay.submit(ui.state, Command.Attack(selection.unit, targetId, skill), context)) {
             is Gameplay.Outcome.Accepted -> {
-                val resolution = outcome.resolution
-                clearSelection(ui).copy(
-                    state = resolution.state,
-                    effects = effectsOf(resolution.events),
-                    log = appendLog(ui.log, describeAttack(resolution.events, resolution.state)),
-                )
+                val resolution = result.resolution
+                clearSelection(ui)
+                    .copy(effects = effectsOf(resolution.events))
+                    .withVerdict(resolution.state, appendLog(ui.log, describeAttack(resolution.events, resolution.state)))
             }
             is Gameplay.Outcome.Rejected ->
-                clearSelection(ui).copy(log = appendLog(ui.log, "Attack rejected: ${phraseOf(outcome.reason)}"))
+                clearSelection(ui).copy(log = appendLog(ui.log, "Attack rejected: ${phraseOf(result.reason)}"))
         }
+    }
+
+    /**
+     * Applies an accepted command's new [state] to this UI snapshot, polling [Gameplay.outcome] for the
+     * verdict (the reducer never settles outcome itself) and appending a victory/defeat banner to [log]
+     * only on the ONGOING -> decided edge. The receiver carries any already-set effects forward.
+     */
+    private fun BattleUiState.withVerdict(state: BattleState, log: List<String>): BattleUiState {
+        val verdict = Gameplay.outcome(state, script)
+        val banner = if (verdict != BattleOutcome.ONGOING && outcome == BattleOutcome.ONGOING) appendLog(log, verdictBanner(verdict)) else log
+        return copy(state = state, outcome = verdict, log = banner)
     }
 
     private fun clearSelection(ui: BattleUiState): BattleUiState = ui.copy(selection = null, effects = emptyList())

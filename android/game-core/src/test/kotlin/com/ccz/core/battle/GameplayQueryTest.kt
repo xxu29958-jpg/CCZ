@@ -1,5 +1,7 @@
 package com.ccz.core.battle
 
+import com.ccz.core.event.SScript
+import com.ccz.core.event.WinLoseCondition
 import com.ccz.core.model.DamageKind
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
@@ -181,5 +183,46 @@ class GameplayQueryTest {
         assertEquals(RejectReason.SKILL_NOT_IN_LOADOUT, (outcome as Gameplay.Outcome.Rejected).reason)
         // Melee is allowed, but foe is out of melee range → still empty, this time on range not loadout.
         assertTrue(Gameplay.legalTargets(state, "a", "melee", context).isEmpty(), "an allowed skill still range-checks")
+    }
+
+    // --- outcome query: the read-only win/lose verdict the presentation layer polls. ---
+
+    private fun sScript(
+        win: List<WinLoseCondition> = emptyList(),
+        lose: List<WinLoseCondition> = emptyList(),
+    ): SScript = SScript(id = "s", win = win, lose = lose, pre = emptyList(), mid = emptyList(), post = emptyList())
+
+    @Test
+    fun outcomeIsOngoingWhileAnEnemyLivesAndNoLoseConditionIsMet() {
+        val state = stateOf(combatant("p", Faction.PLAYER, Pos(0, 0)), combatant("e", Faction.ENEMY, Pos(1, 0)))
+        val script = sScript(win = listOf(WinLoseCondition.AnnihilateEnemies), lose = listOf(WinLoseCondition.ProtectAlive("p")))
+        assertEquals(BattleOutcome.ONGOING, Gameplay.outcome(state, script))
+    }
+
+    @Test
+    fun outcomeIsVictoryWhenEnemiesAreAnnihilated() {
+        val state = stateOf(combatant("p", Faction.PLAYER, Pos(0, 0)), combatant("e", Faction.ENEMY, Pos(1, 0), hp = 0))
+        assertEquals(BattleOutcome.VICTORY, Gameplay.outcome(state, sScript(win = listOf(WinLoseCondition.AnnihilateEnemies))))
+    }
+
+    @Test
+    fun outcomeIsDefeatWhenAProtectedUnitHasFallen() {
+        val state = stateOf(combatant("p", Faction.PLAYER, Pos(0, 0), hp = 0), combatant("e", Faction.ENEMY, Pos(1, 0)))
+        assertEquals(BattleOutcome.DEFEAT, Gameplay.outcome(state, sScript(lose = listOf(WinLoseCondition.ProtectAlive("p")))))
+    }
+
+    @Test
+    fun outcomeLetsLoseWinTiesMirroringWinLose() {
+        // Protagonist down AND enemies annihilated on the same state → defeat takes precedence.
+        val state = stateOf(combatant("p", Faction.PLAYER, Pos(0, 0), hp = 0), combatant("e", Faction.ENEMY, Pos(1, 0), hp = 0))
+        val script = sScript(win = listOf(WinLoseCondition.AnnihilateEnemies), lose = listOf(WinLoseCondition.ProtectAlive("p")))
+        assertEquals(BattleOutcome.DEFEAT, Gameplay.outcome(state, script))
+        assertEquals(WinLose.evaluate(state, script), Gameplay.outcome(state, script), "outcome is exactly WinLose.evaluate")
+    }
+
+    @Test
+    fun outcomeIsOngoingWithEmptyWinLoseLists() {
+        val state = stateOf(combatant("p", Faction.PLAYER, Pos(0, 0)), combatant("e", Faction.ENEMY, Pos(1, 0), hp = 0))
+        assertEquals(BattleOutcome.ONGOING, Gameplay.outcome(state, sScript()), "no conditions configured → never decided")
     }
 }

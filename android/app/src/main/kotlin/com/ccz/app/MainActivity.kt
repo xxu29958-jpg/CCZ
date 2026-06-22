@@ -57,7 +57,7 @@ private fun AppHost() {
 @Composable
 private fun BattleHost() {
     val context = remember { DemoBattle.context() }
-    val reducer = remember { BattleReducer(context) }
+    val reducer = remember { BattleReducer(context, DemoBattle.script()) }
     val initial = remember { reducer.initial(DemoBattle.initialState()) }
     BattleScreen(
         map = context.map,

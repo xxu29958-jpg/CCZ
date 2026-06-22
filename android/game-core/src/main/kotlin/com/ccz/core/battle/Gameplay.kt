@@ -1,5 +1,6 @@
 package com.ccz.core.battle
 
+import com.ccz.core.event.SScript
 import com.ccz.core.model.Pos
 
 /**
@@ -85,4 +86,22 @@ object Gameplay {
         val loadout = context.loadouts[attackerId] ?: context.skills.keys.toList()
         return loadout.filter { it in context.skills }
     }
+
+    /**
+     * Read-only query: the [BattleOutcome] the S-script's win/lose lists decide for the current state,
+     * so the presentation layer can show a victory/defeat banner and stop accepting commands without
+     * owning the win/lose rule — the verdict is computed here, in the authority, by [WinLose] (lose wins
+     * ties). Pure: reads state only, consumes no RNG, never mutates. [submit] stays the sole authority
+     * that mutates state; this lets the UI poll after each accepted command instead of threading
+     * settlement into [submit] (which would ripple an SScript through every call site and the replay path).
+     *
+     * It returns the same verdict VALUE [WinLose.settle] would reach, but unlike `settle` it does NOT
+     * persist the outcome onto state or emit [Event.BattleEnded] — so [WinLose]'s state-level "sticky once
+     * decided" short-circuit is inert on this polling path: the verdict is re-derived from live unit
+     * aliveness / turn each call. That is stable (monotonic) for the conditions used today, but a
+     * non-monotonic condition (e.g. a script that revives a unit after a win) could flip the polled value
+     * back; callers wanting a one-way latch must hold the decided verdict themselves — the `:app` reducer
+     * does, by freezing input once decided, so the battle is terminal there regardless of re-derivation.
+     */
+    fun outcome(state: BattleState, script: SScript): BattleOutcome = WinLose.evaluate(state, script)
 }
