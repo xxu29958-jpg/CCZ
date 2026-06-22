@@ -6,7 +6,7 @@ CI runs on GitHub Actions: `.github/workflows/ci.yml`.
 
 Triggers: push to `main` / `feat|fix|perf|refactor|chore|ci|docs/**` branches, and every `pull_request`.
 
-Runner: `ubuntu-latest` + JDK 17. Current modules are pure JVM/Kotlin (`game-core` / `native-content` / `save-io`), so no Android SDK is needed. Runs from `android/`:
+Runner: `ubuntu-latest` + JDK 17. The three modules it gates (`game-core` / `native-content` / `save-io`) are pure JVM/Kotlin and execute no Android tasks; the root build now includes `:app`, but configuring it only needs the SDK *location* that `ubuntu-latest` preinstalls (see the Android lane note below), so this lane installs no SDK components. Runs from `android/`:
 
 ```bash
 ./gradlew --no-daemon \
@@ -24,17 +24,27 @@ This is the same gate as `docs/runbook/LOCAL_DEV.md` (Full Current Local Gate). 
 - `@Test` count must equal `android/config/test-count-baseline.txt`.
 - detekt reports uploaded as build artifacts.
 
-## Future Android App Lane
+## Android App Lane (current)
 
-After `android/app` exists, add a lane (will likely need the Android SDK; emulator / instrumented tests may need an SDK-provisioned or Windows runner):
+`android/app` now exists, so the second job `android-gate` runs on every push/PR alongside `jvm-gate`. It provisions the Android SDK (`android-actions/setup-android` + `sdkmanager "platforms;android-36" "build-tools;36.0.0"` — pinned to the locally-verified baseline, not runner-image drift), then:
 
 ```bash
-./gradlew --no-daemon :app:detektGrayDebug :app:detektGrayDebugUnitTest
-./gradlew --no-daemon :app:lintGrayDebug
-./gradlew --no-daemon :app:assertAndroidTestCountEqualsBaseline
-./gradlew --no-daemon :app:assembleGrayRelease
+./gradlew --no-daemon \
+  :app:detektGrayDebug :app:detektGrayDebugUnitTest \
+  :app:lintGrayDebug \
+  :app:assertAndroidTestCountEqualsBaseline \
+  :app:assembleGrayRelease
 ```
 
-Future required gates: Room schema drift gate, R8 release build, apksigner fingerprint pin, emulator smoke test.
+Properties:
+
+- detekt is type-resolving (`detektGrayDebug` / `detektGrayDebugUnitTest`), not plain `detekt`.
+- `:app` `@Test` count must equal `android/app/config/android-test-count-baseline.txt` (separate from the root `:game-core`/`:native-content`/`:save-io` baseline).
+- `assembleGrayRelease` validates release compilation/packaging; the APK is **unsigned** (R8/minify + apksigner are future gates — see below).
+- `:app` detekt + lint reports uploaded as build artifacts.
+
+Note: `jvm-gate` only runs the pure-JVM modules' tasks, but the root project now includes `:app`, so Gradle's configuration phase evaluates `:app` (AGP plugin apply needs the SDK *location*). `ubuntu-latest` ships `ANDROID_SDK_ROOT`, which satisfies configuration; the `android-36` platform is only needed when `:app` tasks **execute** (the `android-gate` lane), so `jvm-gate` does not install it.
+
+Still future (not yet gated — `:app` shell has no DB / signing / instrumented tests): Room schema drift gate, R8 release build, apksigner fingerprint pin, emulator smoke test (AVD `ticketbox_api36_host`).
 
 When CI fails, triage with the `ci-red-triage` skill; put durable commands or new gotchas here, not in `HANDOFF.md`.

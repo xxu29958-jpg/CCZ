@@ -1,8 +1,14 @@
 name: CI
 
-# 最小 CI lane：跑 docs/runbook/LOCAL_DEV.md 的 Full Current Local Gate。
-# 当前模块是纯 JVM/Kotlin（game-core / native-content），无需 Android SDK，
-# 故跑 ubuntu。未来建 :app（Android）后另加需要 Android SDK 的 lane（见 CI.md）。
+# 两 lane：
+#  - jvm-gate：跑 docs/runbook/LOCAL_DEV.md 的 Full Current Local Gate（game-core /
+#    native-content / save-io 的 test + selfTest + detekt + count baseline）。这三模块是
+#    纯 JVM/Kotlin、不执行 Android task，但根工程现含 :app，故 Gradle 配置阶段会评估
+#    :app（AGP plugin apply 需 SDK 位置）——ubuntu-latest 预置 ANDROID_SDK_ROOT 即可满足
+#    配置（android-36 平台只在 :app 任务执行时才需，jvm-gate 不执行故不装）。
+#  - android-gate：:app 的 Android gate（detekt type-resolving / lint / 测试数 /
+#    release 装配，[machine-gated]，每 push/PR 跑），需显式装 android-36 平台 +
+#    build-tools。见 docs/runbook/CI.md。（R8/签名/Room/emulator 才是未来门。）
 
 on:
   push:
@@ -51,4 +57,58 @@ jobs:
         with:
           name: detekt-reports
           path: android/**/build/reports/detekt/
+          if-no-files-found: ignore
+
+  android-gate:
+    name: Android :app gate (detekt + lint + count baseline + release assemble)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install required SDK components
+        # Pinned to the locally-verified baseline (compileSdk 36 / build-tools 36.0.0).
+        # No-op if the runner image already ships them; explicit so the lane does not
+        # depend on runner-image SDK drift.
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Android :app gate
+        # Mirrors docs/rules/CCZ_ENGINE_RULES.md §Android App Gates and the
+        # Full Current Local Gate's :app tail. detekt is type-resolving (detektGrayDebug /
+        # detektGrayDebugUnitTest), release assemble is unsigned (R8/signing are future gates).
+        run: >
+          ./gradlew --no-daemon
+          :app:detektGrayDebug :app:detektGrayDebugUnitTest
+          :app:lintGrayDebug
+          :app:assertAndroidTestCountEqualsBaseline
+          :app:assembleGrayRelease
+
+      - name: Upload :app detekt reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detekt-reports-app
+          path: android/app/build/reports/detekt/
+          if-no-files-found: ignore
+
+      - name: Upload :app lint reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-reports-app
+          path: android/app/build/reports/lint-results-*.*
           if-no-files-found: ignore
