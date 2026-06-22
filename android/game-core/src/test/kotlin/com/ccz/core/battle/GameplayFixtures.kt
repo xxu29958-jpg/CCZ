@@ -46,4 +46,5 @@ internal fun contextOf(
     map: BattleMap,
     classes: Map<String, UnitClass> = classesOf(),
     skills: Map<String, Skill> = skillsOf(),
-): BattleContext = BattleContext(map = map, classes = classes, skills = skills)
+    loadouts: Map<String, List<String>> = emptyMap(),
+): BattleContext = BattleContext(map = map, classes = classes, skills = skills, loadouts = loadouts)

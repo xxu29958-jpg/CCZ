@@ -3,12 +3,9 @@ package com.ccz.app.battle
 import com.ccz.core.battle.BattleContext
 import com.ccz.core.battle.BattleState
 import com.ccz.core.battle.Command
-import com.ccz.core.battle.Event
 import com.ccz.core.battle.Gameplay
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
-
-internal const val MAX_LOG_LINES = 6
 
 /** Side label for a faction; PLAYER and ALLY share the player's turn (see sameSide in core). */
 internal fun sideLabel(faction: Faction): String = when (faction) {
@@ -17,60 +14,93 @@ internal fun sideLabel(faction: Faction): String = when (faction) {
 }
 
 /**
- * Immutable snapshot the battle UI renders: the authoritative [BattleState] (owned by
- * game-core and replaced wholesale on every accepted command — never edited here), plus
- * the transient selection, the move destinations and attack-target ids game-core reported
- * for it, the presentation effects from the last accepted command (floating damage/miss/KO
+ * What game-core reported about the currently selected unit: where it may move, which attack
+ * skills it may use, which one is active, and the targets that skill can legally reach. Every
+ * field is a read-only query result — the UI owns none of these rules. A null [BattleUiState.selection]
+ * means nothing is selected.
+ */
+data class Selection(
+    val unit: String,
+    val destinations: Set<Pos> = emptySet(),
+    val skills: List<String> = emptyList(),
+    val selectedSkill: String? = null,
+    val targets: Set<String> = emptySet(),
+)
+
+/**
+ * Immutable snapshot the battle UI renders: the authoritative [BattleState] (owned by game-core
+ * and replaced wholesale on every accepted command — never edited here), the current [Selection]
+ * (the move/skill/target options game-core reported for the chosen unit, or null when none is
+ * selected), the presentation effects from the last accepted command (floating damage/miss/KO
  * badges, a pure translation of the authority's events), and a short human-readable event log.
  */
 data class BattleUiState(
     val state: BattleState,
-    val selected: String? = null,
-    val destinations: Set<Pos> = emptySet(),
-    val targets: Set<String> = emptySet(),
+    val selection: Selection? = null,
     val effects: List<BattleEffect> = emptyList(),
     val log: List<String> = emptyList(),
 )
 
 /**
- * Pure presentation reducer: turns a tap or end-turn into the next [BattleUiState] by
- * asking [Gameplay] what is legal and submitting commands through it. It holds NO combat
- * authority — it never computes damage, decides who is in range, moves a unit itself, or
- * mutates [BattleState]; every state change is exactly whatever [Gameplay.submit] returns,
- * and every highlight is exactly what a [Gameplay] read-only query reported. [basicAttackSkill]
- * is the skill id a tapped attack is submitted with (a single basic attack for now; a
- * per-unit skill picker is a later slice). Kept free of Android types so it runs under the
- * plain-JVM unit-test gate.
+ * Pure presentation reducer: turns a tap, skill pick, or end-turn into the next [BattleUiState] by
+ * asking [Gameplay] what is legal and submitting commands through it. It holds NO combat authority —
+ * it never computes damage, decides range, picks a unit's usable skills, moves a unit itself, or
+ * mutates [BattleState]; every state change is exactly what [Gameplay.submit] returns and every
+ * option in a [Selection] is exactly what a [Gameplay] read-only query reported. Kept free of
+ * Android types so it runs under the plain-JVM unit-test gate.
  */
-class BattleReducer(private val context: BattleContext, private val basicAttackSkill: String) {
+class BattleReducer(private val context: BattleContext) {
     fun initial(state: BattleState): BattleUiState =
         BattleUiState(state = state, log = listOf("Battle start — ${sideLabel(state.active)}'s turn"))
 
     /**
      * Tap routing, in priority order: while a unit is selected, tapping a tile that holds one of
-     * the targets game-core reported for it attacks that unit; otherwise tapping a unit game-core
-     * reports legal moves for (living, active side) selects it (and exposes its move + attack
-     * options); tapping a highlighted destination while a unit is selected moves it; anything
-     * else clears the selection.
+     * the active skill's targets attacks it; otherwise tapping a unit game-core reports legal moves
+     * for selects it (exposing its destinations, loadout, and first skill's targets); tapping a
+     * highlighted destination while a unit is selected moves it; anything else clears the selection.
      */
     fun tapTile(ui: BattleUiState, pos: Pos): BattleUiState {
         val unitHere = ui.state.units.values.firstOrNull { it.alive && it.pos == pos }
-        val selected = ui.selected
-        if (selected != null && unitHere != null && unitHere.id in ui.targets) {
-            return submitAttack(ui, selected, unitHere.id)
+        val selection = ui.selection
+        if (selection != null && unitHere != null && unitHere.id in selection.targets) {
+            return submitAttack(ui, selection, unitHere.id)
         }
-        if (unitHere != null) {
-            val destinations = Gameplay.legalDestinations(ui.state, unitHere.id, context)
-            return if (destinations.isEmpty()) clearSelection(ui)
-            else ui.copy(
-                selected = unitHere.id,
-                destinations = destinations,
-                targets = Gameplay.legalTargets(ui.state, unitHere.id, basicAttackSkill, context),
-                effects = emptyList(),
-            )
-        }
-        return if (selected != null && pos in ui.destinations) submitMove(ui, selected, pos)
+        if (unitHere != null) return selectUnit(ui, unitHere.id)
+        return if (selection != null && pos in selection.destinations) submitMove(ui, selection.unit, pos)
         else clearSelection(ui)
+    }
+
+    /**
+     * Switches which loadout skill the selected unit will attack with, re-asking game-core for the
+     * targets that skill can legally reach. A no-op when nothing is selected or [skillId] is not a
+     * skill game-core listed for this unit — the loadout stays the authority on what it may use.
+     */
+    fun selectSkill(ui: BattleUiState, skillId: String): BattleUiState {
+        val selection = ui.selection ?: return ui
+        if (skillId !in selection.skills) return ui
+        return ui.copy(
+            selection = selection.copy(
+                selectedSkill = skillId,
+                targets = Gameplay.legalTargets(ui.state, selection.unit, skillId, context),
+            ),
+        )
+    }
+
+    private fun selectUnit(ui: BattleUiState, unitId: String): BattleUiState {
+        val destinations = Gameplay.legalDestinations(ui.state, unitId, context)
+        if (destinations.isEmpty()) return clearSelection(ui)
+        val skills = Gameplay.legalSkills(ui.state, unitId, context)
+        val skill = skills.firstOrNull()
+        return ui.copy(
+            selection = Selection(
+                unit = unitId,
+                destinations = destinations,
+                skills = skills,
+                selectedSkill = skill,
+                targets = skill?.let { Gameplay.legalTargets(ui.state, unitId, it, context) } ?: emptySet(),
+            ),
+            effects = emptyList(),
+        )
     }
 
     fun endTurn(ui: BattleUiState): BattleUiState =
@@ -82,8 +112,8 @@ class BattleReducer(private val context: BattleContext, private val basicAttackS
                     log = appendLog(ui.log, "—— ${sideLabel(next.active)}'s turn (turn ${next.turn}) ——"),
                 )
             }
-            // Defensive: EndTurn(state.active) is always legal, so this branch is unreachable
-            // by construction today; kept fail-safe in case the active-side seam ever changes.
+            // Defensive: EndTurn(state.active) is always legal, so this branch is unreachable by
+            // construction today; kept fail-safe in case the active-side seam ever changes.
             is Gameplay.Outcome.Rejected -> ui.copy(log = appendLog(ui.log, "End turn rejected: ${outcome.reason}"))
         }
 
@@ -97,8 +127,11 @@ class BattleReducer(private val context: BattleContext, private val basicAttackS
                 clearSelection(ui).copy(log = appendLog(ui.log, "Move rejected: ${outcome.reason}"))
         }
 
-    private fun submitAttack(ui: BattleUiState, attackerId: String, targetId: String): BattleUiState =
-        when (val outcome = Gameplay.submit(ui.state, Command.Attack(attackerId, targetId, basicAttackSkill), context)) {
+    private fun submitAttack(ui: BattleUiState, selection: Selection, targetId: String): BattleUiState {
+        // The tapped target came from this selection's active-skill target set, so selectedSkill is
+        // set; the elvis is a fail-safe that never fabricates an attack with an unchosen skill.
+        val skill = selection.selectedSkill ?: return clearSelection(ui)
+        return when (val outcome = Gameplay.submit(ui.state, Command.Attack(selection.unit, targetId, skill), context)) {
             is Gameplay.Outcome.Accepted -> {
                 val resolution = outcome.resolution
                 clearSelection(ui).copy(
@@ -110,30 +143,7 @@ class BattleReducer(private val context: BattleContext, private val basicAttackS
             is Gameplay.Outcome.Rejected ->
                 clearSelection(ui).copy(log = appendLog(ui.log, "Attack rejected: ${outcome.reason}"))
         }
+    }
 
-    private fun clearSelection(ui: BattleUiState): BattleUiState =
-        ui.copy(selected = null, destinations = emptySet(), targets = emptySet(), effects = emptyList())
+    private fun clearSelection(ui: BattleUiState): BattleUiState = ui.copy(selection = null, effects = emptyList())
 }
-
-private fun unitName(state: BattleState, id: String): String = state.units[id]?.name ?: id
-
-private fun describeMoves(events: List<Event>, state: BattleState): String =
-    events.joinToString(separator = "; ") { event ->
-        when (event) {
-            is Event.Moved -> "${unitName(state, event.unit)} → (${event.to.x}, ${event.to.y})"
-            else -> event::class.simpleName ?: "event"
-        }
-    }
-
-private fun describeAttack(events: List<Event>, state: BattleState): String =
-    events.joinToString(separator = "; ") { event ->
-        when (event) {
-            is Event.Missed -> "${unitName(state, event.target)} evaded"
-            is Event.Damaged -> "${unitName(state, event.target)} −${event.amount}" +
-                (if (event.crit) " crit" else "") + (if (event.combo) " combo" else "")
-            is Event.Died -> "${unitName(state, event.unit)} defeated"
-            else -> event::class.simpleName ?: "event"
-        }
-    }
-
-private fun appendLog(log: List<String>, line: String): List<String> = (log + line).takeLast(MAX_LOG_LINES)

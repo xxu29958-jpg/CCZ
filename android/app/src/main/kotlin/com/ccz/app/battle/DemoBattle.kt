@@ -9,30 +9,28 @@ import com.ccz.core.model.CombatRates
 import com.ccz.core.model.CombatStats
 import com.ccz.core.model.CombatVitals
 import com.ccz.core.model.Combatant
+import com.ccz.core.model.DamageKind
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
+import com.ccz.core.model.RangeSpec
+import com.ccz.core.model.Skill
 import com.ccz.core.model.UnitClass
 
 /**
  * A hardcoded battle seed so the shell has something concrete to render and drive while
  * the real content-fed battle driver layer is still pending. This is plain initial input
- * to game-core (map + classes + an opening [BattleState]) — NOT a second source of combat
- * truth: the app never reads these values to decide an outcome, it only hands them to
- * [com.ccz.core.battle.Gameplay] and renders what comes back. It will be replaced by a
- * native-content-loaded scenario once the driver layer lands.
+ * to game-core (map + classes + the skill table + per-unit loadouts + an opening
+ * [BattleState]) — NOT a second source of combat truth: the app never reads these values to
+ * decide an outcome, it only hands them to [com.ccz.core.battle.Gameplay] and renders what
+ * comes back. It will be replaced by a native-content-loaded scenario once the driver layer
+ * lands (which is also what will fill a loadout for every unit instead of this demo map).
  */
 object DemoBattle {
     const val WIDTH = 7
     const val HEIGHT = 6
 
-    /**
-     * Skill id a tapped basic attack is submitted with. Matches the entry in the demo
-     * context's skill table ([com.ccz.core.battle.Resolver.DEMO_SKILLS]); the skill's range
-     * lives there, in the authority — this is just which skill the demo's basic attack uses.
-     */
-    const val BASIC_ATTACK = "atk"
-
-    fun context(): BattleContext = BattleContext(map = demoMap(), classes = classes())
+    fun context(): BattleContext =
+        BattleContext(map = demoMap(), classes = classes(), skills = skills(), loadouts = loadouts())
 
     fun initialState(): BattleState =
         BattleState(units = units().associateBy { it.id }, turn = 1, active = Faction.PLAYER, rngState = 1L)
@@ -54,12 +52,29 @@ object DemoBattle {
         "archer" to UnitClass("archer", "Archer", "foot", move = 4),
     )
 
+    // The skill table is the authority on each skill's reach; loadouts (below) say which unit
+    // may use which — game-core enforces both, the app only renders the choice.
+    private fun skills(): Map<String, Skill> = mapOf(
+        "strike" to Skill("strike", "Strike", DamageKind.PHYSICAL, powerCoeff = 100, range = RangeSpec.MELEE),
+        "spear" to Skill("spear", "Spear Thrust", DamageKind.PHYSICAL, powerCoeff = 110, range = RangeSpec(1, 2)),
+        "bow" to Skill("bow", "Bow Shot", DamageKind.PHYSICAL, powerCoeff = 80, range = RangeSpec(2, 3)),
+    )
+
+    private fun loadouts(): Map<String, List<String>> = mapOf(
+        "guan" to listOf("strike", "spear"),
+        "zhang" to listOf("strike"),
+        "foe" to listOf("bow"),
+        "foe2" to listOf("strike"),
+    )
+
     private fun units(): List<Combatant> = listOf(
-        // Guan (cavalry) is still maneuvering up the left flank; Zhang (infantry) has reached
-        // the front line adjacent to the enemy archer, so a basic attack is legal from turn one.
-        unit(CombatIdentity("guan", "Guan Yu", "cavalry", Faction.PLAYER), Pos(1, 1), hp = 240),
+        // Zhang (infantry) is locked in melee with the archer to the east; Guan (cavalry) carries a
+        // spear, so switching his skill from Strike (reach 1) to Spear (reach 1–2) brings the
+        // spearman two tiles south into range — the demo shows targets changing with the skill.
+        unit(CombatIdentity("guan", "Guan Yu", "cavalry", Faction.PLAYER), Pos(1, 2), hp = 240),
         unit(CombatIdentity("zhang", "Zhang Fei", "infantry", Faction.PLAYER), Pos(4, 2), hp = 220),
         unit(CombatIdentity("foe", "Enemy Archer", "archer", Faction.ENEMY), Pos(5, 2), hp = 180),
+        unit(CombatIdentity("foe2", "Enemy Spearman", "infantry", Faction.ENEMY), Pos(1, 4), hp = 200),
     )
 
     private fun unit(identity: CombatIdentity, pos: Pos, hp: Int): Combatant =

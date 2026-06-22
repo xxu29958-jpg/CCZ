@@ -97,10 +97,11 @@ private fun rowCells(map: BattleMap, ui: BattleUiState, y: Int): List<CellModel>
 
 private fun cellAt(map: BattleMap, ui: BattleUiState, pos: Pos): CellModel {
     val unit = ui.state.units.values.firstOrNull { it.alive && it.pos == pos }
+    val selection = ui.selection
     val mark = when {
-        unit != null && unit.id == ui.selected -> CellMark.SELECTED
-        unit != null && unit.id in ui.targets -> CellMark.TARGET
-        pos in ui.destinations -> CellMark.MOVE
+        unit != null && unit.id == selection?.unit -> CellMark.SELECTED
+        unit != null && unit.id in (selection?.targets ?: emptySet()) -> CellMark.TARGET
+        pos in (selection?.destinations ?: emptySet()) -> CellMark.MOVE
         else -> CellMark.NONE
     }
     return CellModel(

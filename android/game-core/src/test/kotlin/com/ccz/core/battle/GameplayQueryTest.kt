@@ -1,8 +1,10 @@
 package com.ccz.core.battle
 
+import com.ccz.core.model.DamageKind
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
 import com.ccz.core.model.RangeSpec
+import com.ccz.core.model.Skill
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -135,5 +137,48 @@ class GameplayQueryTest {
             val accepted = Gameplay.submit(state, Command.Attack("a", id, "bow"), context) is Gameplay.Outcome.Accepted
             assertEquals(id in targets, accepted, "query and submit must agree on $id")
         }
+    }
+
+    private val twoSkills = mapOf(
+        "melee" to Skill("melee", "Melee", DamageKind.PHYSICAL, 100, RangeSpec.MELEE),
+        "bow" to Skill("bow", "Bow", DamageKind.PHYSICAL, 80, RangeSpec(2, 3)),
+    )
+
+    @Test
+    fun legalSkillsReturnsTheConfiguredLoadoutFilteredToKnownSkillsInOrder() {
+        val context = contextOf(flat(3, 1), skills = twoSkills, loadouts = mapOf("a" to listOf("bow", "melee", "ghost")))
+        val state = stateOf(combatant("a", Faction.PLAYER, Pos(0, 0)))
+        // Loadout order is preserved; "ghost" (not in the skill table) is dropped fail-closed.
+        assertEquals(listOf("bow", "melee"), Gameplay.legalSkills(state, "a", context))
+    }
+
+    @Test
+    fun legalSkillsFallsBackToTheFullTableWithoutALoadoutAndIsEmptyWhenUnattackable() {
+        val context = contextOf(flat(3, 3), skills = twoSkills) // no loadouts → unconstrained
+        val live = stateOf(combatant("a", Faction.PLAYER, Pos(0, 0)))
+        assertEquals(setOf("melee", "bow"), Gameplay.legalSkills(live, "a", context).toSet())
+
+        val dead = stateOf(combatant("a", Faction.PLAYER, Pos(0, 0), hp = 0))
+        assertTrue(Gameplay.legalSkills(dead, "a", context).isEmpty(), "a dead unit can use no skill")
+
+        val enemyTurn = stateOf(combatant("e", Faction.ENEMY, Pos(0, 0)), active = Faction.PLAYER)
+        assertTrue(Gameplay.legalSkills(enemyTurn, "e", context).isEmpty(), "an off-side unit can use no skill")
+    }
+
+    @Test
+    fun aSkillOutsideTheLoadoutIsNeitherTargetedNorAcceptedWhileAllowedOnesStillRangeCheck() {
+        // "a" may use only melee; bow is in the table but not in a's loadout.
+        val context = contextOf(flat(3, 1), skills = twoSkills, loadouts = mapOf("a" to listOf("melee")))
+        val state = stateOf(
+            combatant("a", Faction.PLAYER, Pos(0, 0)),
+            combatant("foe", Faction.ENEMY, Pos(2, 0)), // distance 2: in bow range, out of melee
+        )
+        // Bow would reach foe by range, but it is not in the loadout → no targets, and submit rejects it.
+        assertTrue(Gameplay.legalTargets(state, "a", "bow", context).isEmpty(), "a skill outside the loadout has no targets")
+        val outcome = Gameplay.submit(state, Command.Attack("a", "foe", "bow"), context)
+        assertTrue(outcome is Gameplay.Outcome.Rejected, "submit rejects a loadout-excluded skill")
+        assertEquals(RejectReason.SKILL_NOT_IN_LOADOUT, (outcome as Gameplay.Outcome.Rejected).reason)
+        // Melee is allowed, but foe is out of melee range → still empty, this time on range not loadout.
+        assertTrue(Gameplay.legalTargets(state, "a", "melee", context).isEmpty(), "an allowed skill still range-checks")
     }
 }
