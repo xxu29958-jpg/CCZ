@@ -54,6 +54,15 @@ Most of these are already emitted by the trigger runner (P3): `UnitSpawned`, `Un
 forwarded for the view layer). `BattleEnded(outcome)` is emitted by `WinLose.settle` once on
 the `ONGOING -> VICTORY/DEFEAT` edge; `BattleOutcome` is sticky on `BattleState`.
 
+There is a second, read-only way to learn the verdict: `Gameplay.outcome(state, sScript)` delegates to
+`WinLose.evaluate` and returns the outcome value WITHOUT settling — it neither persists the outcome onto
+state nor emits `BattleEnded`. It exists so a presentation layer can poll the verdict after each accepted
+command without threading an `SScript` through `submit`/replay. Because it does not persist, the
+state-level "sticky" short-circuit does not engage on this path (the value is re-derived each call, stable
+while win/lose conditions are monotonic); a caller that needs a one-way latch holds the decided verdict
+itself (the `:app` reducer freezes input once decided). `settle` remains the canonical event-emitting,
+state-persisting channel.
+
 `TriggerRunner.tick(state, sScript, scriptContext)` fires eligible mid-triggers (conditions in
 `TriggerConditions`, `once` tracked) then settles win/lose; `applyPre`/`applyPost` run the
 battle's pre/post op lists. All of this is pure and deterministic (no RNG).
