@@ -16,8 +16,10 @@ object Resolver {
     ): Resolution = when (command) {
         is Command.Move -> move(state, command)
         is Command.Attack -> attack(state, command, classes, skills, rules)
+        is Command.Wait -> Resolution(state.markActed(command.unit), listOf(Event.Waited(command.unit)))
         is Command.EndTurn -> Resolution(
-            state.copy(active = nextFaction(command.faction), turn = state.turn + 1),
+            // Reset the per-turn action economy so the next side's units start fresh.
+            state.copy(active = nextFaction(command.faction), turn = state.turn + 1).clearTurnActions(),
             listOf(Event.TurnEnded(command.faction)),
         )
     }
@@ -25,7 +27,7 @@ object Resolver {
     private fun move(state: BattleState, command: Command.Move): Resolution {
         val unit = state.unit(command.unit)
         return Resolution(
-            state.withUnit(unit.copy(pos = command.to)),
+            state.withUnit(unit.copy(pos = command.to)).markMoved(unit.id),
             listOf(Event.Moved(unit.id, unit.pos, command.to)),
         )
     }
@@ -45,8 +47,9 @@ object Resolver {
         val events = mutableListOf<Event>()
 
         if (!profile.hit) {
+            // A missed attack still spends the attacker's action for the turn.
             events += Event.Missed(attacker.id, defender.id)
-            return Resolution(state.copy(rngState = rng.snapshot()), events)
+            return Resolution(state.copy(rngState = rng.snapshot()).markActed(attacker.id), events)
         }
 
         val (atkValue, defValue) = when (skill.kind) {
@@ -73,7 +76,7 @@ object Resolver {
             strike(rules.damage.comboCoeffPct, isCrit = false, isCombo = true)
         }
 
-        return Resolution(state.withUnit(defender).copy(rngState = rng.snapshot()), events)
+        return Resolution(state.withUnit(defender).copy(rngState = rng.snapshot()).markActed(attacker.id), events)
     }
 
     private fun nextFaction(faction: Faction): Faction = when (faction) {

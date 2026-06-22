@@ -51,6 +51,11 @@ internal object SaveMappers {
         turn = s.turn,
         active = s.active.name,
         rngState = s.rngState,
+        // progress.moved/acted (the per-turn action economy) are intentionally NOT serialized: the only
+        // state the save captures is a fresh battle start where both are empty, and replay re-derives
+        // them by folding the command stream. If a "save mid-battle" feature ever captures a non-fresh
+        // state, this drops the economy silently (an exhausted unit would reload able to act) — that
+        // feature must persist moved/acted (schema bump) or assert the state is fresh before encoding here.
         progress = BattleProgressDto(s.progress.outcome.name, s.progress.vars, s.progress.firedTriggers),
     )
 
@@ -69,6 +74,7 @@ internal object SaveMappers {
     private fun commandDto(c: Command): CommandDto = when (c) {
         is Command.Move -> CommandDto.Move(c.unit, PosDto(c.to.x, c.to.y))
         is Command.Attack -> CommandDto.Attack(c.attacker, c.target, c.skill)
+        is Command.Wait -> CommandDto.Wait(c.unit)
         is Command.EndTurn -> CommandDto.EndTurn(c.faction.name)
     }
 
@@ -121,6 +127,7 @@ internal object SaveMappers {
     private fun command(c: CommandDto): Command = when (c) {
         is CommandDto.Move -> Command.Move(c.unit, Pos(c.to.x, c.to.y))
         is CommandDto.Attack -> Command.Attack(c.attacker, c.target, c.skill)
+        is CommandDto.Wait -> Command.Wait(c.unit)
         is CommandDto.EndTurn -> Command.EndTurn(faction("command.end_turn.faction", c.faction))
     }
 

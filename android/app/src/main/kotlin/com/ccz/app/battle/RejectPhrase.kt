@@ -27,4 +27,6 @@ internal fun phraseOf(reason: RejectReason): String = when (reason) {
     RejectReason.TARGET_FRIENDLY -> "That's an ally"
     RejectReason.OUT_OF_ATTACK_RANGE -> "Out of attack range"
     RejectReason.WRONG_END_TURN_FACTION -> "Not your turn to end"
+    RejectReason.UNIT_ALREADY_MOVED -> "Already moved this turn"
+    RejectReason.UNIT_ALREADY_ACTED -> "Already acted this turn"
 }

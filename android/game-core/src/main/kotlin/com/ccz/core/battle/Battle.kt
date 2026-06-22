@@ -8,6 +8,8 @@ import com.ccz.core.model.Combatant
 sealed interface Command {
     data class Move(val unit: String, val to: Pos) : Command
     data class Attack(val attacker: String, val target: String, val skill: String) : Command
+    /** Ends a unit's turn without attacking (the Fire-Emblem "wait"/stand), exhausting it this turn. */
+    data class Wait(val unit: String) : Command
     data class EndTurn(val faction: Faction) : Command
 }
 
@@ -23,6 +25,7 @@ sealed interface Event {
     ) : Event
 
     data class Died(val unit: String) : Event
+    data class Waited(val unit: String) : Event
     data class TurnEnded(val faction: Faction) : Event
     data class BattleEnded(val outcome: BattleOutcome) : Event
     data class UnitSpawned(val unit: String) : Event
@@ -60,11 +63,23 @@ enum class PlacementReject { NO_TEMPLATE, OUT_OF_BOUNDS, IMPASSABLE, OCCUPIED }
  * decided outcome, scenario variables, and the ids of triggers that have already
  * fired. Bundled so [BattleState] stays within its constructor-parameter budget
  * and so all event-runner state evolves through one immutable value.
+ *
+ * [moved] / [acted] are the per-turn action economy: a unit may Move once (entering [moved])
+ * then take one action — Attack or Wait — (entering [acted], fully exhausted); it may not move
+ * twice nor act after acting. Both are cleared on every [Command.EndTurn] so the next side starts
+ * fresh. They are turn-scoped and deliberately NOT persisted in the save: the only state the save
+ * captures is a fresh battle start (where both are empty) and replay re-derives them by folding the
+ * command stream, so SaveMappers omits them and decode falls back to these empty defaults. That is a
+ * save-path ASSUMPTION, not a structural guarantee — a future "save mid-battle" feature must either
+ * persist these sets (schema bump) or assert the captured state is fresh, else exhausted units would
+ * reload able to act again (see the guard note at SaveMappers' encode seam).
  */
 data class BattleProgress(
     val outcome: BattleOutcome = BattleOutcome.ONGOING,
     val vars: Map<String, Int> = emptyMap(),
     val firedTriggers: Set<String> = emptySet(),
+    val moved: Set<String> = emptySet(),
+    val acted: Set<String> = emptySet(),
 )
 
 data class BattleState(
@@ -83,6 +98,13 @@ data class BattleState(
     fun withOutcome(outcome: BattleOutcome): BattleState = copy(progress = progress.copy(outcome = outcome))
     fun hasFired(id: String): Boolean = id in progress.firedTriggers
     fun markFired(id: String): BattleState = copy(progress = progress.copy(firedTriggers = progress.firedTriggers + id))
+
+    fun hasMoved(id: String): Boolean = id in progress.moved
+    fun hasActed(id: String): Boolean = id in progress.acted
+    fun markMoved(id: String): BattleState = copy(progress = progress.copy(moved = progress.moved + id))
+    fun markActed(id: String): BattleState = copy(progress = progress.copy(acted = progress.acted + id))
+    /** Clears the per-turn action economy so the next side's units start fresh (used by EndTurn). */
+    fun clearTurnActions(): BattleState = copy(progress = progress.copy(moved = emptySet(), acted = emptySet()))
 }
 
 data class Resolution(val state: BattleState, val events: List<Event>)
