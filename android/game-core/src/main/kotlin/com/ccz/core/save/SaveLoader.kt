@@ -4,6 +4,7 @@ import com.ccz.core.battle.BattleRules
 import com.ccz.core.battle.BattleState
 import com.ccz.core.battle.Command
 import com.ccz.core.battle.Resolver
+import com.ccz.core.event.RScript
 import com.ccz.core.model.Skill
 import com.ccz.core.model.UnitClass
 
@@ -11,13 +12,15 @@ import com.ccz.core.model.UnitClass
  * Loads a [SaveEnvelope] by validating its version axes fail-closed, then replaying
  * the recorded command sequence through the [Resolver] from the initial state.
  *
- * Two load gates (CCZ_ENGINE_RULES §Save/Replay), three reject reasons: a version check
+ * Three load gates (CCZ_ENGINE_RULES §Save/Replay), four reject reasons: a version check
  * (rejecting a FUTURE save schema this build cannot understand, or a rules-version mismatch
  * — the save was produced under different battle-formula rules, so a replay would diverge,
  * 宁可拒绝也不破坏回放) then a command-integrity check (a corrupt command referencing a
- * unit/skill absent from the initial state or skill table). On-disk shape/enum decoding is a
- * separate, earlier concern in [SaveCodec]. Replay re-applies already-accepted commands directly,
- * exactly like the live flow's accepted path, so it consumes RNG identically and is deterministic.
+ * unit/skill absent from the initial state or skill table) then a scenario-integrity check
+ * (a recorded cutscene naming a script absent from the loaded content). On-disk shape/enum
+ * decoding — including the units-map roster coherence — is a separate, earlier concern in
+ * [SaveCodec]. Replay re-applies already-accepted commands directly, exactly like the live
+ * flow's accepted path, so it consumes RNG identically and is deterministic.
  *
  * Commands were accepted when recorded, so a well-formed envelope always resolves; a
  * tampered/corrupt envelope is caught fail-closed by [commandIntegrity] BEFORE replay,
@@ -35,8 +38,11 @@ object SaveLoader {
         classes: Map<String, UnitClass>,
         skills: Map<String, Skill> = Resolver.DEMO_SKILLS,
         rules: BattleRules = BattleRules.DEFAULT,
+        scripts: Map<String, RScript> = emptyMap(),
     ): Outcome {
-        val rejection = check(envelope.versions) ?: commandIntegrity(envelope, skills)
+        val rejection = check(envelope.versions)
+            ?: commandIntegrity(envelope, skills)
+            ?: scenarioIntegrity(envelope, scripts)
         return if (rejection != null) {
             Outcome.Rejected(rejection)
         } else {
@@ -71,6 +77,19 @@ object SaveLoader {
         }
         return if (corrupt) SaveRejection.CORRUPT_COMMAND else null
     }
+
+    /**
+     * Fail-closed counterpart to [commandIntegrity] for the second (cutscene) replay axis:
+     * every recorded [ScenarioReplay.scriptId] must resolve to a script in the current
+     * content, mirroring how commandIntegrity demands its unit/skill references resolve. A
+     * save pointing at a script absent from the loaded pack is rejected cleanly here rather
+     * than dangling. This is the cheap reference pre-check; the deeper "recorded choices no
+     * longer complete a content-drifted script" case (ScenarioRejection.INCOMPLETE_REPLAY)
+     * is decided by [ScenarioReplayer] when the battle driver actually re-runs the cutscene.
+     * With no scripts supplied (the default), any recorded scenario is unverifiable → rejected.
+     */
+    private fun scenarioIntegrity(envelope: SaveEnvelope, scripts: Map<String, RScript>): SaveRejection? =
+        if (envelope.scenarios.any { it.scriptId !in scripts }) SaveRejection.CORRUPT_SCENARIO else null
 
     private fun replay(
         envelope: SaveEnvelope,

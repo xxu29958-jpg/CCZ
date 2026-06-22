@@ -84,12 +84,27 @@ internal object SaveMappers {
     )
 
     private fun state(s: BattleStateDto) = BattleState(
-        units = s.units.mapValues { combatant(it.value) },
+        units = s.units.mapValues { (key, dto) -> checkedCombatant(key, dto) },
         turn = s.turn,
         active = faction("initial_state.active", s.active),
         rngState = s.rngState,
         progress = BattleProgress(outcome("initial_state.progress.outcome", s.progress.outcome), s.progress.vars, s.progress.firedTriggers),
     )
+
+    /**
+     * The units map key and the combatant's own [Combatant.id] are one identifier in the
+     * domain ([BattleState.unit] reads by key, `withUnit` re-keys by `unit.id`). A save whose
+     * key diverges from the wrapped id is shape-valid but incoherent — it would round-trip,
+     * pass command integrity (which checks the map keys), then alias/duplicate the unit on
+     * replay. Reject it at the decode boundary, fail-closed like the faction/outcome whitelist.
+     */
+    private fun checkedCombatant(key: String, dto: CombatantDto): Combatant {
+        val unit = combatant(dto)
+        if (key != unit.identity.id) {
+            throw SaveDecodeException("initial_state.units: map key '$key' != combatant id '${unit.identity.id}'")
+        }
+        return unit
+    }
 
     private fun combatant(c: CombatantDto) = Combatant(
         identity = CombatIdentity(c.identity.id, c.identity.name, c.identity.classId, faction("combatant.faction", c.identity.faction)),

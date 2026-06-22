@@ -105,6 +105,16 @@ class SaveCodecTest {
         assertEquals(emptyList(), SaveCodec.decode(json).scenarios)
     }
 
+    @Test
+    fun unitMapKeyMismatchingCombatantIdFailsClosed() {
+        // diverge identity.id from its units-map key: shape-valid but an incoherent roster
+        val encoded = SaveCodec.encode(sampleEnvelope())
+        val tampered = encoded.replaceFirst("\"id\":\"zhaoyun\"", "\"id\":\"impostor\"")
+        assertNotEquals(encoded, tampered) // guard: the id must actually diverge, else the test degrades
+
+        assertFailsWith<SaveDecodeException> { SaveCodec.decode(tampered) }
+    }
+
     private fun sampleEnvelope(): SaveEnvelope = SaveEnvelope(
         versions = SaveVersions(
             saveSchemaVersion = 1,

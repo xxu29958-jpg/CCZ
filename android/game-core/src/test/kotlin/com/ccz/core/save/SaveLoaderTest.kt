@@ -5,6 +5,7 @@ import com.ccz.core.battle.Command
 import com.ccz.core.battle.Resolver
 import com.ccz.core.battle.combatant
 import com.ccz.core.battle.stateOf
+import com.ccz.core.event.RScript
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
 import com.ccz.core.model.UnitClass
@@ -129,5 +130,30 @@ class SaveLoaderTest {
         val env = envelope(future).copy(commands = listOf(Command.Move("ghost", Pos(1, 1))))
         val outcome = SaveLoader.load(env, classes)
         assertEquals(SaveRejection.FUTURE_SCHEMA_VERSION, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
+    }
+
+    @Test
+    fun rejectsScenarioReferencingAbsentScriptGracefully() {
+        val env = envelope().copy(scenarios = listOf(ScenarioReplay("missing")))
+        val outcome = SaveLoader.load(env, classes, scripts = emptyMap())
+        assertEquals(SaveRejection.CORRUPT_SCENARIO, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
+    }
+
+    @Test
+    fun acceptsScenarioReferencingKnownScript() {
+        val env = envelope().copy(scenarios = listOf(ScenarioReplay("intro")))
+        val scripts = mapOf("intro" to RScript("intro", emptyList()))
+        assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(env, classes, scripts = scripts))
+    }
+
+    @Test
+    fun commandIntegrityPrecedesScenarioIntegrity() {
+        // both a corrupt command AND an absent-script scenario — the command gate is checked first
+        val env = envelope().copy(
+            commands = listOf(Command.Move("ghost", Pos(1, 1))),
+            scenarios = listOf(ScenarioReplay("missing")),
+        )
+        val outcome = SaveLoader.load(env, classes, scripts = emptyMap())
+        assertEquals(SaveRejection.CORRUPT_COMMAND, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
     }
 }
