@@ -160,6 +160,37 @@ class BattleOpTest {
     }
 
     @Test
+    fun setHpReviveOntoOccupiedTileIsRejected() {
+        // d died, then h moved onto its tile while d was dead (occupancy excludes corpses);
+        // reviving d there would stack two living units on one tile — the spawn/move invariant.
+        val state = stateOf(
+            combatant("d", Faction.PLAYER, Pos(2, 2), hp = 0),
+            combatant("h", Faction.ENEMY, Pos(2, 2), hp = 40),
+        )
+        val result = BattleOps.applyOp(state, BattleOp.SetHp("d", 50), emptyCtx)
+        assertEquals(state, result.state)
+        assertEquals(listOf(Event.HpSetRejected("d", PlacementReject.OCCUPIED)), result.events)
+    }
+
+    @Test
+    fun setHpReviveOntoFreeTileSucceeds() {
+        val state = stateOf(combatant("d", Faction.PLAYER, Pos(2, 2), hp = 0))
+        val result = BattleOps.applyOp(state, BattleOp.SetHp("d", 50), emptyCtx)
+        assertEquals(listOf(Event.HpSet("d", 50)), result.events)
+        assertTrue(result.state.unit("d").alive)
+        assertEquals(50, result.state.unit("d").hp)
+    }
+
+    @Test
+    fun setHpLiveUnitChangeOnOwnTileIsNotSelfBlocked() {
+        // A live unit's hp change on its own occupied tile is not a revive and must not self-block.
+        val state = stateOf(combatant("h", Faction.PLAYER, Pos(2, 2), hp = 40))
+        val result = BattleOps.applyOp(state, BattleOp.SetHp("h", 80), emptyCtx)
+        assertEquals(listOf(Event.HpSet("h", 80)), result.events)
+        assertEquals(80, result.state.unit("h").hp)
+    }
+
+    @Test
     fun setStatusAddsStatus() {
         val state = stateOf(combatant("h", Faction.PLAYER, Pos(0, 0)))
         val result = BattleOps.applyOp(state, BattleOp.SetStatus("h", "poison"), emptyCtx)
