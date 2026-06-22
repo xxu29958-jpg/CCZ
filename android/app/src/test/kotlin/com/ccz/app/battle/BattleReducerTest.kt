@@ -131,11 +131,27 @@ class BattleReducerTest {
     }
 
     @Test
-    fun endTurnFlipsActiveSideAndAdvancesTurn() {
+    fun endTurnRunsTheEnemyTurnAndReturnsControlToThePlayer() {
         val ui = start()
         val after = reducer.endTurn(ui)
-        assertEquals(Faction.ENEMY, after.state.active)
-        assertEquals(ui.state.turn + 1, after.state.turn)
+        // endTurn now drives the whole enemy turn: player ends (→ENEMY), the AI acts, then ENEMY ends
+        // (→PLAYER). Control returns to the player and the turn counter advanced for both end-turns.
+        assertEquals("control returns to the player", Faction.PLAYER, after.state.active)
+        assertEquals("both sides' end-turns advanced the counter", ui.state.turn + 2, after.state.turn)
+    }
+
+    @Test
+    fun theEnemyTakesItsTurnAutomaticallyOnEndTurn() {
+        val ui = start()
+        val after = reducer.endTurn(ui)
+        val enemyMoved = after.state.units.values.any {
+            it.faction == Faction.ENEMY && it.pos != ui.state.units.getValue(it.id).pos
+        }
+        val playerHurt = after.state.units.values.any {
+            it.faction == Faction.PLAYER && it.hp < ui.state.units.getValue(it.id).hp
+        }
+        assertTrue("the enemy advanced or attacked during its auto-driven turn", enemyMoved || playerHurt)
+        assertEquals("the enemy turn completed and control returned to the player", Faction.PLAYER, after.state.active)
     }
 
     @Test
