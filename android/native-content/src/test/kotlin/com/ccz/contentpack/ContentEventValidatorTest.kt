@@ -187,8 +187,32 @@ class ContentEventValidatorTest {
         assertEquals(emptyList(), ContentValidator.validate(content))
     }
 
-    private fun trig(cond: TriggerCondition): BattleTrigger =
-        BattleTrigger(id = "t1", whenCondition = cond, actions = emptyList())
+    @Test
+    fun duplicateTriggerIdFailClosed() {
+        val content = sScriptWith(
+            mid = listOf(
+                trig(TriggerCondition.TurnStart(1), id = "dup"),
+                trig(TriggerCondition.TurnStart(2), id = "dup"),
+            ),
+        )
+
+        assertTrue(ContentValidator.validate(content).any { it.message.contains("duplicate trigger id: dup") })
+    }
+
+    @Test
+    fun uniqueTriggerIdsValidate() {
+        val content = sScriptWith(
+            mid = listOf(
+                trig(TriggerCondition.TurnStart(1), id = "t1"),
+                trig(TriggerCondition.TurnStart(2), id = "t2"),
+            ),
+        )
+
+        assertEquals(emptyList(), ContentValidator.validate(content))
+    }
+
+    private fun trig(cond: TriggerCondition, id: String = "t1"): BattleTrigger =
+        BattleTrigger(id = id, whenCondition = cond, actions = emptyList())
 
     private fun sScriptWith(
         win: List<WinLoseCondition> = emptyList(),
