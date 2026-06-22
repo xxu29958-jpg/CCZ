@@ -35,8 +35,9 @@ tasks.register("assertTestCountEqualsBaseline") {
 
 // Module dependency-direction gate — machine-enforces the high-cohesion/low-coupling 总纲
 // (GENERAL_ENGINEERING_RULES §Module Boundaries) for the inter-module DAG: game-core is the pure
-// authority core and may depend on NO other module; native-content / save-io / app may depend only
-// on game-core. The module set is read from settings.gradle.kts (the topology source of truth), so a
+// authority core and may depend on NO other module; native-content / save-io depend only on game-core,
+// and :app (the composition root) depends on native-content + game-core (app -> native-content ->
+// game-core, still acyclic and single-direction). The module set is read from settings.gradle.kts (the topology source of truth), so a
 // module added there but NOT registered in `allowed` fails closed ("unregistered module") rather than
 // being silently un-gated; a registered module whose build script declares an out-of-DAG project(":...")
 // edge — especially a reverse edge into game-core — also fails. Coverage boundary (honest): it
@@ -48,12 +49,16 @@ tasks.register("assertTestCountEqualsBaseline") {
 tasks.register("assertModuleDependencyDirection") {
     group = "verification"
     description = "Fails if a settings.gradle.kts module is unregistered or has a project(\":...\") edge " +
-        "violating the allowed native-content/save-io/app -> game-core DAG (game-core depends on nothing)."
+        "violating the allowed DAG: native-content/save-io -> game-core, app -> {game-core, native-content} " +
+        "(game-core depends on nothing)."
     val allowed = mapOf(
         "game-core" to emptySet<String>(),
         "native-content" to setOf("game-core"),
         "save-io" to setOf("game-core"),
-        "app" to setOf("game-core"),
+        // :app is the composition root — it loads + assembles the native-content campaign pack, so it
+        // may depend on native-content as well as game-core. The DAG stays acyclic and single-direction
+        // (app -> native-content -> game-core); game-core still depends on nothing. See ADR-0005.
+        "app" to setOf("game-core", "native-content"),
     )
     val settingsFile = file("settings.gradle.kts")
     val includeRe = Regex("""include\(["']:([\w-]+)["']\)""")
@@ -77,8 +82,8 @@ tasks.register("assertModuleDependencyDirection") {
             violations += "stale allowed entry '$stale' (no such module in settings.gradle.kts)"
         }
         check(violations.isEmpty()) {
-            "module dependency-direction violations (allowed DAG: native-content/save-io/app -> " +
-                "game-core; game-core depends on nothing): $violations"
+            "module dependency-direction violations (allowed DAG: native-content/save-io -> game-core, " +
+                "app -> {game-core, native-content}; game-core depends on nothing): $violations"
         }
         println("OK module dependency direction (${modules.size} modules from settings, DAG enforced)")
     }

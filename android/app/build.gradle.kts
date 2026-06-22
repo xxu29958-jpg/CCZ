@@ -56,7 +56,12 @@ detekt {
 }
 
 dependencies {
+    // :app is the composition root: it loads the native-content campaign pack and assembles it (via
+    // native-content's CampaignAssembler) into the game-core inputs it then renders. The DAG stays
+    // single-direction — app -> native-content -> game-core (game-core depends on nothing); the
+    // assertModuleDependencyDirection gate permits exactly this edge.
     implementation(project(":game-core"))
+    implementation(project(":native-content"))
 
     implementation(platform("androidx.compose:compose-bom:2026.05.00"))
     implementation("androidx.activity:activity-compose:1.13.0")

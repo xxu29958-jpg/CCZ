@@ -12,7 +12,7 @@
 
 | 项 | 说明 | 何时变 |
 |---|---|---|
-| 事件 placement op 的 `OUT_OF_BOUNDS`/`IMPASSABLE`：部署路径已 live，mid-battle 仍 dormant | `BattleOps.spawn`/`move` 的越界/不可通行校验仅在 `ScriptContext.map` 传入时生效（`OCCUPIED` 恒生效）。**`CampaignAssembler`（native-content）的部署路径现把 `BattleMap` 接进 `ScriptContext` → 这两类拒在内容驱动部署（`SScript.pre` 的 SpawnUnit）中转 live**（`CampaignAssemblerTest` 钉墙格 spawn 拒）。**仍 dormant**：① 旧 `BattleAssembler.scriptContext`（不传 map，硬编码种子用）；② mid-battle 脚本 spawn/move（触发器 `tick` 尚未接进 `:app` 运行时，生产不跑）。决策见 ADR-0004，`PlacementReject` KDoc 诚实标注。 | 余下两处随 mid-battle `tick` 接线 / 旧 `BattleAssembler` 退役转 live。 |
+| 事件 placement op 的 `OUT_OF_BOUNDS`/`IMPASSABLE`：部署路径已 live，mid-battle 仍 dormant | `BattleOps.spawn`/`move` 的越界/不可通行校验仅在 `ScriptContext.map` 传入时生效（`OCCUPIED` 恒生效）。**`CampaignAssembler`（native-content）的部署路径把 `BattleMap` 接进 `ScriptContext` → 这两类拒在内容驱动部署（`SScript.pre` 的 SpawnUnit）中转 live**（`CampaignAssemblerTest` 钉墙格 spawn 拒），且 PR2 起经 `:app` 的 `DemoBattle` 生效于运行时。**仍 dormant**：① 旧 `BattleAssembler.scriptContext`（不传 map，仅 `ContentSelfTest` 用）；② mid-battle 脚本 spawn/move（触发器 `tick` 尚未接进 `:app` 运行时，生产不跑）。决策见 ADR-0004，`PlacementReject` KDoc 诚实标注。 | 余下两处随 mid-battle `tick` 接线 / 旧 `BattleAssembler` 退役转 live。 |
 | loadout opt-in fail-closed | 配了 loadout 的单位只能用其内技能；未配的回退全技能表（向后兼容默认）。 | 内容驱动层为每个单位填 loadout 后，删 `legalSkills` 的 `?: skills.keys.toList()` 与 `loadoutAllows` 的 `?: return true`，转全严格（内聚触发器 ③，不要提前单做）。 |
 | 移动到自身格消耗「移动」 | 行动经济下 move-to-self 是合法的原地待命，且置 `moved`——之后仍可攻、但不可再移。 | 不变（Fire-Emblem 语义）。 |
 | 敌方击杀主将 → DEFEAT 现为 live | demo `lose=[ProtectAlive("guan")]` 此前 dormant（敌空转），敌方 AI（#56）落地后转 live。 | 已 live。 |
@@ -21,7 +21,7 @@
 
 | 项 | 说明 | 触发 / 前置 |
 |---|---|---|
-| **战役驱动层（content → 运行时）** | **装配引擎已落地**（`CampaignAssembler`，native-content，PR1）：`NativeContent` 包 → `BattleSetup`（`BattleContext` + 经 `TriggerRunner.applyPre` 部署的初始 `BattleState` + 入口 `SScript`），含 `MapDef`+terrain→`BattleMap`（含 `passable`）、`ClassDef`→`UnitClass`、`SkillDef`→`Skill`、loadout、`SScript.pre` SpawnUnit 部署（map 接线使越界/墙拒 live）。**DAG 决策已定**：`:app` 作组合根，加 `:app → :native-content` 边（`app → native-content → game-core` 无环）；ADR-0005。**剩余（PR2 +）**：把 `CampaignAssembler` 接进 `:app`（更新依赖方向门 `allowed`、`CampaignContent` 包替 `DemoBattle` 硬编码）+ 过场（R 剧本）转 content + 接 `SaveLoader`（战斗回放）/`ScenarioReplayer`（过场回放）。 | PR2：`:app` 组合根接线；后续片：cutscene→content、replay 接线。 |
+| **战役驱动层（content → 运行时）—— 战斗侧已闭环** | **战斗侧端到端落地**：`CampaignAssembler`（native-content，PR1）`NativeContent`包→`BattleSetup`（`BattleContext` + 经 `TriggerRunner.applyPre` 部署的初始 `BattleState` + 入口 `SScript`），含 `MapDef`+terrain→`BattleMap`（`passable`）、`ClassDef`→`UnitClass`、`SkillDef`→`Skill`、loadout、`SScript.pre` SpawnUnit 部署（map 接线使越界/墙拒 live）。**已接进 `:app`**（PR2，ADR-0005）：`:app → :native-content` 组合根边、`CampaignContent` demo 包、`DemoBattle` 重写为 `CampaignAssembler` 薄访问器（既有 reducer 测试转为对装配产物的端到端覆盖）。**剩余**：① 过场（R 剧本）仍 `DemoScenario` 硬编码——转 content 须先定 `Portrait` 非战斗说话人（如 `cao_cao`）的校验路径；② 接 `SaveLoader`（战斗回放，**S7 caveat** 见下行）/`ScenarioReplayer`（过场回放）；③ 从 JSON 资源经 `ContentJsonLoader` 装载（现 `CampaignContent` 是程序化 `NativeContent` 值，JSON 解码另有 `ContentJsonLoaderTest` 覆盖）；④ mid-battle 触发器 `tick` 接进 reducer（现 `Gameplay.submit` 不跑 `tick`，`SScript.mid` 不触发）。 | 后续片：cutscene→content（先定 Portrait 校验）、replay 接线、JSON 资源装载、mid-trigger tick。 |
 | **S7 driver caveat：`SaveLoader.load` 须传 script 表** | 建战役驱动层接 `SaveLoader.load` 时**必须**把已加载 content 的 script 表传进 `scripts`，否则带过场的 v2 存档全判 `CORRUPT_SCENARIO`（默认 `emptyMap` = 不可验即拒，fail-closed）。 | 战役驱动层接线时。 |
 
 ## P2 — 已知限制 / 体验毛刺（可排期）
