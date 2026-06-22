@@ -20,6 +20,11 @@ object ContentValidator {
 
         val indexes = ContentIndexes.from(content.tables)
         issues += validateUniqueIds(content.tables)
+        // Event scripts are addressed by id (manifest.entry, scenario-replay lookup) and the
+        // event validator builds diagnostic paths keyed on script id, so ids must be unique.
+        // They live on content.events (not ContentTables), so dedup them here directly.
+        issues += uniqueIds("events.sScripts", content.events.sScripts.map { it.id })
+        issues += uniqueIds("events.rScripts", content.events.rScripts.map { it.id })
         issues += validateUnits(content.tables, indexes)
         issues += validateClasses(content.tables, indexes)
         issues += validateItems(content.tables, indexes)

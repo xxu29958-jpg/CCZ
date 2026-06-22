@@ -1,5 +1,7 @@
 package com.ccz.contentpack
 
+import com.ccz.core.event.RScript
+import com.ccz.core.event.SScript
 import com.ccz.core.model.CombatStats
 import com.ccz.core.model.DamageKind
 import com.ccz.core.model.Faction
@@ -73,11 +75,39 @@ class ContentValidatorTest {
         assertEquals(emptyList(), ContentValidator.validate(content))
     }
 
+    @Test
+    fun duplicateSScriptIdFailClosed() {
+        val content = validContent(events = EventTables(sScripts = listOf(emptySScript("dup"), emptySScript("dup"))))
+
+        assertTrue(
+            ContentValidator.validate(content)
+                .any { it.path == "events.sScripts[1].id" && it.message.contains("duplicate id: dup") },
+        )
+    }
+
+    @Test
+    fun duplicateRScriptIdFailClosed() {
+        val content = validContent(events = EventTables(rScripts = listOf(RScript("dup", emptyList()), RScript("dup", emptyList()))))
+
+        assertTrue(
+            ContentValidator.validate(content)
+                .any { it.path == "events.rScripts[1].id" && it.message.contains("duplicate id: dup") },
+        )
+    }
+
+    @Test
+    fun blankScriptIdFailClosed() {
+        val content = validContent(events = EventTables(sScripts = listOf(emptySScript(""))))
+
+        assertTrue(ContentValidator.validate(content).any { it.path == "events.sScripts[0].id" && it.message.contains("id is blank") })
+    }
+
     private fun validContent(
         unit: UnitDef = unitDef(),
         map: MapDef = mapDef(),
         cls: ClassDef = classDef(),
         items: List<ItemDef> = emptyList(),
+        events: EventTables = EventTables(),
     ): NativeContent =
         NativeContent(
             manifest = ContentManifest(
@@ -95,7 +125,11 @@ class ContentValidatorTest {
                 items = items,
                 maps = listOf(map),
             ),
+            events = events,
         )
+
+    private fun emptySScript(id: String): SScript =
+        SScript(id = id, win = emptyList(), lose = emptyList(), pre = emptyList(), mid = emptyList(), post = emptyList())
 
     private fun classDef(terrainAffinity: Map<String, Int> = emptyMap()): ClassDef =
         ClassDef(
