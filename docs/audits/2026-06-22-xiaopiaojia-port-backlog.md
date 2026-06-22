@@ -14,11 +14,12 @@
 | **`RejectReason→phrase` 层** | #42 | `:app RejectPhrase.kt`，穷尽 when fail-closed（比 `errors.py` dict+fallback 更强：编译期强制） |
 | **detekt `ignoreSingleWhenExpression`** | #42 | `detekt.yml` 门细化（穷尽映射 when 不被圈复杂度误伤） |
 | **依赖方向门** | #44 | 根 gradle `assertModuleDependencyDirection`，模块集从 `settings.gradle.kts` 驱动 fail-closed，强制 `native-content/save-io/app → game-core` 单向 DAG；**把高内聚低耦合总纲从 `[review-only]` 升 `[machine-gated]`**。对抗审抓到初版 over-claim fail-closed（只扫硬编码模块）已修。 |
+| **文本/编码 lint 门** | #46 | 根 gradle `verifyTextEncoding`，扫 `git ls-files` 跟踪文件，强制 UTF-8 + `.ps1` BOM + 无 U+FFFD；`§Windows/PowerShell Rules` 升 `[machine-gated]`。对抗审抓 3 confirmed（fail-open 空扫描 / 非 ASCII 路径八进制转义 / `.ps1` 大小写）已修。 |
 
 ## 待移植（adapt-then-port，需改造适配引擎域；按优先级）
 
-1. ~~依赖方向门~~ **已落地（#44，见上「已移植」）** —— 高内聚低耦合总纲已升 `[machine-gated]`，兑现「规则要么有门要么诚实标注」元规则（"标杆 = 规则有牙"）。
-2. **文本/编码 lint 门**（P1，机器门）—— gradle `verifyTextEncoding`：UTF-8 有效性 + `.ps1` UTF-8-BOM + mojibake 标记扫描（CCZ 是 Windows + 中文文档，已有 `§Windows / PowerShell Rules` 但无机器门）。
+1. ~~依赖方向门~~ **已落地（#44，见上）** —— 高内聚低耦合总纲已升 `[machine-gated]`，兑现「规则要么有门要么诚实标注」元规则（"标杆 = 规则有牙"）。
+2. ~~文本/编码 lint 门~~ **已落地（#46，见上）** —— `verifyTextEncoding` 把 `§Windows/PowerShell Rules` 升 `[machine-gated]`。
 3. **依赖版本审计门**（P1，机器门）—— 禁 alpha/beta/rc/snapshot 进主线。**注意**：CCZ 已有 detekt alpha ADR 例外（`0003`），门必须尊重该豁免，否则自相矛盾。
 4. **per-slice report 习惯**（P1，doc）—— 缓解 `HANDOFF.md` 顶部 run-on（line 3 ~1800 字每轮重述全部 PR）。可做成 ship-slice 收尾产出或 `docs/reports/`。
 5. **`KNOWN_ISSUES.md` 分级 ledger**（P2，doc）—— P0/P1/P2 + design-contract-vs-defect 判定，收口现散在 handoff 的 dormant caveat / defer 项。
