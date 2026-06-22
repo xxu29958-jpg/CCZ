@@ -77,8 +77,11 @@ cd android
 
 ```powershell
 cd android
-.\gradlew.bat --no-daemon :game-core:test :native-content:test :save-io:test :game-core:runSelfTest :native-content:runSelfTest :save-io:runSelfTest :game-core:detektMain :native-content:detektMain :save-io:detektMain :game-core:detektTest :native-content:detektTest :save-io:detektTest assertTestCountEqualsBaseline :app:detektGrayDebug :app:detektGrayDebugUnitTest :app:lintGrayDebug :app:assertAndroidTestCountEqualsBaseline :app:assembleGrayRelease
+.\gradlew.bat --no-daemon :game-core:test :native-content:test :save-io:test :game-core:runSelfTest :native-content:runSelfTest :save-io:runSelfTest :game-core:detektMain :native-content:detektMain :save-io:detektMain :game-core:detektTest :native-content:detektTest :save-io:detektTest assertTestCountEqualsBaseline :app:detektGrayDebug :app:detektGrayDebugUnitTest :app:testGrayDebugUnitTest :app:lintGrayDebug :app:assertAndroidTestCountEqualsBaseline :app:assembleGrayRelease
 ```
+
+`:app:testGrayDebugUnitTest` actually runs the `:app` JVM unit tests (e.g. `BattleReducerTest`);
+`:app:assertAndroidTestCountEqualsBaseline` only counts `@Test` methods, so both are needed.
 
 ## Android SDK Tools
 

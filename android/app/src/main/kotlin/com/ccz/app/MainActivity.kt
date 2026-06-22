@@ -3,22 +3,23 @@ package com.ccz.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import com.ccz.core.battle.BattleRules
+import com.ccz.app.battle.BattleReducer
+import com.ccz.app.battle.BattleScreen
+import com.ccz.app.battle.DemoBattle
 
 /**
- * Minimal app shell. The presentation layer holds no combat authority: it reads
- * already-decided values from game-core (here, the rules version) and renders them —
- * it never computes damage, mutates battle state, consumes RNG, or decides outcomes.
- * Rendering map/units, input -> command (via Gameplay.submit), and the event-driven
- * presentation layer arrive in later slices.
+ * App shell. The presentation layer holds no combat authority: it renders the battle
+ * state game-core decides and forwards taps as commands through [BattleReducer], which
+ * is the only thing that talks to game-core (Gameplay.submit / legalDestinations). The
+ * app never computes damage, mutates battle state, consumes RNG, or decides outcomes.
+ * The battle here runs off a hardcoded [DemoBattle] seed until the content-fed driver
+ * layer lands; attack targeting and event-driven cutscenes arrive in later slices.
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,7 +27,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    ShellScreen(rulesVersion = BattleRules.RULES_VERSION)
+                    BattleHost()
                 }
             }
         }
@@ -34,8 +35,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun ShellScreen(rulesVersion: Int) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = "CCZ Tactics Engine — game-core rules v$rulesVersion")
-    }
+private fun BattleHost() {
+    val context = remember { DemoBattle.context() }
+    val reducer = remember { BattleReducer(context) }
+    val initial = remember { reducer.initial(DemoBattle.initialState()) }
+    BattleScreen(map = context.map, reducer = reducer, initial = initial)
 }
