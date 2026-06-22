@@ -4,6 +4,8 @@ import com.ccz.core.battle.BattleContext
 import com.ccz.core.battle.BattleMap
 import com.ccz.core.battle.BattleState
 import com.ccz.core.battle.MapTile
+import com.ccz.core.event.SScript
+import com.ccz.core.event.WinLoseCondition
 import com.ccz.core.model.CombatIdentity
 import com.ccz.core.model.CombatRates
 import com.ccz.core.model.CombatStats
@@ -34,6 +36,22 @@ object DemoBattle {
 
     fun initialState(): BattleState =
         BattleState(units = units().associateBy { it.id }, turn = 1, active = Faction.PLAYER, rngState = 1L)
+
+    /**
+     * The win/lose script the battle is judged by: rout every enemy to win, lose if the protagonist
+     * (Guan, the classic 主将阵亡 = 失败 rule) falls. Win is reachable in the demo today by killing both
+     * foes; the lose path is wired but DORMANT until enemy AI lands — the idle enemy never strikes Guan,
+     * so DEFEAT cannot trigger yet (honest: the rule is configured, the trigger is not). pre/mid/post are
+     * empty — no scripted triggers in the hardcoded demo.
+     */
+    fun script(): SScript = SScript(
+        id = "demo_battle",
+        win = listOf(WinLoseCondition.AnnihilateEnemies),
+        lose = listOf(WinLoseCondition.ProtectAlive("guan")),
+        pre = emptyList(),
+        mid = emptyList(),
+        post = emptyList(),
+    )
 
     private fun demoMap(): BattleMap {
         val rows = (0 until HEIGHT).map { y -> (0 until WIDTH).map { x -> tileAt(x, y) } }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -18,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ccz.core.battle.BattleMap
+import com.ccz.core.battle.BattleOutcome
 
 /**
  * Top-level battle UI. Holds the rendered [BattleUiState] and routes every input through
@@ -29,6 +31,7 @@ import com.ccz.core.battle.BattleMap
 fun BattleScreen(map: BattleMap, reducer: BattleReducer, initial: BattleUiState, skillLabel: (String) -> String) {
     var ui by remember { mutableStateOf(initial) }
     Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+        OutcomeBanner(outcome = ui.outcome)
         Hud(ui = ui, onEndTurn = { ui = reducer.endTurn(ui) })
         Spacer(modifier = Modifier.height(12.dp))
         SkillBar(ui = ui, skillLabel = skillLabel, onSelectSkill = { ui = reducer.selectSkill(ui, it) })
@@ -36,6 +39,13 @@ fun BattleScreen(map: BattleMap, reducer: BattleReducer, initial: BattleUiState,
         Spacer(modifier = Modifier.height(12.dp))
         EventLog(log = ui.log)
     }
+}
+
+/** Victory/defeat banner; renders nothing while the battle is ongoing. */
+@Composable
+private fun OutcomeBanner(outcome: BattleOutcome) {
+    if (outcome == BattleOutcome.ONGOING) return
+    Text(text = verdictBanner(outcome), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 12.dp))
 }
 
 @Composable

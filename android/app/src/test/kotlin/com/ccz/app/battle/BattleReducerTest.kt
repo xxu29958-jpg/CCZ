@@ -1,12 +1,15 @@
 package com.ccz.app.battle
 
+import com.ccz.core.battle.BattleOutcome
 import com.ccz.core.battle.BattleState
+import com.ccz.core.battle.Gameplay
 import com.ccz.core.model.Combatant
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -18,12 +21,54 @@ import org.junit.Test
  */
 class BattleReducerTest {
     private val context = DemoBattle.context()
-    private val reducer = BattleReducer(context)
+    private val script = DemoBattle.script()
+    private val reducer = BattleReducer(context, script)
 
     private fun start(): BattleUiState = reducer.initial(DemoBattle.initialState())
     private fun playerUnit(state: BattleState): Combatant = state.units.values.first { it.faction == Faction.PLAYER }
     private fun enemyUnit(state: BattleState): Combatant = state.units.values.first { it.faction == Faction.ENEMY }
     private fun select(unitId: String): BattleUiState = reducer.tapTile(start(), start().state.units.getValue(unitId).pos)
+
+    /** A copy of [state] with the named units reduced to 0 hp (dead), to drive win/lose without RNG. */
+    private fun withDead(state: BattleState, vararg ids: String): BattleState =
+        state.copy(units = state.units.mapValues { (id, u) -> if (id in ids) u.copy(vitals = u.vitals.copy(hp = 0)) else u })
+
+    @Test
+    fun freshBattleIsOngoing() {
+        assertEquals(BattleOutcome.ONGOING, start().outcome)
+    }
+
+    @Test
+    fun routingEveryEnemySurfacesVictory() {
+        // AnnihilateEnemies: both foes down → VICTORY (no RNG — outcome reads unit aliveness).
+        val ui = reducer.initial(withDead(DemoBattle.initialState(), "foe", "foe2"))
+        assertEquals(BattleOutcome.VICTORY, ui.outcome)
+    }
+
+    @Test
+    fun protagonistDownSurfacesDefeat() {
+        // ProtectAlive("guan") in the lose list: the 主将 falling decides defeat (dormant until enemy AI).
+        val ui = reducer.initial(withDead(DemoBattle.initialState(), "guan"))
+        assertEquals(BattleOutcome.DEFEAT, ui.outcome)
+    }
+
+    @Test
+    fun aDecidedBattleIgnoresFurtherInput() {
+        val won = reducer.initial(withDead(DemoBattle.initialState(), "foe", "foe2"))
+        val guanPos = won.state.units.getValue("guan").pos
+        assertSame("a finished battle is terminal — taps do nothing", won, reducer.tapTile(won, guanPos))
+        assertSame(won, reducer.endTurn(won))
+        assertSame(won, reducer.selectSkill(won, "strike"))
+    }
+
+    @Test
+    fun outcomeStaysInSyncWithStateAfterAnAcceptedCommand() {
+        // After any accepted command the reducer's outcome must equal the authority's verdict for the new
+        // state — proving it polls Gameplay.outcome rather than holding a stale or self-decided value.
+        val moved = reducer.endTurn(start())
+        assertEquals(Gameplay.outcome(moved.state, script), moved.outcome)
+        assertEquals(BattleOutcome.ONGOING, moved.outcome)
+    }
 
     @Test
     fun tappingFriendlyUnitSelectsItAndExposesDestinations() {
