@@ -6,6 +6,7 @@ import com.ccz.core.event.SScript
 import com.ccz.core.event.ScenarioOp
 import com.ccz.core.event.TriggerCondition
 import com.ccz.core.event.WinLoseCondition
+import com.ccz.core.model.Pos
 
 /**
  * Validates event reference integrity for S-scripts and R-scripts: units / items
@@ -13,12 +14,21 @@ import com.ccz.core.event.WinLoseCondition
  * content ids; an R-script's branch/choice jumps must target a label defined in the
  * same script (labels are unique), and a portrait must name a known unit.
  *
+ * It also fails closed on the value-domain floors that are unambiguous independent of
+ * any map or game-design choice: a percentage threshold ([TriggerCondition.HpBelow.pct])
+ * must lie in 0..100; a survive-N-turns objective ([WinLoseCondition.SurviveTurns]) must
+ * be >= 1; and every script-op coordinate (spawn / move / reach targets) must be
+ * non-negative (a negative tile is off-board regardless of map size — the upper bound
+ * against a concrete map stays a later, map-aware layer).
+ *
  * Note: the op set itself is whitelisted by Kotlin's sealed interfaces (an unknown
  * op cannot be constructed in memory); a string-keyed op whitelist only becomes
  * relevant at a future JSON decode boundary. This validator covers the reference
  * integrity that the type system does not.
  */
 internal object ContentEventValidator {
+    private const val PERCENT_MAX = 100
+
     fun validate(events: EventTables, unitIds: Set<String>, itemIds: Set<String>): List<ValidationIssue> =
         events.sScripts.flatMap { script(it, unitIds, itemIds) } +
             events.rScripts.flatMap { rScript(it, unitIds) }
@@ -37,12 +47,19 @@ internal object ContentEventValidator {
     private fun unit(path: String, id: String, unitIds: Set<String>): ValidationIssue? =
         if (id in unitIds) null else ValidationIssue(path, "unknown unit: $id")
 
+    /**
+     * Map-independent floor on a script-op coordinate: a negative tile is off-board for
+     * any map size. The upper bound against a concrete map stays a later, map-aware layer.
+     */
+    private fun pos(path: String, at: Pos): ValidationIssue? =
+        if (at.x >= 0 && at.y >= 0) null else ValidationIssue(path, "negative coordinate: (${at.x}, ${at.y})")
+
     private fun battleOp(id: String, op: BattleOp, unitIds: Set<String>, itemIds: Set<String>): List<ValidationIssue> {
         val path = "events.sScripts[$id]"
         return when (op) {
-            is BattleOp.SpawnUnit -> listOfNotNull(unit(path, op.unit, unitIds))
+            is BattleOp.SpawnUnit -> listOfNotNull(unit(path, op.unit, unitIds), pos(path, op.at))
             is BattleOp.RemoveUnit -> listOfNotNull(unit(path, op.unit, unitIds))
-            is BattleOp.MoveUnit -> listOfNotNull(unit(path, op.unit, unitIds))
+            is BattleOp.MoveUnit -> listOfNotNull(unit(path, op.unit, unitIds), pos(path, op.to))
             is BattleOp.SetHp -> listOfNotNull(unit(path, op.unit, unitIds))
             is BattleOp.SetStatus -> listOfNotNull(unit(path, op.unit, unitIds))
             is BattleOp.GiveItem -> listOfNotNull(
@@ -57,8 +74,11 @@ internal object ContentEventValidator {
         val path = "events.sScripts[$id].trigger"
         return when (cond) {
             is TriggerCondition.UnitDead -> listOfNotNull(unit(path, cond.unit, unitIds))
-            is TriggerCondition.UnitReach -> listOfNotNull(unit(path, cond.unit, unitIds))
-            is TriggerCondition.HpBelow -> listOfNotNull(unit(path, cond.unit, unitIds))
+            is TriggerCondition.UnitReach -> listOfNotNull(unit(path, cond.unit, unitIds), pos(path, cond.pos))
+            is TriggerCondition.HpBelow -> listOfNotNull(
+                unit(path, cond.unit, unitIds),
+                if (cond.pct in 0..PERCENT_MAX) null else ValidationIssue(path, "hp_below pct out of range: ${cond.pct}"),
+            )
             is TriggerCondition.TurnStart,
             is TriggerCondition.EnemyCountBelow,
             is TriggerCondition.VarEquals,
@@ -70,12 +90,12 @@ internal object ContentEventValidator {
         val path = "events.sScripts[$id].$side"
         return when (cond) {
             is WinLoseCondition.UnitDead -> listOfNotNull(unit(path, cond.unit, unitIds))
-            is WinLoseCondition.ReachTile -> listOfNotNull(unit(path, cond.unit, unitIds))
+            is WinLoseCondition.ReachTile -> listOfNotNull(unit(path, cond.unit, unitIds), pos(path, cond.pos))
             is WinLoseCondition.ProtectAlive -> listOfNotNull(unit(path, cond.unit, unitIds))
             is WinLoseCondition.DefeatUnit -> listOfNotNull(unit(path, cond.unit, unitIds))
-            WinLoseCondition.AnnihilateEnemies,
-            is WinLoseCondition.SurviveTurns,
-            -> emptyList()
+            is WinLoseCondition.SurviveTurns ->
+                if (cond.turns >= 1) emptyList() else listOf(ValidationIssue(path, "survive_turns must be >= 1: ${cond.turns}"))
+            WinLoseCondition.AnnihilateEnemies -> emptyList()
         }
     }
 

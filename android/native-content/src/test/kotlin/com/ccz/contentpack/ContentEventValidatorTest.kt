@@ -10,6 +10,7 @@ import com.ccz.core.event.TriggerCondition
 import com.ccz.core.event.WinLoseCondition
 import com.ccz.core.model.CombatStats
 import com.ccz.core.model.Faction
+import com.ccz.core.model.Pos
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -92,6 +93,76 @@ class ContentEventValidatorTest {
 
         assertEquals(emptyList(), ContentValidator.validate(content))
     }
+
+    @Test
+    fun hpBelowPctOutOfRangeFailClosed() {
+        val high = sScriptWith(mid = listOf(trig(TriggerCondition.HpBelow("zhaoyun", pct = 200))))
+        val low = sScriptWith(mid = listOf(trig(TriggerCondition.HpBelow("zhaoyun", pct = -1))))
+
+        assertTrue(ContentValidator.validate(high).any { it.message.contains("hp_below pct out of range: 200") })
+        assertTrue(ContentValidator.validate(low).any { it.message.contains("hp_below pct out of range: -1") })
+    }
+
+    @Test
+    fun hpBelowPctBoundariesValidate() {
+        val zero = sScriptWith(mid = listOf(trig(TriggerCondition.HpBelow("zhaoyun", pct = 0))))
+        val full = sScriptWith(mid = listOf(trig(TriggerCondition.HpBelow("zhaoyun", pct = 100))))
+
+        assertEquals(emptyList(), ContentValidator.validate(zero))
+        assertEquals(emptyList(), ContentValidator.validate(full))
+    }
+
+    @Test
+    fun surviveTurnsBelowOneFailClosed() {
+        val zero = sScriptWith(win = listOf(WinLoseCondition.SurviveTurns(0)))
+        val negative = sScriptWith(win = listOf(WinLoseCondition.SurviveTurns(-3)))
+
+        assertTrue(ContentValidator.validate(zero).any { it.message.contains("survive_turns must be >= 1: 0") })
+        assertTrue(ContentValidator.validate(negative).any { it.message.contains("survive_turns must be >= 1: -3") })
+    }
+
+    @Test
+    fun surviveTurnsAtLeastOneValidates() {
+        assertEquals(emptyList(), ContentValidator.validate(sScriptWith(win = listOf(WinLoseCondition.SurviveTurns(1)))))
+    }
+
+    @Test
+    fun negativeSpawnAndMoveCoordinatesFailClosed() {
+        val spawn = sScriptWith(pre = listOf(BattleOp.SpawnUnit("zhaoyun", at = Pos(-1, 0))))
+        val move = sScriptWith(pre = listOf(BattleOp.MoveUnit("zhaoyun", to = Pos(0, -2))))
+
+        assertTrue(ContentValidator.validate(spawn).any { it.message.contains("negative coordinate: (-1, 0)") })
+        assertTrue(ContentValidator.validate(move).any { it.message.contains("negative coordinate: (0, -2)") })
+    }
+
+    @Test
+    fun negativeTriggerAndWinLoseCoordinatesFailClosed() {
+        val reach = sScriptWith(mid = listOf(trig(TriggerCondition.UnitReach("zhaoyun", pos = Pos(-1, -1)))))
+        val tile = sScriptWith(win = listOf(WinLoseCondition.ReachTile("zhaoyun", pos = Pos(-5, 0))))
+
+        assertTrue(ContentValidator.validate(reach).any { it.message.contains("negative coordinate: (-1, -1)") })
+        assertTrue(ContentValidator.validate(tile).any { it.message.contains("negative coordinate: (-5, 0)") })
+    }
+
+    @Test
+    fun nonNegativeCoordinatesValidate() {
+        assertEquals(emptyList(), ContentValidator.validate(sScriptWith(pre = listOf(BattleOp.SpawnUnit("zhaoyun", at = Pos(0, 0))))))
+    }
+
+    private fun trig(cond: TriggerCondition): BattleTrigger =
+        BattleTrigger(id = "t1", whenCondition = cond, actions = emptyList())
+
+    private fun sScriptWith(
+        win: List<WinLoseCondition> = emptyList(),
+        lose: List<WinLoseCondition> = emptyList(),
+        pre: List<BattleOp> = emptyList(),
+        mid: List<BattleTrigger> = emptyList(),
+        post: List<BattleOp> = emptyList(),
+    ): NativeContent =
+        contentWith(
+            events = EventTables(sScripts = listOf(SScript("s1", win, lose, pre, mid, post))),
+            items = emptyList(),
+        )
 
     private fun rScriptContent(vararg ops: ScenarioOp): NativeContent =
         contentWith(events = EventTables(rScripts = listOf(RScript(id = "r1", ops = ops.toList()))), items = emptyList())
