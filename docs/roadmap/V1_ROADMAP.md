@@ -35,8 +35,12 @@
   scenario authority in the view layer. `MainActivity` runs the intro cutscene then hands off to battle.
 - S pre/mid/post triggers. **[engine done]** `TriggerRunner` (pre/tick/post) fires mid-triggers
   (`TriggerConditions`, `once` tracked) and runs `BattleOps` (all 9 battle ops); pure, no RNG.
-- Win/lose conditions. **[engine done]** `WinLose.evaluate/settle` decides `BattleOutcome` from
-  the S-script win/lose lists and emits `Event.BattleEnded`; `tick` settles after firing triggers.
+- Win/lose conditions. **[engine done + presentation done]** `WinLose.evaluate/settle` decides
+  `BattleOutcome` from the S-script win/lose lists and emits `Event.BattleEnded`; `tick` settles after
+  firing triggers. `:app` surfaces the verdict via the read-only `Gameplay.outcome(state, script)` query
+  (polling `evaluate`), shows a victory/defeat banner, and freezes input once decided — so a player
+  command can now reach VICTORY. The demo's DEFEAT path (`ProtectAlive` the protagonist) is wired but
+  dormant until enemy AI exists to threaten it.
 
 ## P4 Converter Sample
 
