@@ -22,7 +22,10 @@
   `CommandValidator` in `game-core` validate move range / path / range / aliveness / turn ownership and
   gate the `Resolver`; `:app` `BattleReducer` routes taps to `Move` / `Attack` / `EndTurn` through
   `Gameplay` (read-only `legalDestinations` / `legalTargets` / `legalSkills` for highlighting), holding
-  no combat authority (#32/#33/#37).
+  no combat authority (#32/#33/#37). A Fire-Emblem action economy is enforced (#54): each unit may move
+  once then act once (Attack or `Wait`) per turn — move-then-attack allowed, double-move/double-act
+  rejected, cleared on `EndTurn`. This is the prerequisite for enemy AI (a turn loop needs a per-unit
+  budget to terminate).
 - Emit events and drive presentation from events. **[done]** `effectsOf` projects the authority's
   `Event` stream into floating Damaged / Missed / Defeated badges; the view layer never recomputes them (#35).
 
