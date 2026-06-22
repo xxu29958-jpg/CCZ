@@ -9,6 +9,7 @@ import com.ccz.contentpack.MapSize
 import com.ccz.contentpack.RangeDef
 import com.ccz.contentpack.SkillDef
 import com.ccz.contentpack.SkillUse
+import com.ccz.contentpack.TerrainBonuses
 import com.ccz.contentpack.TerrainDef
 import com.ccz.contentpack.UnitAssets
 import com.ccz.contentpack.UnitDef
@@ -62,9 +63,8 @@ internal fun toTerrain(dto: TerrainDto): TerrainDef =
         id = dto.id,
         name = dto.name,
         moveCost = dto.moveCost,
-        defBonus = dto.defBonus,
-        avoidBonus = dto.avoidBonus,
-        heal = dto.heal,
+        passable = dto.passable,
+        bonuses = TerrainBonuses(dto.bonuses.defBonus, dto.bonuses.avoidBonus, dto.bonuses.heal),
     )
 
 internal fun toSkill(index: Int, dto: SkillDto): SkillDef =

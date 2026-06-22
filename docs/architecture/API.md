@@ -76,6 +76,16 @@ battle's pre/post op lists. All of this is pure and deterministic (no RNG).
 native-content's `BattleAssembler` from validated `UnitDef`s — full-HP `Combatant` templates keyed
 by unit id, with a sentinel position the spawn op overwrites when it places the unit on the board.
 
+`CampaignAssembler.assemble(content, battleScriptId, mapId, seed)` (native-content) turns a validated
+`NativeContent` pack into a `BattleSetup(context, initialState, script)` — the content-driven path that
+replaces hardcoded battle seeds. It maps tables onto engine inputs (terrain+`MapDef` → `BattleMap` with
+per-tile `passable`, `ClassDef` → `UnitClass`, `SkillDef` → `Skill`, unit loadouts → the loadout table)
+and **deploys** the opening roster by running the script's `pre` SpawnUnit ops through `TriggerRunner.applyPre`
+over the `BattleAssembler` reserves, with the `BattleMap` threaded into the `ScriptContext` so deployment
+placement honors occupancy *and* bounds/passability. Fail-closed: a missing script/map id, an unknown
+terrain id, or a surfaced placement rejection throws `CampaignAssemblyException` rather than yielding a
+half-built battle.
+
 `ScenarioRunner.run(rScript, vars, choices)` interprets an R-script (cutscene) deterministically:
 control-flow ops (`Label`/`SetVar`/`Branch`) are consumed to evolve variables and the program counter;
 presentation ops (Dialogue/Portrait/Wait/SceneTransition/PlayBgm/Fade) are emitted in order into

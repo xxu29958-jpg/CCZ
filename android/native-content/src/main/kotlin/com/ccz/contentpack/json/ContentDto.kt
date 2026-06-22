@@ -108,6 +108,12 @@ internal data class TerrainDto(
     val id: String,
     val name: String,
     val moveCost: Int,
+    val passable: Boolean = true,
+    val bonuses: TerrainBonusesDto = TerrainBonusesDto(),
+)
+
+@Serializable
+internal data class TerrainBonusesDto(
     val defBonus: Int = 0,
     val avoidBonus: Int = 0,
     val heal: Int = 0,

@@ -97,6 +97,16 @@ data class TerrainDef(
     val id: String,
     val name: String,
     val moveCost: Int,
+    // Whether a unit may enter the tile at all. False models a wall / blocked tile; the assembler
+    // carries it straight onto the engine's MapTile.passable, which gates both movement reachability
+    // and op-driven placement. Defaults true (an ordinary terrain is passable) so existing packs and
+    // v1 saves that predate the field decode unchanged.
+    val passable: Boolean = true,
+    val bonuses: TerrainBonuses = TerrainBonuses(),
+)
+
+/** Combat modifiers a tile grants its occupant; content metadata not yet read by game-core. */
+data class TerrainBonuses(
     val defBonus: Int = 0,
     val avoidBonus: Int = 0,
     val heal: Int = 0,
