@@ -15,12 +15,13 @@
 | **detekt `ignoreSingleWhenExpression`** | #42 | `detekt.yml` 门细化（穷尽映射 when 不被圈复杂度误伤） |
 | **依赖方向门** | #44 | 根 gradle `assertModuleDependencyDirection`，模块集从 `settings.gradle.kts` 驱动 fail-closed，强制 `native-content/save-io/app → game-core` 单向 DAG；**把高内聚低耦合总纲从 `[review-only]` 升 `[machine-gated]`**。对抗审抓到初版 over-claim fail-closed（只扫硬编码模块）已修。 |
 | **文本/编码 lint 门** | #46 | 根 gradle `verifyTextEncoding`，扫 `git ls-files` 跟踪文件，强制 UTF-8 + `.ps1` BOM + 无 U+FFFD；`§Windows/PowerShell Rules` 升 `[machine-gated]`。对抗审抓 3 confirmed（fail-open 空扫描 / 非 ASCII 路径八进制转义 / `.ps1` 大小写）已修。 |
+| **依赖版本审计门** | #48 | 根 gradle `assertStableDependencyVersions`，扫所有构建脚本（root + settings + 各 settings 登记模块 `build.gradle.kts`，模块集从 settings 读 fail-closed）+ wrapper `distributionUrl` 的版本字面量（plugin DSL / detekt toolVersion / Maven 坐标 / gradle 发行版），非纯数字点分且非 RELEASE/FINAL/GA 即判预发布 fail，除非精确版本串在 `adrSanctioned`（锁步 ADR-0003 detekt alpha 例外）。`GENERAL §Dependency Governance` 的「禁 alpha/beta/rc/snapshot」条升 `[machine-gated]`，尊重 ADR-0003 豁免。门含自扫描，注释示例刻意避开 regex（镜像依赖方向门 `...` 占位）。 |
 
 ## 待移植（adapt-then-port，需改造适配引擎域；按优先级）
 
 1. ~~依赖方向门~~ **已落地（#44，见上）** —— 高内聚低耦合总纲已升 `[machine-gated]`，兑现「规则要么有门要么诚实标注」元规则（"标杆 = 规则有牙"）。
 2. ~~文本/编码 lint 门~~ **已落地（#46，见上）** —— `verifyTextEncoding` 把 `§Windows/PowerShell Rules` 升 `[machine-gated]`。
-3. **依赖版本审计门**（P1，机器门）—— 禁 alpha/beta/rc/snapshot 进主线。**注意**：CCZ 已有 detekt alpha ADR 例外（`0003`），门必须尊重该豁免，否则自相矛盾。
+3. ~~依赖版本审计门~~ **已落地（#48，见上）** —— `assertStableDependencyVersions` 禁 alpha/beta/rc/snapshot 进主线，`adrSanctioned` 白名单尊重 detekt alpha ADR-0003 豁免（锁步：升级被豁免预发布须同 diff 改 ADR + 白名单），把 `§Dependency Governance` 禁预发布条升 `[machine-gated]`。
 4. **per-slice report 习惯**（P1，doc）—— 缓解 `HANDOFF.md` 顶部 run-on（line 3 ~1800 字每轮重述全部 PR）。可做成 ship-slice 收尾产出或 `docs/reports/`。
 5. **`KNOWN_ISSUES.md` 分级 ledger**（P2，doc）—— P0/P1/P2 + design-contract-vs-defect 判定，收口现散在 handoff 的 dormant caveat / defer 项。
 6. **rollback runbook 具体步骤**（P2，doc）—— 触发器**已 fire**（`:save-io` 存档已落地）：补 `docs/runbook/` 带编号恢复步骤 + 风险边界，不只是原则。

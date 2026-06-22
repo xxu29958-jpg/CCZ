@@ -50,6 +50,7 @@ jobs:
           :game-core:detektMain :native-content:detektMain :save-io:detektMain
           :game-core:detektTest :native-content:detektTest :save-io:detektTest
           assertTestCountEqualsBaseline assertModuleDependencyDirection verifyTextEncoding
+          assertStableDependencyVersions
 
       - name: Upload detekt reports
         if: always()
