@@ -30,6 +30,7 @@ sealed interface Event {
     data class MoveRejected(val unit: String, val reason: PlacementReject) : Event
     data class UnitRemoved(val unit: String) : Event
     data class HpSet(val unit: String, val hp: Int) : Event
+    data class HpSetRejected(val unit: String, val reason: PlacementReject) : Event
     data class StatusApplied(val unit: String, val status: String) : Event
     data class ItemGranted(val unit: String, val item: String) : Event
     data class VarSet(val name: String, val value: Int) : Event
@@ -40,15 +41,17 @@ sealed interface Event {
 enum class BattleOutcome { ONGOING, VICTORY, DEFEAT }
 
 /**
- * Why an op-driven SpawnUnit/MoveUnit could not place its unit onto a target tile;
- * the op is a fail-closed no-op (state untouched) that surfaces [Event.SpawnRejected]
- * / [Event.MoveRejected] so the presentation layer can see why the unit did not move
- * instead of a unit silently stacking on an occupied tile or sliding off the board.
+ * Why an op-driven placement could not put its unit onto a target tile; the op is a
+ * fail-closed no-op (state untouched) that surfaces [Event.SpawnRejected] /
+ * [Event.MoveRejected] / [Event.HpSetRejected] so the presentation layer can see why
+ * the unit did not move instead of a unit silently stacking on an occupied tile or
+ * sliding off the board. A SetHp that revives a dead unit (raising it above 0 onto the
+ * tile it retained while dead) is a placement too, so it honors the same invariant.
  * [OCCUPIED] is always enforced (occupancy derives from state); [OUT_OF_BOUNDS] and
  * [IMPASSABLE] fire only when a [ScriptContext.map] is supplied, which the
  * content-assembly path does not yet thread in (it arrives with the battle driver
  * layer), so those two are dormant in production today. [NO_TEMPLATE] is spawn-only
- * (MoveUnit acts on a unit already on the board), so a MoveRejected never carries it.
+ * (MoveUnit / SetHp act on a unit already on the board), so only a SpawnRejected carries it.
  */
 enum class PlacementReject { NO_TEMPLATE, OUT_OF_BOUNDS, IMPASSABLE, OCCUPIED }
 

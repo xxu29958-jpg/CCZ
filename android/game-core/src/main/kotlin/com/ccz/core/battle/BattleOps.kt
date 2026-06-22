@@ -42,7 +42,7 @@ internal object BattleOps {
         is BattleOp.SpawnUnit -> spawn(state, op, ctx)
         is BattleOp.RemoveUnit -> remove(state, op.unit)
         is BattleOp.MoveUnit -> move(state, op, ctx)
-        is BattleOp.SetHp -> setHp(state, op)
+        is BattleOp.SetHp -> setHp(state, op, ctx)
         is BattleOp.SetStatus -> setStatus(state, op)
         is BattleOp.GiveItem -> Resolution(state, listOf(Event.ItemGranted(op.to, op.item)))
         BattleOp.ForceWin -> endBattle(state, BattleOutcome.VICTORY)
@@ -91,9 +91,18 @@ internal object BattleOps {
             Resolution(state, emptyList())
         }
 
-    private fun setHp(state: BattleState, op: BattleOp.SetHp): Resolution {
+    private fun setHp(state: BattleState, op: BattleOp.SetHp, ctx: ScriptContext): Resolution {
         val unit = state.units[op.unit] ?: return Resolution(state, emptyList())
         val hp = op.hp.coerceIn(0, unit.hpMax)
+        // A revive (a currently-dead unit raised above 0) re-enters occupancy at the tile it
+        // retained while dead, which another living unit may have moved onto. Honor the same
+        // single-occupant invariant spawn/move enforce instead of fabricating two living units
+        // on one tile. Only the dead->alive edge is gated; ordinary hp changes on a live unit
+        // must not self-block (excludeUnit mirrors CommandValidator/spawn).
+        if (!unit.alive && hp > 0) {
+            val blocked = blockedTile(state, unit.pos, excludeUnit = unit.id, map = ctx.map)
+            if (blocked != null) return Resolution(state, listOf(Event.HpSetRejected(unit.id, blocked)))
+        }
         val events = mutableListOf<Event>(Event.HpSet(unit.id, hp))
         if (hp <= 0) events += Event.Died(unit.id)
         return Resolution(state.withUnit(unit.withHp(hp)), events)
