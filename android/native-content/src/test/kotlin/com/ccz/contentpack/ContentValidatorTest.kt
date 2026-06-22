@@ -43,9 +43,41 @@ class ContentValidatorTest {
         assertTrue(issues.any { it.path == "maps[0].spawn_points.player[0]" })
     }
 
+    @Test
+    fun unknownEquipClassFailClosed() {
+        val content = validContent(items = listOf(itemDef(equipClass = "ghost_class")))
+
+        assertTrue(ContentValidator.validate(content).any { it.path == "items[0].equip_class" })
+    }
+
+    @Test
+    fun nullAndKnownEquipClassValidate() {
+        val content = validContent(
+            items = listOf(itemDef(id = "i1", equipClass = null), itemDef(id = "i2", equipClass = "cavalry")),
+        )
+
+        assertTrue(ContentValidator.validate(content).none { it.path.endsWith(".equip_class") })
+    }
+
+    @Test
+    fun unknownTerrainAffinityKeyFailClosed() {
+        val content = validContent(cls = classDef(terrainAffinity = mapOf("lava" to 1)))
+
+        assertTrue(ContentValidator.validate(content).any { it.path == "classes[0].terrain_affinity" })
+    }
+
+    @Test
+    fun knownTerrainAffinityKeyValidates() {
+        val content = validContent(cls = classDef(terrainAffinity = mapOf("plain" to 2)))
+
+        assertEquals(emptyList(), ContentValidator.validate(content))
+    }
+
     private fun validContent(
         unit: UnitDef = unitDef(),
         map: MapDef = mapDef(),
+        cls: ClassDef = classDef(),
+        items: List<ItemDef> = emptyList(),
     ): NativeContent =
         NativeContent(
             manifest = ContentManifest(
@@ -56,22 +88,25 @@ class ContentValidatorTest {
                 entry = "map_1",
             ),
             tables = ContentTables(
-                classes = listOf(classDef()),
+                classes = listOf(cls),
                 units = listOf(unit),
                 terrain = listOf(TerrainDef("plain", "Plain", moveCost = 1)),
                 skills = listOf(skillDef()),
-                items = emptyList(),
+                items = items,
                 maps = listOf(map),
             ),
         )
 
-    private fun classDef(): ClassDef =
+    private fun classDef(terrainAffinity: Map<String, Int> = emptyMap()): ClassDef =
         ClassDef(
             id = "cavalry",
             name = "Cavalry",
             movement = ClassMovement(moveType = "horse", move = 6),
-            combat = ClassCombat(skills = listOf("atk")),
+            combat = ClassCombat(skills = listOf("atk"), terrainAffinity = terrainAffinity),
         )
+
+    private fun itemDef(id: String = "sword", equipClass: String? = null): ItemDef =
+        ItemDef(id = id, name = id, type = "weapon", equipClass = equipClass)
 
     private fun unitDef(
         classId: String = "cavalry",
