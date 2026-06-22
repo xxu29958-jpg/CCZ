@@ -28,6 +28,7 @@ object ContentValidator {
         issues += validateUnits(content.tables, indexes)
         issues += validateClasses(content.tables, indexes)
         issues += validateItems(content.tables, indexes)
+        issues += validateNumericBounds(content.tables)
         issues += validateMaps(content.tables, indexes.terrainIds)
         issues += ContentEventValidator.validate(content.events, indexes.unitIds, indexes.itemIds)
 
@@ -80,6 +81,30 @@ object ContentValidator {
             val equipClass = item.equipClass
             if (equipClass != null && equipClass !in indexes.classIds) {
                 issues += ValidationIssue("items[$index].equip_class", "unknown class: $equipClass")
+            }
+        }
+        return issues
+    }
+
+    /**
+     * Content-layer mirrors of game-core's own value-domain invariants, so a malformed pack
+     * fails closed at content load instead of throwing deep in a future builder:
+     * - terrain move cost mirrors [com.ccz.core.battle.BattleMap]'s MapTile (>= 1): a cost
+     *   below 1 makes movement free/negative and breaks reachability accumulation.
+     * - skill range mirrors [com.ccz.core.model.RangeSpec] (min in 0..max): an inverted band
+     *   can never cover any distance; a negative min is out of domain. min == 0 is valid.
+     */
+    private fun validateNumericBounds(tables: ContentTables): List<ValidationIssue> {
+        val issues = mutableListOf<ValidationIssue>()
+        tables.terrain.forEachIndexed { index, terrain ->
+            if (terrain.moveCost < 1) {
+                issues += ValidationIssue("terrain[$index].move_cost", "move cost must be >= 1")
+            }
+        }
+        tables.skills.forEachIndexed { index, skill ->
+            val range = skill.use.range
+            if (range.min < 0 || range.min > range.max) {
+                issues += ValidationIssue("skills[$index].range", "min must be in 0..max")
             }
         }
         return issues

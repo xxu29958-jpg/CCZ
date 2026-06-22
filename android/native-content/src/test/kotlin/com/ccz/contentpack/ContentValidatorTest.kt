@@ -19,7 +19,7 @@ class ContentValidatorTest {
     @Test
     fun unknownReferencesFailClosed() {
         val content = validContent(
-            unit = unitDef(classId = "missing_class", skills = listOf("missing_skill")),
+            tables = defaultTables().copy(units = listOf(unitDef(classId = "missing_class", skills = listOf("missing_skill")))),
         )
 
         val issues = ContentValidator.validate(content)
@@ -38,7 +38,7 @@ class ContentValidatorTest {
             spawnPoints = mapOf("player" to listOf(Pos(2, 0))),
         )
 
-        val issues = ContentValidator.validate(validContent(map = badMap))
+        val issues = ContentValidator.validate(validContent(tables = defaultTables().copy(maps = listOf(badMap))))
 
         assertTrue(issues.any { it.path == "maps[0].tiles" })
         assertTrue(issues.any { it.path == "maps[0].tiles[0]" })
@@ -47,7 +47,7 @@ class ContentValidatorTest {
 
     @Test
     fun unknownEquipClassFailClosed() {
-        val content = validContent(items = listOf(itemDef(equipClass = "ghost_class")))
+        val content = validContent(tables = defaultTables().copy(items = listOf(itemDef(equipClass = "ghost_class"))))
 
         assertTrue(ContentValidator.validate(content).any { it.path == "items[0].equip_class" })
     }
@@ -55,7 +55,7 @@ class ContentValidatorTest {
     @Test
     fun nullAndKnownEquipClassValidate() {
         val content = validContent(
-            items = listOf(itemDef(id = "i1", equipClass = null), itemDef(id = "i2", equipClass = "cavalry")),
+            tables = defaultTables().copy(items = listOf(itemDef(id = "i1", equipClass = null), itemDef(id = "i2", equipClass = "cavalry"))),
         )
 
         assertTrue(ContentValidator.validate(content).none { it.path.endsWith(".equip_class") })
@@ -63,14 +63,14 @@ class ContentValidatorTest {
 
     @Test
     fun unknownTerrainAffinityKeyFailClosed() {
-        val content = validContent(cls = classDef(terrainAffinity = mapOf("lava" to 1)))
+        val content = validContent(tables = defaultTables().copy(classes = listOf(classDef(terrainAffinity = mapOf("lava" to 1)))))
 
         assertTrue(ContentValidator.validate(content).any { it.path == "classes[0].terrain_affinity" })
     }
 
     @Test
     fun knownTerrainAffinityKeyValidates() {
-        val content = validContent(cls = classDef(terrainAffinity = mapOf("plain" to 2)))
+        val content = validContent(tables = defaultTables().copy(classes = listOf(classDef(terrainAffinity = mapOf("plain" to 2)))))
 
         assertEquals(emptyList(), ContentValidator.validate(content))
     }
@@ -102,11 +102,35 @@ class ContentValidatorTest {
         assertTrue(ContentValidator.validate(content).any { it.path == "events.sScripts[0].id" && it.message.contains("id is blank") })
     }
 
+    @Test
+    fun terrainMoveCostBelowOneFailClosed() {
+        val zero = validContent(tables = defaultTables().copy(terrain = listOf(TerrainDef("plain", "Plain", moveCost = 0))))
+        val negative = validContent(tables = defaultTables().copy(terrain = listOf(TerrainDef("plain", "Plain", moveCost = -2))))
+
+        assertTrue(ContentValidator.validate(zero).any { it.path == "terrain[0].move_cost" })
+        assertTrue(ContentValidator.validate(negative).any { it.path == "terrain[0].move_cost" })
+    }
+
+    @Test
+    fun skillRangeInvertedOrNegativeFailClosed() {
+        val inverted = validContent(tables = defaultTables().copy(skills = listOf(skillDef(min = 5, max = 1))))
+        val negative = validContent(tables = defaultTables().copy(skills = listOf(skillDef(min = -1, max = 2))))
+
+        assertTrue(ContentValidator.validate(inverted).any { it.path == "skills[0].range" })
+        assertTrue(ContentValidator.validate(negative).any { it.path == "skills[0].range" })
+    }
+
+    @Test
+    fun zeroMinSkillRangeValidates() {
+        // min == 0 is a valid degenerate band (e.g. self/aura targeting) and must not be rejected.
+        val content = validContent(tables = defaultTables().copy(skills = listOf(skillDef(min = 0, max = 2))))
+        assertEquals(emptyList(), ContentValidator.validate(content))
+    }
+
+    // Override any table via defaultTables().copy(...) to keep the parameter list small
+    // (CCZ rule: bundle test knobs into the ContentTables value object, not loose params).
     private fun validContent(
-        unit: UnitDef = unitDef(),
-        map: MapDef = mapDef(),
-        cls: ClassDef = classDef(),
-        items: List<ItemDef> = emptyList(),
+        tables: ContentTables = defaultTables(),
         events: EventTables = EventTables(),
     ): NativeContent =
         NativeContent(
@@ -117,15 +141,18 @@ class ContentValidatorTest {
                 source = SourceInfo(mod = "sample_mod"),
                 entry = "map_1",
             ),
-            tables = ContentTables(
-                classes = listOf(cls),
-                units = listOf(unit),
-                terrain = listOf(TerrainDef("plain", "Plain", moveCost = 1)),
-                skills = listOf(skillDef()),
-                items = items,
-                maps = listOf(map),
-            ),
+            tables = tables,
             events = events,
+        )
+
+    private fun defaultTables(): ContentTables =
+        ContentTables(
+            classes = listOf(classDef()),
+            units = listOf(unitDef()),
+            terrain = listOf(TerrainDef("plain", "Plain", moveCost = 1)),
+            skills = listOf(skillDef()),
+            items = emptyList(),
+            maps = listOf(mapDef()),
         )
 
     private fun emptySScript(id: String): SScript =
@@ -152,13 +179,13 @@ class ContentValidatorTest {
             loadout = UnitLoadout(skills = skills),
         )
 
-    private fun skillDef(): SkillDef =
+    private fun skillDef(min: Int = 1, max: Int = 1): SkillDef =
         SkillDef(
             id = "atk",
             name = "Attack",
             kind = DamageKind.PHYSICAL,
             powerCoeff = 100,
-            use = SkillUse(range = RangeDef(min = 1, max = 1), area = "single", targeting = "enemy"),
+            use = SkillUse(range = RangeDef(min = min, max = max), area = "single", targeting = "enemy"),
         )
 
     private fun mapDef(): MapDef =
