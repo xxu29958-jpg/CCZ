@@ -11,6 +11,7 @@ enum class RejectReason {
     DESTINATION_OCCUPIED,
     OUT_OF_MOVE_RANGE,
     UNKNOWN_SKILL,
+    SKILL_NOT_IN_LOADOUT,
     TARGET_NOT_FOUND,
     TARGET_DEAD,
     SELF_TARGET,
@@ -59,6 +60,7 @@ object CommandValidator {
         if (!attacker.alive) return RejectReason.UNIT_DEAD
         if (!sameSide(attacker.faction, state.active)) return RejectReason.NOT_ACTIVE_FACTION
         val skill = context.skills[command.skill] ?: return RejectReason.UNKNOWN_SKILL
+        if (!context.loadoutAllows(command.attacker, command.skill)) return RejectReason.SKILL_NOT_IN_LOADOUT
         if (command.attacker == command.target) return RejectReason.SELF_TARGET
         val target = state.units[command.target] ?: return RejectReason.TARGET_NOT_FOUND
         if (!target.alive) return RejectReason.TARGET_DEAD

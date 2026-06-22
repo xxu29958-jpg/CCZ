@@ -17,10 +17,10 @@ import com.ccz.app.battle.DemoBattle
  * App shell. The presentation layer holds no combat authority: it renders the battle
  * state game-core decides and forwards taps as commands through [BattleReducer], which
  * is the only thing that talks to game-core (Gameplay.submit / legalDestinations /
- * legalTargets). The app never computes damage, decides range, mutates battle state,
- * consumes RNG, or decides outcomes. The battle here runs off a hardcoded [DemoBattle]
- * seed until the content-fed driver layer lands; event-driven cutscenes and a multi-skill
- * picker arrive in later slices.
+ * legalTargets / legalSkills). The app never computes damage, decides range, picks a unit's
+ * usable skills, mutates battle state, consumes RNG, or decides outcomes. The battle here runs
+ * off a hardcoded [DemoBattle] seed until the content-fed driver layer lands; event-driven
+ * cutscenes arrive in a later slice.
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,7 +38,12 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun BattleHost() {
     val context = remember { DemoBattle.context() }
-    val reducer = remember { BattleReducer(context, DemoBattle.BASIC_ATTACK) }
+    val reducer = remember { BattleReducer(context) }
     val initial = remember { reducer.initial(DemoBattle.initialState()) }
-    BattleScreen(map = context.map, reducer = reducer, initial = initial)
+    BattleScreen(
+        map = context.map,
+        reducer = reducer,
+        initial = initial,
+        skillLabel = { id -> context.skills[id]?.name ?: id },
+    )
 }

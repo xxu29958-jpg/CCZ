@@ -60,6 +60,7 @@ object Gameplay {
         if (!attacker.alive) return emptySet()
         if (!sameSide(attacker.faction, state.active)) return emptySet()
         val skill = context.skills[skillId] ?: return emptySet()
+        if (!context.loadoutAllows(attackerId, skillId)) return emptySet()
         return state.units.values
             .filter { target ->
                 target.alive &&
@@ -69,5 +70,23 @@ object Gameplay {
             }
             .map { it.id }
             .toSet()
+    }
+
+    /**
+     * Read-only query: the attack skills [attackerId] may choose from this turn, in a stable order,
+     * so the presentation layer can offer a skill picker without owning the loadout rule. A unit
+     * with a loadout configured gets that loadout, filtered to the skills the context actually
+     * defines (a loadout entry naming an unknown skill is dropped, fail-closed); a unit with no
+     * loadout entry — the unconstrained default — gets every id the skill table defines. Returns an
+     * empty list when the attacker is unknown, dead, or not on the active side, i.e. when it cannot
+     * attack at all right now. Listing a skill does not promise a target is in range for it; pair
+     * with [legalTargets] per skill to know which actually have something to hit.
+     */
+    fun legalSkills(state: BattleState, attackerId: String, context: BattleContext): List<String> {
+        val attacker = state.units[attackerId] ?: return emptyList()
+        if (!attacker.alive) return emptyList()
+        if (!sameSide(attacker.faction, state.active)) return emptyList()
+        val loadout = context.loadouts[attackerId] ?: context.skills.keys.toList()
+        return loadout.filter { it in context.skills }
     }
 }
