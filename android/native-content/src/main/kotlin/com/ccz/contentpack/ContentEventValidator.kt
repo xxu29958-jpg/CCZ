@@ -38,7 +38,16 @@ internal object ContentEventValidator {
         (script.pre + script.post + script.mid.flatMap { it.actions }).forEach {
             issues += battleOp(script.id, it, unitIds, itemIds)
         }
-        script.mid.forEach { issues += trigger(script.id, it.whenCondition, unitIds) }
+        val triggerIds = mutableSetOf<String>()
+        script.mid.forEach { t ->
+            // Mirror the R-script label dedup: trigger ids must be unique within a script
+            // because TriggerRunner keys `once` firing on the id (BattleProgress.firedTriggers),
+            // so a shared id would let one trigger permanently suppress another.
+            if (!triggerIds.add(t.id)) {
+                issues += ValidationIssue("events.sScripts[${script.id}].mid", "duplicate trigger id: ${t.id}")
+            }
+            issues += trigger(script.id, t.whenCondition, unitIds)
+        }
         script.win.forEach { issues += winLose(script.id, "win", it, unitIds) }
         script.lose.forEach { issues += winLose(script.id, "lose", it, unitIds) }
         return issues
