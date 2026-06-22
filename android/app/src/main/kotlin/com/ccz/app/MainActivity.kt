@@ -25,8 +25,10 @@ import com.ccz.app.scenario.ScenarioScreen
  * [BattleReducer] (Gameplay.submit / legalDestinations / legalTargets / legalSkills); for the cutscene it
  * is [ScenarioReducer] driving the deterministic ScenarioRunner. The app never computes damage, decides
  * range/legality, mutates state, consumes RNG, decides outcomes, or evolves scenario vars/branches — it
- * only draws the authority's output. The demo runs off hardcoded [DemoScenario] / [DemoBattle] seeds (an
- * intro cutscene then a battle) until the content-fed driver layer supplies real scripts.
+ * only draws the authority's output. The battle now runs off the content-driven [DemoBattle], which
+ * [com.ccz.contentpack.assembly.CampaignAssembler] assembles from the [com.ccz.app.battle.CampaignContent]
+ * native-content pack; the intro cutscene still runs off the hand-built [DemoScenario] seed pending a
+ * content path for non-combatant speakers.
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
