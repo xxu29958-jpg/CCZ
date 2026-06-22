@@ -123,7 +123,7 @@ class BattleReducer(private val context: BattleContext) {
             }
             // Defensive: EndTurn(state.active) is always legal, so this branch is unreachable by
             // construction today; kept fail-safe in case the active-side seam ever changes.
-            is Gameplay.Outcome.Rejected -> ui.copy(log = appendLog(ui.log, "End turn rejected: ${outcome.reason}"))
+            is Gameplay.Outcome.Rejected -> ui.copy(log = appendLog(ui.log, "End turn rejected: ${phraseOf(outcome.reason)}"))
         }
 
     private fun submitMove(ui: BattleUiState, unitId: String, to: Pos): BattleUiState =
@@ -133,7 +133,7 @@ class BattleReducer(private val context: BattleContext) {
                 clearSelection(ui).copy(state = next, log = appendLog(ui.log, describeMoves(outcome.resolution.events, next)))
             }
             is Gameplay.Outcome.Rejected ->
-                clearSelection(ui).copy(log = appendLog(ui.log, "Move rejected: ${outcome.reason}"))
+                clearSelection(ui).copy(log = appendLog(ui.log, "Move rejected: ${phraseOf(outcome.reason)}"))
         }
 
     private fun submitAttack(ui: BattleUiState, selection: Selection, targetId: String): BattleUiState {
@@ -150,7 +150,7 @@ class BattleReducer(private val context: BattleContext) {
                 )
             }
             is Gameplay.Outcome.Rejected ->
-                clearSelection(ui).copy(log = appendLog(ui.log, "Attack rejected: ${outcome.reason}"))
+                clearSelection(ui).copy(log = appendLog(ui.log, "Attack rejected: ${phraseOf(outcome.reason)}"))
         }
     }
 

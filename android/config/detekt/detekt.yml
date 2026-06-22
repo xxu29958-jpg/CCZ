@@ -20,6 +20,9 @@ complexity:
   CyclomaticComplexMethod:
     active: true
     allowedComplexity: 14
+    # 方法体仅为单个 when（穷尽枚举/sealed 映射或路由）不计圈复杂度：它宽而不深，认知复杂度极低，
+    # 拆开反而破坏内聚（一处映射劈成多处）。LargeClass/LongMethod 仍兜底过长方法。
+    ignoreSingleWhenExpression: true
   NestedBlockDepth:
     active: true
     allowedDepth: 4
