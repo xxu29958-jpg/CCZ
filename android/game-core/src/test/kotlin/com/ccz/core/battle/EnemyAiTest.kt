@@ -2,6 +2,7 @@ package com.ccz.core.battle
 
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
+import com.ccz.core.model.RangeSpec
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -63,6 +64,21 @@ class EnemyAiTest {
         )
         // Both foes are distance 1; the id tie-break picks "a".
         assertEquals(Command.Attack("e", "a", "atk"), EnemyAi.nextCommand(state, ctx))
+    }
+
+    @Test
+    fun aRangedUnitRepositionsToFireRatherThanIdling() {
+        // A bow (range 2-3) enemy adjacent to a foe (distance 1, inside its min range) cannot fire from
+        // where it stands; it should step to a tile within its range band, then attack — not Wait.
+        val bowCtx = contextOf(flat(6, 1), skills = skillsOf("bow", RangeSpec(2, 3)), loadouts = mapOf("e" to listOf("bow")))
+        val state = stateOf(
+            combatant("e", Faction.ENEMY, Pos(1, 0)),
+            combatant("p", Faction.PLAYER, Pos(0, 0)),
+            active = Faction.ENEMY,
+        )
+        val move = assertIs<Command.Move>(EnemyAi.nextCommand(state, bowCtx), "the archer repositions instead of idling")
+        val moved = assertIs<Gameplay.Outcome.Accepted>(Gameplay.submit(state, move, bowCtx)).resolution.state
+        assertTrue("p" in Gameplay.legalTargets(moved, "e", "bow", bowCtx), "after repositioning it can fire on the foe")
     }
 
     @Test
