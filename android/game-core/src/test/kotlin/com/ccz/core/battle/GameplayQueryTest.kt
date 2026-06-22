@@ -157,6 +157,7 @@ class GameplayQueryTest {
         val context = contextOf(flat(3, 3), skills = twoSkills) // no loadouts → unconstrained
         val live = stateOf(combatant("a", Faction.PLAYER, Pos(0, 0)))
         assertEquals(setOf("melee", "bow"), Gameplay.legalSkills(live, "a", context).toSet())
+        assertTrue(Gameplay.legalSkills(live, "ghost", context).isEmpty(), "an unknown unit can use no skill")
 
         val dead = stateOf(combatant("a", Faction.PLAYER, Pos(0, 0), hp = 0))
         assertTrue(Gameplay.legalSkills(dead, "a", context).isEmpty(), "a dead unit can use no skill")

@@ -43,9 +43,8 @@ object CommandValidator {
     }
 
     private fun checkMove(state: BattleState, command: Command.Move, context: BattleContext): RejectReason? {
-        val unit = state.units[command.unit] ?: return RejectReason.UNIT_NOT_FOUND
-        if (!unit.alive) return RejectReason.UNIT_DEAD
-        if (!sameSide(unit.faction, state.active)) return RejectReason.NOT_ACTIVE_FACTION
+        actorEligibility(state, command.unit, state.active)?.let { return it }
+        val unit = state.units.getValue(command.unit)
         val unitClass = context.classes[unit.classId] ?: return RejectReason.UNKNOWN_CLASS
         if (!context.map.inBounds(command.to)) return RejectReason.DESTINATION_OUT_OF_BOUNDS
         if (!context.map.tileAt(command.to).passable) return RejectReason.DESTINATION_IMPASSABLE
@@ -56,9 +55,8 @@ object CommandValidator {
     }
 
     private fun checkAttack(state: BattleState, command: Command.Attack, context: BattleContext): RejectReason? {
-        val attacker = state.units[command.attacker] ?: return RejectReason.UNIT_NOT_FOUND
-        if (!attacker.alive) return RejectReason.UNIT_DEAD
-        if (!sameSide(attacker.faction, state.active)) return RejectReason.NOT_ACTIVE_FACTION
+        actorEligibility(state, command.attacker, state.active)?.let { return it }
+        val attacker = state.units.getValue(command.attacker)
         val skill = context.skills[command.skill] ?: return RejectReason.UNKNOWN_SKILL
         if (!context.loadoutAllows(command.attacker, command.skill)) return RejectReason.SKILL_NOT_IN_LOADOUT
         if (command.attacker == command.target) return RejectReason.SELF_TARGET

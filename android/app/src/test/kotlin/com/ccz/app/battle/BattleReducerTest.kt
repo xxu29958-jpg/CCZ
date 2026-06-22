@@ -204,4 +204,15 @@ class BattleReducerTest {
         val ui = start()
         assertEquals("with nothing selected there is no skill to switch", ui, reducer.selectSkill(ui, "strike"))
     }
+
+    @Test
+    fun tappingATileHoldingOnlyADeadUnitSelectsNothing() {
+        val base = start()
+        val foe = base.state.units.getValue("foe")
+        // A defeated unit keeps its tile in state but no longer occupies it for selection (unitAt's
+        // alive filter); tapping that tile must not select the corpse.
+        val withDeadFoe = base.copy(state = base.state.withUnit(foe.withHp(0)))
+        val after = reducer.tapTile(withDeadFoe, foe.pos)
+        assertNull("a dead unit does not occupy its tile for selection", after.selection)
+    }
 }
