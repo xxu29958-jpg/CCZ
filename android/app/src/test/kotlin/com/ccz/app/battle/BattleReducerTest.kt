@@ -142,4 +142,40 @@ class BattleReducerTest {
         assertNull("selection clears after a rejected submit", after.selected)
         assertTrue("the rejection is surfaced in the log", after.log.any { it.contains("rejected") })
     }
+
+    @Test
+    fun attackingSurfacesADamagedEffectMatchingTheAuthoritysHpDrop() {
+        val ui = start()
+        val foeHpBefore = ui.state.units.getValue("foe").hp
+        val selected = reducer.tapTile(ui, ui.state.units.getValue("zhang").pos)
+        val attacked = reducer.tapTile(selected, selected.state.units.getValue("foe").pos)
+        val dealt = foeHpBefore - attacked.state.units.getValue("foe").hp
+        val damage = attacked.effects.filterIsInstance<BattleEffect.Damaged>().single { it.unit == "foe" }
+        assertEquals("the badge shows the authority's damage, not a recomputed number", dealt, damage.amount)
+    }
+
+    @Test
+    fun defeatingAUnitSurfacesADefeatedEffect() {
+        var ui = start()
+        // No per-unit action budget yet, so re-select and strike until the archer falls.
+        repeat(5) {
+            val selected = reducer.tapTile(ui, ui.state.units.getValue("zhang").pos)
+            ui = reducer.tapTile(selected, selected.state.units.getValue("foe").pos)
+        }
+        assertFalse("the archer is defeated after enough strikes", ui.state.units.getValue("foe").alive)
+        assertTrue(
+            "a KO badge is surfaced for the defeated unit",
+            ui.effects.any { it is BattleEffect.Defeated && it.unit == "foe" },
+        )
+    }
+
+    @Test
+    fun selectingAUnitClearsEffectsFromThePriorCommand() {
+        val selected = reducer.tapTile(start(), start().state.units.getValue("zhang").pos)
+        val attacked = reducer.tapTile(selected, selected.state.units.getValue("foe").pos)
+        assertTrue("precondition: the attack left effects to clear", attacked.effects.isNotEmpty())
+        val reselected = reducer.tapTile(attacked, attacked.state.units.getValue("guan").pos)
+        assertEquals("the new selection lands on guan", "guan", reselected.selected)
+        assertTrue("a fresh selection drops the prior command's badges", reselected.effects.isEmpty())
+    }
 }

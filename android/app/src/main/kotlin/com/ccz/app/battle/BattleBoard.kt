@@ -24,17 +24,22 @@ import com.ccz.core.model.Pos
 
 private val CELL_SIZE = 44.dp
 
+/** The mutually-exclusive highlight a tile can carry, derived from the snapshot. */
+private enum class CellMark { NONE, MOVE, SELECTED, TARGET }
+
 /** Everything needed to draw one grid cell, derived from the current snapshot. */
 private data class CellModel(
     val pos: Pos,
     val tile: MapTile,
     val unit: Combatant?,
-    val highlighted: Boolean,
-    val selected: Boolean,
-    val targetable: Boolean,
+    val mark: CellMark,
+    val effect: BattleEffect?,
 )
 
-/** Draws the static map plus units, selection ring, and the move highlights from state. */
+/**
+ * Draws the static map plus units, selection ring, the move/attack highlights, and the
+ * floating damage/miss/KO badges — all derived from the current snapshot, none recomputed.
+ */
 @Composable
 fun BattleBoard(map: BattleMap, ui: BattleUiState, onTapTile: (Pos) -> Unit) {
     Column {
@@ -63,6 +68,7 @@ private fun GridCell(cell: CellModel, onTap: (Pos) -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         cell.unit?.let { UnitMarker(it) }
+        cell.effect?.let { EffectBadge(effect = it, modifier = Modifier.align(Alignment.TopCenter)) }
     }
 }
 
@@ -74,38 +80,57 @@ private fun UnitMarker(unit: Combatant) {
     }
 }
 
+/** A floating badge translating one authority event (damage / miss / death) into a readout. */
+@Composable
+private fun EffectBadge(effect: BattleEffect, modifier: Modifier = Modifier) {
+    val (text, color) = when (effect) {
+        is BattleEffect.Damaged ->
+            ("−${effect.amount}" + (if (effect.crit) "!" else "") + (if (effect.combo) "+" else "")) to Color(0xFFB71C1C)
+        is BattleEffect.Missed -> "Miss" to Color(0xFF455A64)
+        is BattleEffect.Defeated -> "KO" to Color(0xFF7B1FA2)
+    }
+    Text(text = text, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = modifier)
+}
+
 private fun rowCells(map: BattleMap, ui: BattleUiState, y: Int): List<CellModel> =
     (0 until map.width).map { x -> cellAt(map, ui, Pos(x, y)) }
 
 private fun cellAt(map: BattleMap, ui: BattleUiState, pos: Pos): CellModel {
     val unit = ui.state.units.values.firstOrNull { it.alive && it.pos == pos }
+    val mark = when {
+        unit != null && unit.id == ui.selected -> CellMark.SELECTED
+        unit != null && unit.id in ui.targets -> CellMark.TARGET
+        pos in ui.destinations -> CellMark.MOVE
+        else -> CellMark.NONE
+    }
     return CellModel(
         pos = pos,
         tile = map.tileAt(pos),
         unit = unit,
-        highlighted = pos in ui.destinations,
-        selected = unit != null && unit.id == ui.selected,
-        targetable = unit != null && unit.id in ui.targets,
+        mark = mark,
+        // The latest effect anchored to whoever stands (or just fell) on this tile — a defeated
+        // unit keeps its tile in state, so its "KO" still lands here even though it stops rendering.
+        effect = ui.effects.lastOrNull { ui.state.units[it.unit]?.pos == pos },
     )
 }
 
 private fun tileColor(cell: CellModel): Color = when {
     !cell.tile.passable -> Color(0xFF37474F)
-    cell.targetable -> Color(0xFFEF9A9A)
-    cell.highlighted -> Color(0xFF9CCC65)
+    cell.mark == CellMark.TARGET -> Color(0xFFEF9A9A)
+    cell.mark == CellMark.MOVE || cell.mark == CellMark.SELECTED -> Color(0xFF9CCC65)
     cell.tile.moveCost > 1 -> Color(0xFF558B2F)
     else -> Color(0xFFCFD8DC)
 }
 
-private fun borderWidth(cell: CellModel) = when {
-    cell.selected -> 3.dp
-    cell.targetable -> 2.dp
+private fun borderWidth(cell: CellModel) = when (cell.mark) {
+    CellMark.SELECTED -> 3.dp
+    CellMark.TARGET -> 2.dp
     else -> 1.dp
 }
 
-private fun borderColor(cell: CellModel): Color = when {
-    cell.selected -> Color(0xFFFFC107)
-    cell.targetable -> Color(0xFFD32F2F)
+private fun borderColor(cell: CellModel): Color = when (cell.mark) {
+    CellMark.SELECTED -> Color(0xFFFFC107)
+    CellMark.TARGET -> Color(0xFFD32F2F)
     else -> Color(0xFF90A4AE)
 }
 
