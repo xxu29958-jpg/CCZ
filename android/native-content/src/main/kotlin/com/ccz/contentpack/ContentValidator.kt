@@ -22,6 +22,7 @@ object ContentValidator {
         issues += validateUniqueIds(content.tables)
         issues += validateUnits(content.tables, indexes)
         issues += validateClasses(content.tables, indexes)
+        issues += validateItems(content.tables, indexes)
         issues += validateMaps(content.tables, indexes.terrainIds)
         issues += ContentEventValidator.validate(content.events, indexes.unitIds, indexes.itemIds)
 
@@ -60,6 +61,20 @@ object ContentValidator {
             }
             cls.combat.skills.filterNot { it in indexes.skillIds }.forEach {
                 issues += ValidationIssue("classes[$index].skills", "unknown skill: $it")
+            }
+            cls.combat.terrainAffinity.keys.filterNot { it in indexes.terrainIds }.forEach {
+                issues += ValidationIssue("classes[$index].terrain_affinity", "unknown terrain: $it")
+            }
+        }
+        return issues
+    }
+
+    private fun validateItems(tables: ContentTables, indexes: ContentIndexes): List<ValidationIssue> {
+        val issues = mutableListOf<ValidationIssue>()
+        tables.items.forEachIndexed { index, item ->
+            val equipClass = item.equipClass
+            if (equipClass != null && equipClass !in indexes.classIds) {
+                issues += ValidationIssue("items[$index].equip_class", "unknown class: $equipClass")
             }
         }
         return issues
