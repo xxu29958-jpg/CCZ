@@ -23,7 +23,7 @@
 2. ~~文本/编码 lint 门~~ **已落地（#46，见上）** —— `verifyTextEncoding` 把 `§Windows/PowerShell Rules` 升 `[machine-gated]`。
 3. ~~依赖版本审计门~~ **已落地（#48，见上）** —— `assertStableDependencyVersions` 禁 alpha/beta/rc/snapshot 进主线，`adrSanctioned` 白名单尊重 detekt alpha ADR-0003 豁免（锁步：升级被豁免预发布须同 diff 改 ADR + 白名单），把 `§Dependency Governance` 禁预发布条升 `[machine-gated]`。
 4. **per-slice report 习惯**（P1，doc）—— 缓解 `HANDOFF.md` 顶部 run-on（line 3 ~1800 字每轮重述全部 PR）。可做成 ship-slice 收尾产出或 `docs/reports/`。
-5. **`KNOWN_ISSUES.md` 分级 ledger**（P2，doc）—— P0/P1/P2 + design-contract-vs-defect 判定，收口现散在 handoff 的 dormant caveat / defer 项。
+5. ~~`KNOWN_ISSUES.md` 分级 ledger~~ **已落地（#60）** —— `docs/KNOWN_ISSUES.md`：P0/P1/P2 + design-contract-vs-defect 判定，收口散在 handoff / 规则 / KDoc 的 dormant caveat / defer 项。
 6. **rollback runbook 具体步骤**（P2，doc）—— 触发器**已 fire**（`:save-io` 存档已落地）：补 `docs/runbook/` 带编号恢复步骤 + 风险边界，不只是原则。
 7. **ship-slice 加 code-doc-test reconciliation step**（P2，process）—— `skills/ship-slice/SKILL.md` 加一步「码 / 文档 / 测试三对账」，不建 per-slice 文件（2.7k sloc 太重）。
 8. **`BRANCH_BASELINE.md`**（P3，doc）—— 精简版（非源 176 行）：mainline SHA + squash-merge caveat，抵抗 stale-branch 混乱。
