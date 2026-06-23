@@ -17,7 +17,7 @@ tasks.register("assertTestCountEqualsBaseline") {
     group = "verification"
     description = "Fails if the @Test method count drifts from config/test-count-baseline.txt."
     val baselineFile = file("config/test-count-baseline.txt")
-    val testRoots = listOf("game-core", "native-content", "save-io").map { file("$it/src/test") }
+    val testRoots = listOf("game-core", "native-content", "save-io", "mod-import").map { file("$it/src/test") }
     val testAnnotation = Regex("""(?m)^\s*@Test\b""")
     doLast {
         val actual = testRoots
@@ -59,6 +59,10 @@ tasks.register("assertModuleDependencyDirection") {
         // may depend on native-content as well as game-core. The DAG stays acyclic and single-direction
         // (app -> native-content -> game-core); game-core still depends on nothing. See ADR-0005.
         "app" to setOf("game-core", "native-content"),
+        // :mod-import is a leaf consumer (legacy-APK BGT1 import) — it converts owned legacy resources
+        // into engine content, so it may depend on game-core + native-content but nothing depends on it.
+        // DAG stays acyclic (mod-import -> {native-content -> game-core}); currently declares no project edge.
+        "mod-import" to setOf("game-core", "native-content"),
     )
     val settingsFile = file("settings.gradle.kts")
     val includeRe = Regex("""include\(["']:([\w-]+)["']\)""")
