@@ -48,5 +48,6 @@ ccz-native-pack/
 - R-script branch/choice jumps target a label defined in the same script (labels unique); portraits name a known unit or `events.portrait_subjects` entry.
 - Maps match declared size.
 - Campaign assembly checks every coordinate in the selected S-script against the selected `MapDef` bounds before battle setup is returned.
+- Campaign assembly rejects selected S-script `pre` MoveUnit/RemoveUnit ops that target a unit not currently deployed by earlier `pre` ops.
 - Assets referenced by content exist.
 

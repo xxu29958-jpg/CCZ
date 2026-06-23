@@ -239,6 +239,38 @@ class CampaignAssemblerTest {
     }
 
     @Test
+    fun assembleThrowsWhenPreMoveTargetsUndeployedUnit() {
+        val pre = listOf(BattleOp.MoveUnit("hero", Pos(1, 0)))
+
+        val error = assertFailsWith<CampaignAssemblyException> { CampaignAssembler.assemble(content(pre = pre), "b", "m") }
+
+        assertTrue(error.message.orEmpty().contains("events.sScripts[b].pre[0].move=hero"))
+    }
+
+    @Test
+    fun assembleThrowsWhenPreRemoveTargetsUndeployedUnit() {
+        val pre = listOf(BattleOp.RemoveUnit("hero"))
+
+        val error = assertFailsWith<CampaignAssemblyException> { CampaignAssembler.assemble(content(pre = pre), "b", "m") }
+
+        assertTrue(error.message.orEmpty().contains("events.sScripts[b].pre[0].remove=hero"))
+    }
+
+    @Test
+    fun assembleAllowsPreRemoveAfterSpawn() {
+        val pre = listOf(
+            BattleOp.SpawnUnit("hero", Pos(0, 0)),
+            BattleOp.RemoveUnit("hero"),
+            BattleOp.SpawnUnit("foe", Pos(2, 2)),
+        )
+
+        val state = CampaignAssembler.assemble(content(pre = pre), "b", "m").initialState
+
+        assertFalse("hero" in state.units)
+        assertTrue("foe" in state.units)
+    }
+
+    @Test
     fun assembleThrowsOnUnknownScriptId() {
         assertFailsWith<CampaignAssemblyException> { CampaignAssembler.assemble(content(), "missing", "m") }
     }

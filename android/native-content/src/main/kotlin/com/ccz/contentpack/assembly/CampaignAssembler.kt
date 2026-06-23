@@ -74,10 +74,9 @@ data class BattleSetup(
  * Deployment fail-closes on the placement rejections the engine *surfaces* as events
  * (SpawnRejected / MoveRejected / HpSetRejected). Deploy a roster with SpawnUnit ops: a
  * SpawnUnit that lands off-board, on an impassable tile, on an occupied tile, or names a unit
- * with no reserve is caught here. One gap is honestly out of reach — a `pre` MoveUnit/RemoveUnit
- * naming a unit not yet on the board silently no-ops in [com.ccz.core.battle.BattleOps] (its
- * documented mid-battle fail-safe) without an event, so the assembler cannot see it; deploy via
- * SpawnUnit and treat such ops in `pre` as an authoring error (see KNOWN_ISSUES).
+ * with no reserve is caught here. It also preflights `pre` MoveUnit/RemoveUnit ordering so
+ * opening deployment cannot silently no-op a unit that has not been spawned yet, while leaving
+ * game-core's documented mid-battle fail-safe unchanged.
  */
 object CampaignAssembler {
     private const val DEFAULT_SEED = 1L
@@ -98,6 +97,7 @@ object CampaignAssembler {
             ?: throw CampaignAssemblyException("no s-script '$battleScriptId' in content '${content.manifest.contentId}'")
         val mapDef = content.tables.maps.firstOrNull { it.id == mapId }
             ?: throw CampaignAssemblyException("no map '$mapId' in content '${content.manifest.contentId}'")
+        validatePreDeploymentOrder(script)
         validateScriptMapBounds(script, mapDef)
         val map = battleMap(mapDef, content.tables.terrain)
         val context = BattleContext(
@@ -112,6 +112,36 @@ object CampaignAssembler {
         val scriptContext = ScriptContext(reserves = BattleAssembler.reserves(content.tables.units), map = map)
         return BattleSetup(context, deploy(script, scriptContext, seed), script, scriptContext)
     }
+
+    private fun validatePreDeploymentOrder(script: SScript) {
+        val deployed = mutableSetOf<String>()
+        val invalid = mutableListOf<String>()
+        script.pre.forEachIndexed { index, op ->
+            when (op) {
+                is BattleOp.SpawnUnit -> deployed += op.unit
+                is BattleOp.MoveUnit ->
+                    if (op.unit !in deployed) invalid += preDeploymentRef(script.id, index, "move", op.unit)
+                is BattleOp.RemoveUnit ->
+                    if (!deployed.remove(op.unit)) invalid += preDeploymentRef(script.id, index, "remove", op.unit)
+                is BattleOp.Script,
+                is BattleOp.SetHp,
+                is BattleOp.SetStatus,
+                is BattleOp.GiveItem,
+                BattleOp.ForceWin,
+                BattleOp.ForceLose,
+                -> Unit
+            }
+        }
+        if (invalid.isNotEmpty()) {
+            throw CampaignAssemblyException(
+                "battle '${script.id}' pre-deployment references unit(s) not currently deployed: " +
+                    invalid.joinToString("; "),
+            )
+        }
+    }
+
+    private fun preDeploymentRef(scriptId: String, index: Int, op: String, unit: String): String =
+        "events.sScripts[$scriptId].pre[$index].$op=$unit"
 
     private fun validateScriptMapBounds(script: SScript, mapDef: MapDef) {
         val outOfBounds = scriptPositions(script).filterNot { mapDef.contains(it.pos) }
