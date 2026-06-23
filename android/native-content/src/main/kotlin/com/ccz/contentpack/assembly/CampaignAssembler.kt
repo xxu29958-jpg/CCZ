@@ -31,14 +31,18 @@ class CampaignAssemblyException(message: String) : RuntimeException(message)
 
 /**
  * The runnable battle a content pack assembles into: the immutable [context] game-core
- * validates commands against, the deployed opening [initialState], and the [script] whose
- * win/lose lists decide the outcome. This is plain input handed to game-core — the holder
- * computes no combat truth; it only carries what [CampaignAssembler] derived from content.
+ * validates commands against, the deployed opening [initialState], the [script] whose
+ * win/lose lists decide the outcome, and the [scriptContext] (reserves + map) the battle
+ * loop threads into [com.ccz.core.battle.TriggerRunner] so the script's `pre` deployment and
+ * `mid` triggers draw from the same reserves and honor the same map. This is plain input
+ * handed to game-core — the holder computes no combat truth; it only carries what
+ * [CampaignAssembler] derived from content.
  */
 data class BattleSetup(
     val context: BattleContext,
     val initialState: BattleState,
     val script: SScript,
+    val scriptContext: ScriptContext,
 )
 
 /**
@@ -92,7 +96,11 @@ object CampaignAssembler {
             skills = skills(content.tables.skills),
             loadouts = loadouts(content.tables.units),
         )
-        return BattleSetup(context, deploy(content.tables.units, script, map, seed), script)
+        // One ScriptContext for the whole battle: reserves + map drive the `pre` deployment here AND the
+        // `mid` triggers the battle loop later runs through TriggerRunner.tick (so a mid spawn draws the
+        // same reserves and lands on the same map).
+        val scriptContext = ScriptContext(reserves = BattleAssembler.reserves(content.tables.units), map = map)
+        return BattleSetup(context, deploy(script, scriptContext, seed), script, scriptContext)
     }
 
     private fun battleMap(mapDef: MapDef, terrain: List<TerrainDef>): BattleMap {
@@ -128,8 +136,7 @@ object CampaignAssembler {
     private fun loadouts(units: List<UnitDef>): Map<String, List<String>> =
         units.filter { it.loadout.skills.isNotEmpty() }.associate { it.id to it.loadout.skills }
 
-    private fun deploy(units: List<UnitDef>, script: SScript, map: BattleMap, seed: Long): BattleState {
-        val ctx = ScriptContext(reserves = BattleAssembler.reserves(units), map = map)
+    private fun deploy(script: SScript, ctx: ScriptContext, seed: Long): BattleState {
         val empty = BattleState(units = emptyMap(), turn = 1, active = Faction.PLAYER, rngState = seed)
         val resolution = TriggerRunner.applyPre(empty, script, ctx)
         val rejects = resolution.events.mapNotNull(::rejectMessage)

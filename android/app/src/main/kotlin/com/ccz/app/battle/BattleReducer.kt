@@ -8,6 +8,8 @@ import com.ccz.core.battle.EnemyAi
 import com.ccz.core.battle.Event
 import com.ccz.core.battle.Gameplay
 import com.ccz.core.battle.Resolution
+import com.ccz.core.battle.ScriptContext
+import com.ccz.core.battle.TriggerRunner
 import com.ccz.core.event.SScript
 import com.ccz.core.model.Combatant
 import com.ccz.core.model.Faction
@@ -74,17 +76,45 @@ data class BattleUiState(
  * option in a [Selection] is exactly what a [Gameplay] read-only query reported. Kept free of
  * Android types so it runs under the plain-JVM unit-test gate.
  *
- * [script] is the S-script whose win/lose lists decide the battle outcome; the reducer polls
- * [Gameplay.outcome] (read-only, never settling state itself) after every accepted command and surfaces
- * the verdict on [BattleUiState.outcome]. Once decided, input is ignored — a finished battle is terminal.
+ * [script] is the S-script whose win/lose lists decide the battle outcome and whose `mid` triggers fire
+ * mid-battle. After every accepted command the reducer runs the authority's [TriggerRunner.tick]
+ * ([tickAfter]) — firing eligible mid-triggers and settling win/lose in game-core — then reads the verdict
+ * from the settled [BattleState.outcome]. The reducer owns none of this: triggers and settlement live in
+ * game-core; it only forwards state through `tick` and renders the result. Once decided, input is ignored
+ * — a finished battle is terminal. [scriptContext] (reserves + map, from the assembler) is what `tick`
+ * draws mid spawns from and checks placement against — the same context the opening deployment used.
  */
-class BattleReducer(private val context: BattleContext, private val script: SScript) {
+class BattleReducer(
+    private val context: BattleContext,
+    private val script: SScript,
+    private val scriptContext: ScriptContext,
+) {
     fun initial(state: BattleState): BattleUiState =
         BattleUiState(
             state = state,
             log = listOf("Battle start — ${sideLabel(state.active)}'s turn"),
+            // The opening state has not had a command, so evaluate (don't settle) its verdict: a battle that
+            // is somehow already decided at deployment shows decided; mid-triggers settle from tickAfter on.
             outcome = Gameplay.outcome(state, script),
         )
+
+    /**
+     * Runs game-core's mid-battle triggers + win/lose settlement after a command resolves: the loaded
+     * S-script's `mid` triggers fire (conditions met → [com.ccz.core.battle.BattleOps]) and the outcome
+     * settles, all in the authority. Returns the ticked state plus the command's events followed by the
+     * tick's, so a trigger-driven spawn/damage/outcome is reflected in both state and the rendered events.
+     *
+     * Presentation caveat (the demo's `mid` is empty, so this is dormant today): a trigger's *combat*
+     * events (Damaged/Missed/Died) badge and log like a command's, but its *structural* events
+     * (UnitSpawned/UnitRemoved and the fail-closed SpawnRejected/MoveRejected/HpSetRejected) are applied to
+     * state yet not yet surfaced as a badge or a dedicated log line — so a rejected mid-spawn is currently
+     * silent in the UI. Surface these when in-battle trigger content lands, alongside the per-event timed
+     * presentation refinement (see KNOWN_ISSUES / HANDOFF 内聚触发器 ⑤).
+     */
+    private fun tickAfter(resolution: Resolution): Resolution {
+        val ticked = TriggerRunner.tick(resolution.state, script, scriptContext)
+        return Resolution(ticked.state, resolution.events + ticked.events)
+    }
 
     /**
      * Tap routing, in priority order: while a unit is selected, tapping a tile that holds one of
@@ -144,9 +174,12 @@ class BattleReducer(private val context: BattleContext, private val script: SScr
     fun endTurn(ui: BattleUiState): BattleUiState {
         if (ui.outcome != BattleOutcome.ONGOING) return ui
         val afterPlayer = when (val result = Gameplay.submit(ui.state, Command.EndTurn(ui.state.active), context)) {
-            // Recompute the verdict: advancing the turn can satisfy a SurviveTurns condition.
-            is Gameplay.Outcome.Accepted ->
-                clearSelection(ui).withVerdict(result.resolution.state, appendLog(ui.log, turnBanner(result.resolution.state)))
+            // tick after the turn flip fires the new turn's start-triggers and settles win/lose (advancing
+            // the turn can satisfy a SurviveTurns condition; the verdict comes from the settled state).
+            is Gameplay.Outcome.Accepted -> {
+                val resolution = tickAfter(result.resolution)
+                clearSelection(ui).withVerdict(resolution.state, appendLog(ui.log, turnBanner(resolution.state)))
+            }
             // Defensive: EndTurn(state.active) is always legal, so this branch is unreachable by
             // construction today; kept fail-safe in case the active-side seam ever changes.
             is Gameplay.Outcome.Rejected -> return ui.copy(log = appendLog(ui.log, "End turn rejected: ${phraseOf(result.reason)}"))
@@ -169,7 +202,7 @@ class BattleReducer(private val context: BattleContext, private val script: SScr
             steps++
             val command = EnemyAi.nextCommand(ui.state, context)
             ui = when (val result = Gameplay.submit(ui.state, command, context)) {
-                is Gameplay.Outcome.Accepted -> applyEnemyCommand(ui, command, result.resolution)
+                is Gameplay.Outcome.Accepted -> applyEnemyCommand(ui, command, tickAfter(result.resolution))
                 // The AI only issues commands its own legality queries reported, so a rejection is a
                 // should-never bug; hand control back to the player rather than spin or strand them.
                 is Gameplay.Outcome.Rejected -> return handBackToPlayer(ui, "Enemy command rejected: ${phraseOf(result.reason)}")
@@ -196,8 +229,10 @@ class BattleReducer(private val context: BattleContext, private val script: SScr
      *  returns to the player instead of stranding them able to command enemy units. */
     private fun handBackToPlayer(ui: BattleUiState, note: String): BattleUiState =
         when (val result = Gameplay.submit(ui.state, Command.EndTurn(ui.state.active), context)) {
-            is Gameplay.Outcome.Accepted ->
-                ui.copy(selection = null).withVerdict(result.resolution.state, appendLog(appendLog(ui.log, note), turnBanner(result.resolution.state)))
+            is Gameplay.Outcome.Accepted -> {
+                val resolution = tickAfter(result.resolution)
+                ui.copy(selection = null).withVerdict(resolution.state, appendLog(appendLog(ui.log, note), turnBanner(resolution.state)))
+            }
             is Gameplay.Outcome.Rejected -> ui.copy(log = appendLog(ui.log, note))
         }
 
@@ -213,8 +248,9 @@ class BattleReducer(private val context: BattleContext, private val script: SScr
     private fun submitMove(ui: BattleUiState, unitId: String, to: Pos): BattleUiState =
         when (val result = Gameplay.submit(ui.state, Command.Move(unitId, to), context)) {
             is Gameplay.Outcome.Accepted -> {
-                val next = result.resolution.state
-                val moved = clearSelection(ui).withVerdict(next, appendLog(ui.log, describeMoves(result.resolution.events, next)))
+                val resolution = tickAfter(result.resolution)
+                val next = resolution.state
+                val moved = clearSelection(ui).withVerdict(next, appendLog(ui.log, describeMoves(resolution.events, next)))
                 // Move-then-act: keep the unit selected so it can still attack or Wait this turn. selectUnit
                 // now reports empty destinations (it has moved) but its skills/targets, so the attack UX is
                 // reachable; if the battle just ended, leave the selection cleared.
@@ -234,7 +270,7 @@ class BattleReducer(private val context: BattleContext, private val script: SScr
         val selection = ui.selection ?: return ui
         return when (val result = Gameplay.submit(ui.state, Command.Wait(selection.unit), context)) {
             is Gameplay.Outcome.Accepted ->
-                clearSelection(ui).withVerdict(result.resolution.state, appendLog(ui.log, "${unitName(ui.state, selection.unit)} waits"))
+                clearSelection(ui).withVerdict(tickAfter(result.resolution).state, appendLog(ui.log, "${unitName(ui.state, selection.unit)} waits"))
             is Gameplay.Outcome.Rejected ->
                 clearSelection(ui).copy(log = appendLog(ui.log, "Wait rejected: ${phraseOf(result.reason)}"))
         }
@@ -246,7 +282,7 @@ class BattleReducer(private val context: BattleContext, private val script: SScr
         val skill = selection.selectedSkill ?: return clearSelection(ui)
         return when (val result = Gameplay.submit(ui.state, Command.Attack(selection.unit, targetId, skill), context)) {
             is Gameplay.Outcome.Accepted -> {
-                val resolution = result.resolution
+                val resolution = tickAfter(result.resolution)
                 clearSelection(ui)
                     .copy(effects = effectsOf(resolution.events))
                     .withVerdict(resolution.state, appendLog(ui.log, describeAttack(resolution.events, resolution.state)))
@@ -257,12 +293,14 @@ class BattleReducer(private val context: BattleContext, private val script: SScr
     }
 
     /**
-     * Applies an accepted command's new [state] to this UI snapshot, polling [Gameplay.outcome] for the
-     * verdict (the reducer never settles outcome itself) and appending a victory/defeat banner to [log]
-     * only on the ONGOING -> decided edge. The receiver carries any already-set effects forward.
+     * Applies a post-[tickAfter] command's new [state] to this UI snapshot, reading the verdict from the
+     * authority-settled [BattleState.outcome] (game-core's `tick` already settled it — including any
+     * trigger-driven force_win/force_lose, which a condition-only poll would miss) and appending a
+     * victory/defeat banner to [log] only on the ONGOING -> decided edge. The receiver carries any
+     * already-set effects forward.
      */
     private fun BattleUiState.withVerdict(state: BattleState, log: List<String>): BattleUiState {
-        val verdict = Gameplay.outcome(state, script)
+        val verdict = state.outcome
         val banner = if (verdict != BattleOutcome.ONGOING && outcome == BattleOutcome.ONGOING) appendLog(log, verdictBanner(verdict)) else log
         return copy(state = state, outcome = verdict, log = banner)
     }
