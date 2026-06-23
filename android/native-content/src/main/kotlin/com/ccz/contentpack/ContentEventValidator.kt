@@ -19,8 +19,8 @@ import com.ccz.core.model.Pos
  * any map or game-design choice: a percentage threshold ([TriggerCondition.HpBelow.pct])
  * must lie in 0..100; a survive-N-turns objective ([WinLoseCondition.SurviveTurns]) must
  * be >= 1; and every script-op coordinate (spawn / move / reach targets) must be
- * non-negative (a negative tile is off-board regardless of map size — the upper bound
- * against a concrete map stays a later, map-aware layer).
+ * non-negative (a negative tile is off-board regardless of map size). Upper bounds require
+ * knowing which concrete map a script is fought on and are checked by CampaignAssembler.
  *
  * Note: the op set itself is whitelisted by Kotlin's sealed interfaces (an unknown
  * op cannot be constructed in memory); a string-keyed op whitelist only becomes
@@ -72,7 +72,8 @@ internal object ContentEventValidator {
 
     /**
      * Map-independent floor on a script-op coordinate: a negative tile is off-board for
-     * any map size. The upper bound against a concrete map stays a later, map-aware layer.
+     * any map size. CampaignAssembler checks the concrete map upper bound for the selected
+     * battle script.
      */
     private fun pos(path: String, at: Pos): ValidationIssue? =
         if (at.x >= 0 && at.y >= 0) null else ValidationIssue(path, "negative coordinate: (${at.x}, ${at.y})")

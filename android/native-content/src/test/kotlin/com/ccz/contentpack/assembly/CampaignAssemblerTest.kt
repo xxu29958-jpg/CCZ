@@ -19,7 +19,9 @@ import com.ccz.contentpack.UnitIdentity
 import com.ccz.contentpack.UnitLoadout
 import com.ccz.contentpack.UnitProfile
 import com.ccz.core.event.BattleOp
+import com.ccz.core.event.BattleTrigger
 import com.ccz.core.event.SScript
+import com.ccz.core.event.TriggerCondition
 import com.ccz.core.event.WinLoseCondition
 import com.ccz.core.model.CombatStats
 import com.ccz.core.model.CounterRelation
@@ -46,6 +48,8 @@ class CampaignAssemblerTest {
     private fun content(
         tiles: List<List<String>> = standardTiles,
         pre: List<BattleOp> = listOf(BattleOp.SpawnUnit("hero", Pos(0, 0)), BattleOp.SpawnUnit("foe", Pos(2, 2))),
+        mid: List<BattleTrigger> = emptyList(),
+        win: List<WinLoseCondition> = listOf(WinLoseCondition.AnnihilateEnemies),
         terrain: List<TerrainDef> = terrainDefs(),
     ): NativeContent = NativeContent(
         manifest = ContentManifest(
@@ -64,7 +68,7 @@ class CampaignAssemblerTest {
             // Size derived from the tiles so every variant stays self-consistent (height x width).
             maps = listOf(MapDef(id = "m", size = MapSize(tiles.first().size, tiles.size), tileset = "t", tiles = tiles)),
         ),
-        events = EventTables(sScripts = listOf(battleScript(pre))),
+        events = EventTables(sScripts = listOf(battleScript(pre = pre, mid = mid, win = win))),
     )
 
     private fun terrainDefs(): List<TerrainDef> = listOf(
@@ -111,13 +115,19 @@ class CampaignAssemblerTest {
             loadout = UnitLoadout(skills = skills),
         )
 
-    private fun battleScript(pre: List<BattleOp>): SScript = SScript(
+    private fun battleScript(
+        pre: List<BattleOp>,
+        mid: List<BattleTrigger> = emptyList(),
+        win: List<WinLoseCondition> = listOf(WinLoseCondition.AnnihilateEnemies),
+        lose: List<WinLoseCondition> = emptyList(),
+        post: List<BattleOp> = emptyList(),
+    ): SScript = SScript(
         id = "b",
-        win = listOf(WinLoseCondition.AnnihilateEnemies),
-        lose = emptyList(),
+        win = win,
+        lose = lose,
         pre = pre,
-        mid = emptyList(),
-        post = emptyList(),
+        mid = mid,
+        post = post,
     )
 
     @Test
@@ -187,6 +197,45 @@ class CampaignAssemblerTest {
         val setup = CampaignAssembler.assemble(content(), "b", "m")
         assertEquals(setOf("hero", "foe", "extra"), setup.scriptContext.reserves.keys)
         assertSame(setup.context.map, setup.scriptContext.map, "script and battle contexts share one BattleMap")
+    }
+
+    @Test
+    fun assembleThrowsWhenMidTriggerReachTileFallsOutsideMap() {
+        val mid = listOf(
+            BattleTrigger(
+                id = "oob",
+                whenCondition = TriggerCondition.UnitReach("hero", Pos(4, 0)),
+                actions = emptyList(),
+            ),
+        )
+
+        val error = assertFailsWith<CampaignAssemblyException> { CampaignAssembler.assemble(content(mid = mid), "b", "m") }
+
+        assertTrue(error.message.orEmpty().contains("events.sScripts[b].mid[0].when.pos=(4, 0)"))
+    }
+
+    @Test
+    fun assembleThrowsWhenMidActionLandingFallsOutsideMap() {
+        val mid = listOf(
+            BattleTrigger(
+                id = "spawn-oob",
+                whenCondition = TriggerCondition.TurnStart(turn = 1),
+                actions = listOf(BattleOp.SpawnUnit("extra", Pos(0, 3))),
+            ),
+        )
+
+        val error = assertFailsWith<CampaignAssemblyException> { CampaignAssembler.assemble(content(mid = mid), "b", "m") }
+
+        assertTrue(error.message.orEmpty().contains("events.sScripts[b].mid[0].actions[0].at=(0, 3)"))
+    }
+
+    @Test
+    fun assembleThrowsWhenWinReachTileFallsOutsideMap() {
+        val win = listOf(WinLoseCondition.ReachTile("hero", Pos(4, 2)))
+
+        val error = assertFailsWith<CampaignAssemblyException> { CampaignAssembler.assemble(content(win = win), "b", "m") }
+
+        assertTrue(error.message.orEmpty().contains("events.sScripts[b].win[0].pos=(4, 2)"))
     }
 
     @Test

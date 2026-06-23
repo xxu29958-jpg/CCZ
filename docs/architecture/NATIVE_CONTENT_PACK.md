@@ -47,5 +47,6 @@ ccz-native-pack/
 - Events use known ops and trigger conditions.
 - R-script branch/choice jumps target a label defined in the same script (labels unique); portraits name a known unit or `events.portrait_subjects` entry.
 - Maps match declared size.
+- Campaign assembly checks every coordinate in the selected S-script against the selected `MapDef` bounds before battle setup is returned.
 - Assets referenced by content exist.
 

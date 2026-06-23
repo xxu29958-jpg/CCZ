@@ -13,9 +13,14 @@ import com.ccz.core.battle.Event
 import com.ccz.core.battle.MapTile
 import com.ccz.core.battle.ScriptContext
 import com.ccz.core.battle.TriggerRunner
+import com.ccz.core.event.BattleOp
+import com.ccz.core.event.BattleTrigger
 import com.ccz.core.event.SScript
+import com.ccz.core.event.TriggerCondition
+import com.ccz.core.event.WinLoseCondition
 import com.ccz.core.model.CounterRelation
 import com.ccz.core.model.Faction
+import com.ccz.core.model.Pos
 import com.ccz.core.model.RangeSpec
 import com.ccz.core.model.Skill
 import com.ccz.core.model.UnitClass
@@ -62,6 +67,10 @@ data class BattleSetup(
  * dereferences — the entry script/map ids, each tile's terrain id, and every deployment op's
  * landing — so a pack that slips past validation cannot quietly produce a broken battle.
  *
+ * It also checks every map coordinate in the selected battle script against the selected
+ * [MapDef] before running the battle, including mid-trigger reach conditions/actions and
+ * win/lose reach tiles.
+ *
  * Deployment fail-closes on the placement rejections the engine *surfaces* as events
  * (SpawnRejected / MoveRejected / HpSetRejected). Deploy a roster with SpawnUnit ops: a
  * SpawnUnit that lands off-board, on an impassable tile, on an occupied tile, or names a unit
@@ -89,6 +98,7 @@ object CampaignAssembler {
             ?: throw CampaignAssemblyException("no s-script '$battleScriptId' in content '${content.manifest.contentId}'")
         val mapDef = content.tables.maps.firstOrNull { it.id == mapId }
             ?: throw CampaignAssemblyException("no map '$mapId' in content '${content.manifest.contentId}'")
+        validateScriptMapBounds(script, mapDef)
         val map = battleMap(mapDef, content.tables.terrain)
         val context = BattleContext(
             map = map,
@@ -102,6 +112,76 @@ object CampaignAssembler {
         val scriptContext = ScriptContext(reserves = BattleAssembler.reserves(content.tables.units), map = map)
         return BattleSetup(context, deploy(script, scriptContext, seed), script, scriptContext)
     }
+
+    private fun validateScriptMapBounds(script: SScript, mapDef: MapDef) {
+        val outOfBounds = scriptPositions(script).filterNot { mapDef.contains(it.pos) }
+        if (outOfBounds.isNotEmpty()) {
+            throw CampaignAssemblyException(
+                "battle '${script.id}' references out-of-bounds tile(s) on map '${mapDef.id}': " +
+                    outOfBounds.joinToString("; ") { "${it.path}=(${it.pos.x}, ${it.pos.y})" },
+            )
+        }
+    }
+
+    private fun scriptPositions(script: SScript): List<ScriptPosRef> =
+        winLosePositions(script.id, "win", script.win) +
+            winLosePositions(script.id, "lose", script.lose) +
+            battleOpPositions("events.sScripts[${script.id}].pre", script.pre) +
+            script.mid.flatMapIndexed { index, trigger -> triggerPositions(script.id, index, trigger) } +
+            battleOpPositions("events.sScripts[${script.id}].post", script.post)
+
+    private fun triggerPositions(scriptId: String, index: Int, trigger: BattleTrigger): List<ScriptPosRef> =
+        triggerConditionPositions(scriptId, index, trigger.whenCondition) +
+            battleOpPositions("events.sScripts[$scriptId].mid[$index].actions", trigger.actions)
+
+    private fun triggerConditionPositions(
+        scriptId: String,
+        index: Int,
+        condition: TriggerCondition,
+    ): List<ScriptPosRef> =
+        when (condition) {
+            is TriggerCondition.UnitReach -> listOf(
+                ScriptPosRef("events.sScripts[$scriptId].mid[$index].when.pos", condition.pos),
+            )
+            is TriggerCondition.TurnStart,
+            is TriggerCondition.UnitDead,
+            is TriggerCondition.HpBelow,
+            is TriggerCondition.EnemyCountBelow,
+            is TriggerCondition.VarEquals,
+            -> emptyList()
+        }
+
+    private fun winLosePositions(scriptId: String, side: String, conditions: List<WinLoseCondition>): List<ScriptPosRef> =
+        conditions.mapIndexedNotNull { index, condition ->
+            when (condition) {
+                is WinLoseCondition.ReachTile -> ScriptPosRef("events.sScripts[$scriptId].$side[$index].pos", condition.pos)
+                is WinLoseCondition.AnnihilateEnemies,
+                is WinLoseCondition.UnitDead,
+                is WinLoseCondition.SurviveTurns,
+                is WinLoseCondition.ProtectAlive,
+                is WinLoseCondition.DefeatUnit,
+                -> null
+            }
+        }
+
+    private fun battleOpPositions(path: String, ops: List<BattleOp>): List<ScriptPosRef> =
+        ops.mapIndexedNotNull { index, op ->
+            when (op) {
+                is BattleOp.SpawnUnit -> ScriptPosRef("$path[$index].at", op.at)
+                is BattleOp.MoveUnit -> ScriptPosRef("$path[$index].to", op.to)
+                is BattleOp.Script,
+                is BattleOp.RemoveUnit,
+                is BattleOp.SetHp,
+                is BattleOp.SetStatus,
+                is BattleOp.GiveItem,
+                BattleOp.ForceWin,
+                BattleOp.ForceLose,
+                -> null
+            }
+        }
+
+    private fun MapDef.contains(pos: Pos): Boolean =
+        pos.x in 0 until size.width && pos.y in 0 until size.height
 
     private fun battleMap(mapDef: MapDef, terrain: List<TerrainDef>): BattleMap {
         val byId = terrain.associateBy { it.id }
@@ -152,4 +232,6 @@ object CampaignAssembler {
         is Event.HpSetRejected -> "set-hp ${event.unit} (${event.reason})"
         else -> null
     }
+
+    private data class ScriptPosRef(val path: String, val pos: Pos)
 }
