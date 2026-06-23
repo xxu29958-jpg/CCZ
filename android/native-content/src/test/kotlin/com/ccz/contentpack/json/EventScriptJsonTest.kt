@@ -23,7 +23,7 @@ import kotlin.test.assertTrue
 class EventScriptJsonTest {
     @Test
     fun rScriptDecodesFaithfully() {
-        val content = ContentJsonLoader.load(eventPack(R_EVENTS))
+        val content = ContentJsonLoader.load(eventPack(R_EVENTS, entry = "r1"))
         assertTrue(ContentValidator.validate(content).isEmpty())
 
         val r = content.events.rScripts.single()

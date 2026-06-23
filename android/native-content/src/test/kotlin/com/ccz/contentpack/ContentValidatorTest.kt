@@ -103,6 +103,39 @@ class ContentValidatorTest {
     }
 
     @Test
+    fun unknownManifestEntryFailClosed() {
+        val content = validContent(
+            entry = "missing",
+            events = EventTables(sScripts = listOf(emptySScript("entry"))),
+        )
+
+        assertTrue(
+            ContentValidator.validate(content)
+                .any { it.path == "manifest.entry" && it.message.contains("unknown entry script: missing") },
+        )
+    }
+
+    @Test
+    fun blankManifestEntryFailClosed() {
+        val content = validContent(
+            entry = "",
+            events = EventTables(sScripts = listOf(emptySScript("entry"))),
+        )
+
+        assertTrue(
+            ContentValidator.validate(content)
+                .any { it.path == "manifest.entry" && it.message.contains("entry is blank") },
+        )
+    }
+
+    @Test
+    fun manifestEntryMayPointToRScript() {
+        val content = validContent(entry = "intro", events = EventTables(rScripts = listOf(RScript("intro", emptyList()))))
+
+        assertEquals(emptyList(), ContentValidator.validate(content))
+    }
+
+    @Test
     fun duplicatePortraitSubjectIdFailClosed() {
         val subjects = listOf(PortraitSubjectDef("cao_cao", "Cao Cao"), PortraitSubjectDef("cao_cao", "Cao Cao 2"))
         val content = validContent(events = EventTables(portraitSubjects = subjects))
@@ -157,7 +190,8 @@ class ContentValidatorTest {
     // (CCZ rule: bundle test knobs into the ContentTables value object, not loose params).
     private fun validContent(
         tables: ContentTables = defaultTables(),
-        events: EventTables = EventTables(),
+        events: EventTables? = null,
+        entry: String = "entry",
     ): NativeContent =
         NativeContent(
             manifest = ContentManifest(
@@ -165,10 +199,10 @@ class ContentValidatorTest {
                 contentId = "sample",
                 contentVersion = "1.0.0",
                 source = SourceInfo(mod = "sample_mod"),
-                entry = "map_1",
+                entry = entry,
             ),
             tables = tables,
-            events = events,
+            events = events ?: EventTables(sScripts = listOf(emptySScript(entry))),
         )
 
     private fun defaultTables(): ContentTables =

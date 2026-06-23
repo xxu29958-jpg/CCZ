@@ -26,6 +26,7 @@ object ContentValidator {
         issues += uniqueIds("events.sScripts", content.events.sScripts.map { it.id })
         issues += uniqueIds("events.rScripts", content.events.rScripts.map { it.id })
         issues += uniqueIds("events.portrait_subjects", content.events.portraitSubjects.map { it.id })
+        issues += validateManifestEntry(content.manifest, content.events)
         issues += validatePortraitSubjectIds(content.tables, content.events.portraitSubjects)
         issues += validateUnits(content.tables, indexes)
         issues += validateClasses(content.tables, indexes)
@@ -49,6 +50,16 @@ object ContentValidator {
             uniqueIds("skills", tables.skills.map { it.id }) +
             uniqueIds("items", tables.items.map { it.id }) +
             uniqueIds("maps", tables.maps.map { it.id })
+
+    private fun validateManifestEntry(manifest: ContentManifest, events: EventTables): List<ValidationIssue> {
+        val entry = manifest.entry
+        val scriptIds = events.sScripts.map { it.id }.toSet() + events.rScripts.map { it.id }
+        return when {
+            entry.isBlank() -> listOf(ValidationIssue("manifest.entry", "entry is blank"))
+            entry !in scriptIds -> listOf(ValidationIssue("manifest.entry", "unknown entry script: $entry"))
+            else -> emptyList()
+        }
+    }
 
     private fun validateUnits(tables: ContentTables, indexes: ContentIndexes): List<ValidationIssue> {
         val issues = mutableListOf<ValidationIssue>()

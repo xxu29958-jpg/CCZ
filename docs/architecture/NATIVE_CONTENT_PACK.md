@@ -33,7 +33,7 @@ ccz-native-pack/
     "mod": "unknown",
     "engine": "6.6"
   },
-  "entry": "events/r_001.json"
+  "entry": "s_001"
 }
 ```
 
@@ -43,6 +43,7 @@ ccz-native-pack/
 - Required fields exist.
 - IDs are unique.
 - References resolve.
+- `manifest.entry` resolves to a known event script id (`events.s_scripts` or `events.r_scripts`).
 - Events use known ops and trigger conditions.
 - R-script branch/choice jumps target a label defined in the same script (labels unique); portraits name a known unit or `events.portrait_subjects` entry.
 - Maps match declared size.

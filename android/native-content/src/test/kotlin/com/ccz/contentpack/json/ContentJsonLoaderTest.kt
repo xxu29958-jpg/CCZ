@@ -50,6 +50,9 @@ class ContentJsonLoaderTest {
             ]
           },
           "events": {
+            "r_scripts": [
+              { "id": "events/r.json", "ops": [] }
+            ],
             "portrait_subjects": [
               { "id": "cao_cao", "name": "Cao Cao", "portrait": "cao_cao_neutral" }
             ]

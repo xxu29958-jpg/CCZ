@@ -274,14 +274,15 @@ class ContentEventValidatorTest {
     private fun contentWith(
         events: EventTables,
         items: List<String>,
-    ): NativeContent =
-        NativeContent(
+    ): NativeContent {
+        val entry = events.sScripts.firstOrNull()?.id ?: events.rScripts.firstOrNull()?.id ?: "s1"
+        return NativeContent(
             manifest = ContentManifest(
                 nativeFormatVersion = ContentValidator.SUPPORTED_NATIVE_FORMAT_VERSION,
                 contentId = "sample",
                 contentVersion = "1.0.0",
                 source = SourceInfo(mod = "sample_mod"),
-                entry = "s1",
+                entry = entry,
             ),
             tables = ContentTables(
                 classes = listOf(ClassDef("cavalry", "Cavalry", ClassMovement("horse", 6))),
@@ -298,4 +299,5 @@ class ContentEventValidatorTest {
             ),
             events = events,
         )
+    }
 }

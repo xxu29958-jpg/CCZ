@@ -5,7 +5,7 @@ package com.ccz.contentpack.json
  * tests can focus on the script payload. The unit `zhaoyun` and item `potion` exist, so reference
  * validation stays clean for ops/conditions that point at them.
  */
-internal fun eventPack(eventsJson: String): String =
+internal fun eventPack(eventsJson: String, entry: String = "s1"): String =
     """
     {
       "manifest": {
@@ -13,7 +13,7 @@ internal fun eventPack(eventsJson: String): String =
         "content_id": "sample",
         "content_version": "0.1.0",
         "source": { "mod": "sample" },
-        "entry": "events/s.json"
+        "entry": "$entry"
       },
       "tables": {
         "classes": [ { "id": "cavalry", "name": "Cavalry", "movement": { "move_type": "horse", "move": 6 } } ],

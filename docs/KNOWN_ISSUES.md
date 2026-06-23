@@ -33,7 +33,6 @@
 | 中途存档会丢行动经济 | `BattleProgress.moved`/`acted` 刻意不持久化（save 只存全新开局态，replay 重导出）。若未来加「中途存档」捕获非全新态，会静默丢失（已耗尽单位重载后可再动）。 | 「中途存档」功能落地时：持久化 `moved`/`acted`（schema bump）或在 encode 处断言开局态。守卫注已在 `SaveMappers.stateDto`。 |
 | `:gameplay` 模块未拆 | `EnemyAi`/`Gameplay`/`WinLose`/`TriggerRunner`（battle loop / AI / trigger runner）暂居 `game-core`；架构计划是 P2/P3 落地后拆独立 `:gameplay` 模块。 | 当 game-core 因这些件膨胀 / 需独立测试边界时（`CCZ_ENGINE_RULES` §Runtime Direction）。 |
 | 事件脚本落点上界未校验 | S1 只设了与地图无关的非负地板；`at` 对具体 `MapDef` 边界的上界需 map-aware 层。 | 同战役驱动层 / map 生产接线。 |
-| `manifest.entry` 存在性未校验 | 指向已知 script/map id 的存在性校验缺失（低风险，可下游补）。 | 内容校验下游加强时。 |
 | `pre` 段 MoveUnit/RemoveUnit 缺单位静默 no-op | `BattleOps.move`/`remove` 对**不在场**单位静默 no-op 且不发拒绝事件（其文档化的 mid-battle fail-safe），故 `CampaignAssembler` 部署时**看不见**这类拒（SpawnUnit 的 spawn 拒可见、已守）。部署请只用 SpawnUnit；`pre` 里 Move/Remove 一个尚未 spawn 的单位 = 作者错误但不报。`CampaignAssembler` KDoc 诚实标注。 | 引擎片：让 `BattleOps` 区分 pre（fail-closed 发拒绝事件）vs mid-battle（静默 no-op），或部署用专门 pre-op runner（改 game-core + `BattleOpTest` 既有 no-op 断言，需独立 ADR/对抗审）。 |
 
 ## `:app` 未来门（`[aspirational]`，见 `CCZ_ENGINE_RULES.md` §Android App Gates）
