@@ -4,6 +4,7 @@ import com.ccz.contentpack.assembly.BattleSetup
 import com.ccz.contentpack.assembly.CampaignAssembler
 import com.ccz.core.battle.BattleContext
 import com.ccz.core.battle.BattleState
+import com.ccz.core.battle.ScriptContext
 import com.ccz.core.event.SScript
 
 /**
@@ -32,4 +33,6 @@ object DemoBattle {
     fun initialState(): BattleState = setup.initialState
 
     fun script(): SScript = setup.script
+
+    fun scriptContext(): ScriptContext = setup.scriptContext
 }

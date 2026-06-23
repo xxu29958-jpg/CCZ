@@ -22,7 +22,7 @@ import org.junit.Test
 class BattleReducerTest {
     private val context = DemoBattle.context()
     private val script = DemoBattle.script()
-    private val reducer = BattleReducer(context, script)
+    private val reducer = BattleReducer(context, script, DemoBattle.scriptContext())
 
     private fun start(): BattleUiState = reducer.initial(DemoBattle.initialState())
     private fun playerUnit(state: BattleState): Combatant = state.units.values.first { it.faction == Faction.PLAYER }
@@ -63,8 +63,9 @@ class BattleReducerTest {
 
     @Test
     fun outcomeStaysInSyncWithStateAfterAnAcceptedCommand() {
-        // After any accepted command the reducer's outcome must equal the authority's verdict for the new
-        // state — proving it polls Gameplay.outcome rather than holding a stale or self-decided value.
+        // After any accepted command the reducer's outcome equals the authority-settled verdict on the new
+        // state (game-core's tick settled it, not the reducer) — which for the demo's monotonic win/lose
+        // matches a fresh Gameplay.outcome evaluation.
         val moved = reducer.endTurn(start())
         assertEquals(Gameplay.outcome(moved.state, script), moved.outcome)
         assertEquals(BattleOutcome.ONGOING, moved.outcome)

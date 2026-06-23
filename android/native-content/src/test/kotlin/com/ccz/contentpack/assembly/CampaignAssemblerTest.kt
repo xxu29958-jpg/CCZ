@@ -31,6 +31,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class CampaignAssemblerTest {
@@ -177,6 +178,15 @@ class CampaignAssemblerTest {
         assertEquals("b", setup.script.id)
         assertEquals(listOf(WinLoseCondition.AnnihilateEnemies), setup.script.win)
         assertEquals(7L, setup.initialState.rngState)
+    }
+
+    @Test
+    fun assembleSurfacesAScriptContextWithReservesAndMapForMidTriggers() {
+        // The battle loop threads this ScriptContext into TriggerRunner.tick; reserves must cover every
+        // unit (so a mid SpawnUnit can draw any of them) and the map must be the same one commands use.
+        val setup = CampaignAssembler.assemble(content(), "b", "m")
+        assertEquals(setOf("hero", "foe", "extra"), setup.scriptContext.reserves.keys)
+        assertSame(setup.context.map, setup.scriptContext.map, "script and battle contexts share one BattleMap")
     }
 
     @Test
