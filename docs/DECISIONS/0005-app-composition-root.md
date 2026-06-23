@@ -23,7 +23,7 @@ Status: Accepted
 
 - `:app` 现可加载 + 装配真实内容；`DemoBattle` 由硬编码 core-type 种子重写为 `CampaignAssembler.assemble(CampaignContent.pack(), …)` 的薄访问器（content→运行时端到端，既有 `:app` reducer 测试转为对装配产物的端到端覆盖）。
 - `:app`（Android 模块）现传递依赖 `kotlinx-serialization-json`（经 `:native-content`）——纯 JVM，无 Android 冲突（CI android-gate 验证）。
-- 后续状态（非本决策）：mid-battle 触发器 `tick` 已接进 reducer；intro 过场已转 content（`events.portrait_subjects` 声明非战斗说话人，`DemoScenario` 为薄访问器）。仍余 `SaveLoader`（战斗回放）/`ScenarioReplayer`（过场回放，S7 caveat：须传 script 表）接线。
+- 后续状态（非本决策）：mid-battle 触发器 `tick` 已接进 reducer；intro 过场已转 content（`events.portrait_subjects` 声明非战斗说话人，`DemoScenario` 为薄访问器）；replay 接线已由 `CampaignReplayDriver` 承接，`:app` 组合根把 content-derived battle tables / R-script 表传给 `SaveLoader` 与 `ScenarioReplayer`，S7 caveat 已有 app 单测覆盖。
 
 ## Rollback Conditions
 

@@ -124,21 +124,27 @@ axes: the accepted battle `commands` and the cutscene `scenarios` (R-script `scr
 save schema v2+). The two axes replay through independent, decoupled entry points:
 
 ```text
-SaveLoader.load(envelope, classes, skills, rules) -> Outcome   // battle axis
+SaveLoader.load(envelope, classes, skills, rules, scripts) -> Outcome   // battle axis + scenario ref pre-check
   Loaded(finalState)   // version-OK + commands resolve: folded through Resolver
-  Rejected(reason)     // SaveRejection: FUTURE_SCHEMA_VERSION / RULES_VERSION_MISMATCH / CORRUPT_COMMAND
+  Rejected(reason)     // SaveRejection: FUTURE_SCHEMA_VERSION / RULES_VERSION_MISMATCH / CORRUPT_COMMAND / CORRUPT_SCENARIO
 
 ScenarioReplayer.replay(scenarios, scripts) -> Outcome         // cutscene axis
   Replayed(playbacks)  // each scenario run to completion through ScenarioRunner
   Rejected(reason)     // ScenarioRejection: UNKNOWN_SCRIPT / INCOMPLETE_REPLAY
 ```
 
-`SaveLoader.load` runs two gates: version (`check`) then command integrity (`commandIntegrity`, replay-time
-references resolve against the initial roster / skill table). On-disk serialization is a separate concern:
+`SaveLoader.load` runs three gates: version (`check`), command integrity (`commandIntegrity`, replay-time
+references resolve against the initial roster / skill table), then scenario script-reference integrity
+(`scenarioIntegrity`, every recorded `scriptId` must resolve against the supplied content script table).
+On-disk serialization is a separate concern:
 `SaveCodec.encode`/`decode` maps `SaveEnvelope` <-> JSON through a `@Serializable` DTO layer (game-core
 domain types carry no serialization annotations). Decoding is fail-closed — unknown keys / missing fields /
 unknown command kind / unknown faction·outcome raise `SaveDecodeException`; version-axis gating stays in
-`SaveLoader.check`. Atomic on-disk write (temp file + rename) is an IO concern for a future layer, not game-core.
+`SaveLoader.check`. Atomic on-disk write (temp file + rename) is an IO concern for `:save-io`, not game-core.
+
+`:app` wires both axes through `CampaignReplayDriver`: it supplies the `BattleContext` class/skill/rules
+tables assembled from bundled content to `SaveLoader`, supplies the same content R-script table to both
+`SaveLoader` and `ScenarioReplayer`, and returns no partial replay if either axis rejects.
 
 ## Contract Rule
 

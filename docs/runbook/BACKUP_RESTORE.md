@@ -19,16 +19,21 @@ reader/crash never sees a half-written save and no temp residue is left on failu
 
 ## Restore
 
-`SaveLoader.load(envelope, scripts)` is fail-closed and runs two gates before replaying:
+`SaveLoader.load(envelope, classes, skills, rules, scripts)` is fail-closed and runs three gates
+before replaying:
 
 1. **version** — reject a `save_schema_version` newer than the runtime supports (`FUTURE_SCHEMA_VERSION`)
    or a `rules_version` mismatch (`RULES_VERSION_MISMATCH`), since the deterministic fold would diverge;
-2. **integrity** — reject commands referencing units/skills absent from the initial roster/skill table
-   (`CORRUPT_COMMAND`), and unknown scenario `scriptId` / drifted choices (`CORRUPT_SCENARIO`).
+2. **command integrity** — reject commands referencing units/skills absent from the initial roster/skill
+   table (`CORRUPT_COMMAND`);
+3. **scenario reference integrity** — reject scenario `scriptId` values absent from the supplied content
+   script table (`CORRUPT_SCENARIO`).
 
-Restoring a cutscene-bearing (v2) save **requires passing the loaded content's script table** to
-`SaveLoader.load`; the default `emptyMap` makes every `scriptId` unverifiable → `CORRUPT_SCENARIO`
-(fail-closed). See the driver caveat in `docs/KNOWN_ISSUES.md` (S7).
+After `SaveLoader` accepts the save axis, replay the cutscene axis with
+`ScenarioReplayer.replay(envelope.scenarios, scripts)`: choices that no longer complete the current
+content script reject as `INCOMPLETE_REPLAY` rather than leaking partial playback. In `:app`, this
+two-axis restore wiring lives in `CampaignReplayDriver`, which passes the bundled content's battle
+tables and R-script table to both game-core entry points.
 
 ## Rollback (intended procedure)
 
