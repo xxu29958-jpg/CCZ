@@ -1,0 +1,88 @@
+{
+  "manifest": {
+    "native_format_version": "1",
+    "content_id": "ccz_demo",
+    "content_version": "0.1.0",
+    "source": { "mod": "ccz_demo" },
+    "entry": "demo_battle"
+  },
+  "tables": {
+    "classes": [
+      { "id": "cavalry", "name": "Cavalry", "movement": { "move_type": "horse", "move": 5 } },
+      { "id": "infantry", "name": "Infantry", "movement": { "move_type": "foot", "move": 4 } },
+      { "id": "archer", "name": "Archer", "movement": { "move_type": "foot", "move": 4 } }
+    ],
+    "units": [
+      {
+        "identity": { "id": "guan", "name": "Guan Yu", "class_id": "cavalry", "faction": "PLAYER" },
+        "profile": { "level": 1, "hp_max": 240, "stats": { "atk": 120, "def": 80, "mat": 40, "res": 60 } },
+        "loadout": { "skills": ["strike", "spear"] }
+      },
+      {
+        "identity": { "id": "zhang", "name": "Zhang Fei", "class_id": "infantry", "faction": "PLAYER" },
+        "profile": { "level": 1, "hp_max": 220, "stats": { "atk": 120, "def": 80, "mat": 40, "res": 60 } },
+        "loadout": { "skills": ["strike"] }
+      },
+      {
+        "identity": { "id": "foe", "name": "Enemy Archer", "class_id": "archer", "faction": "ENEMY" },
+        "profile": { "level": 1, "hp_max": 180, "stats": { "atk": 120, "def": 80, "mat": 40, "res": 60 } },
+        "loadout": { "skills": ["bow"] }
+      },
+      {
+        "identity": { "id": "foe2", "name": "Enemy Spearman", "class_id": "infantry", "faction": "ENEMY" },
+        "profile": { "level": 1, "hp_max": 200, "stats": { "atk": 120, "def": 80, "mat": 40, "res": 60 } },
+        "loadout": { "skills": ["strike"] }
+      }
+    ],
+    "terrain": [
+      { "id": "plain", "name": "Plain", "move_cost": 1 },
+      { "id": "wall", "name": "Wall", "move_cost": 1, "passable": false },
+      { "id": "forest", "name": "Forest", "move_cost": 2 }
+    ],
+    "skills": [
+      {
+        "id": "strike", "name": "Strike", "kind": "PHYSICAL", "power_coeff": 100,
+        "use": { "range": { "min": 1, "max": 1 }, "area": "single", "targeting": "enemy" }
+      },
+      {
+        "id": "spear", "name": "Spear Thrust", "kind": "PHYSICAL", "power_coeff": 110,
+        "use": { "range": { "min": 1, "max": 2 }, "area": "single", "targeting": "enemy" }
+      },
+      {
+        "id": "bow", "name": "Bow Shot", "kind": "PHYSICAL", "power_coeff": 80,
+        "use": { "range": { "min": 2, "max": 3 }, "area": "single", "targeting": "enemy" }
+      }
+    ],
+    "items": [],
+    "maps": [
+      {
+        "id": "battle_map",
+        "size": { "width": 7, "height": 6 },
+        "tileset": "fields",
+        "tiles": [
+          ["plain", "plain", "plain", "plain", "plain", "plain", "plain"],
+          ["plain", "plain", "plain", "wall", "plain", "plain", "plain"],
+          ["plain", "plain", "plain", "wall", "plain", "plain", "plain"],
+          ["plain", "plain", "plain", "wall", "plain", "plain", "plain"],
+          ["plain", "plain", "forest", "forest", "forest", "forest", "plain"],
+          ["plain", "plain", "plain", "plain", "plain", "plain", "plain"]
+        ]
+      }
+    ]
+  },
+  "events": {
+    "s_scripts": [
+      {
+        "id": "demo_battle",
+        "win": [ { "type": "annihilate_enemies" } ],
+        "lose": [ { "type": "protect_alive", "unit": "guan" } ],
+        "pre": [
+          { "type": "spawn_unit", "unit": "guan", "at": { "x": 1, "y": 2 } },
+          { "type": "spawn_unit", "unit": "zhang", "at": { "x": 4, "y": 2 } },
+          { "type": "spawn_unit", "unit": "foe", "at": { "x": 5, "y": 2 } },
+          { "type": "spawn_unit", "unit": "foe2", "at": { "x": 1, "y": 4 } }
+        ]
+      }
+    ]
+  }
+}
