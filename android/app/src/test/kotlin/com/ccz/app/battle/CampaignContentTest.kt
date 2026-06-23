@@ -25,6 +25,17 @@ class CampaignContentTest {
     }
 
     @Test
+    fun theDemoPackDecodesFromItsBundledJsonResource() {
+        // Pins the real pipeline: the JSON resource is found, decodes (strict, fail-closed), and carries
+        // the values the assembler depends on — including the wall's passable=false and the deployment ops.
+        val pack = CampaignContent.pack()
+        assertEquals("ccz_demo", pack.manifest.contentId)
+        assertEquals(setOf("guan", "zhang", "foe", "foe2"), pack.tables.units.map { it.id }.toSet())
+        assertFalse("the wall terrain decodes as impassable", pack.tables.terrain.first { it.id == "wall" }.passable)
+        assertEquals("the battle script deploys four units via pre ops", 4, pack.events.sScripts.first().pre.size)
+    }
+
+    @Test
     fun theBattleDeploysTheDemoRosterAtExpectedTiles() {
         val state = DemoBattle.initialState()
         assertEquals(setOf("guan", "zhang", "foe", "foe2"), state.units.keys)

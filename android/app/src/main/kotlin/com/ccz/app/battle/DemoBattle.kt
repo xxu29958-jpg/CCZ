@@ -19,12 +19,13 @@ import com.ccz.core.event.SScript
  * hand-built R-script pending a content path for non-combatant speakers (see KNOWN_ISSUES).
  */
 object DemoBattle {
-    const val WIDTH = CampaignContent.WIDTH
-    const val HEIGHT = CampaignContent.HEIGHT
-
     private val setup: BattleSetup by lazy {
         CampaignAssembler.assemble(CampaignContent.pack(), CampaignContent.BATTLE_SCRIPT_ID, CampaignContent.MAP_ID)
     }
+
+    // Derived from the assembled map so the JSON pack stays the single source of the board's size.
+    val WIDTH: Int get() = setup.context.map.width
+    val HEIGHT: Int get() = setup.context.map.height
 
     fun context(): BattleContext = setup.context
 
