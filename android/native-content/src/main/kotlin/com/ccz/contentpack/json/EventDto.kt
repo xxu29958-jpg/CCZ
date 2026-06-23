@@ -24,7 +24,11 @@ import kotlinx.serialization.Serializable
 internal data class EventsDto(
     val rScripts: List<RScriptDto> = emptyList(),
     val sScripts: List<SScriptDto> = emptyList(),
+    val portraitSubjects: List<PortraitSubjectDto> = emptyList(),
 )
+
+@Serializable
+internal data class PortraitSubjectDto(val id: String, val name: String, val portrait: String? = null)
 
 @Serializable
 internal data class RScriptDto(

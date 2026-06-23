@@ -103,6 +103,32 @@ class ContentValidatorTest {
     }
 
     @Test
+    fun duplicatePortraitSubjectIdFailClosed() {
+        val subjects = listOf(PortraitSubjectDef("cao_cao", "Cao Cao"), PortraitSubjectDef("cao_cao", "Cao Cao 2"))
+        val content = validContent(events = EventTables(portraitSubjects = subjects))
+
+        assertTrue(
+            ContentValidator.validate(content)
+                .any { it.path == "events.portrait_subjects[1].id" && it.message.contains("duplicate id: cao_cao") },
+        )
+    }
+
+    @Test
+    fun portraitSubjectIdCannotCollideWithUnitId() {
+        val content = validContent(
+            events = EventTables(portraitSubjects = listOf(PortraitSubjectDef("zhaoyun", "Zhao Yun"))),
+        )
+
+        assertTrue(
+            ContentValidator.validate(content)
+                .any {
+                    it.path == "events.portrait_subjects[0].id" &&
+                        it.message.contains("collides with unit id: zhaoyun")
+                },
+        )
+    }
+
+    @Test
     fun terrainMoveCostBelowOneFailClosed() {
         val zero = validContent(tables = defaultTables().copy(terrain = listOf(TerrainDef("plain", "Plain", moveCost = 0))))
         val negative = validContent(tables = defaultTables().copy(terrain = listOf(TerrainDef("plain", "Plain", moveCost = -2))))

@@ -6,6 +6,7 @@ import com.ccz.contentpack.ClassMovement
 import com.ccz.contentpack.ItemDef
 import com.ccz.contentpack.MapDef
 import com.ccz.contentpack.MapSize
+import com.ccz.contentpack.PortraitSubjectDef
 import com.ccz.contentpack.RangeDef
 import com.ccz.contentpack.SkillDef
 import com.ccz.contentpack.SkillUse
@@ -100,6 +101,9 @@ internal fun toMap(dto: MapDto): MapDef =
         spawnPoints = dto.spawnPoints.mapValues { entry -> entry.value.map { toPos(it) } },
         fog = dto.fog,
     )
+
+internal fun toPortraitSubject(dto: PortraitSubjectDto): PortraitSubjectDef =
+    PortraitSubjectDef(id = dto.id, name = dto.name, portrait = dto.portrait)
 
 internal fun toStats(dto: StatsDto): CombatStats =
     CombatStats(atk = dto.atk, def = dto.def, mat = dto.mat, res = dto.res)

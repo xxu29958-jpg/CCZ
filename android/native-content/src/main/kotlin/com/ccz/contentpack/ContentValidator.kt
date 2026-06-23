@@ -25,12 +25,19 @@ object ContentValidator {
         // They live on content.events (not ContentTables), so dedup them here directly.
         issues += uniqueIds("events.sScripts", content.events.sScripts.map { it.id })
         issues += uniqueIds("events.rScripts", content.events.rScripts.map { it.id })
+        issues += uniqueIds("events.portrait_subjects", content.events.portraitSubjects.map { it.id })
+        issues += validatePortraitSubjectIds(content.tables, content.events.portraitSubjects)
         issues += validateUnits(content.tables, indexes)
         issues += validateClasses(content.tables, indexes)
         issues += validateItems(content.tables, indexes)
         issues += validateNumericBounds(content.tables)
         issues += validateMaps(content.tables, indexes.terrainIds)
-        issues += ContentEventValidator.validate(content.events, indexes.unitIds, indexes.itemIds)
+        issues += ContentEventValidator.validate(
+            events = content.events,
+            unitIds = indexes.unitIds,
+            itemIds = indexes.itemIds,
+            portraitIds = indexes.unitIds + content.events.portraitSubjects.map { it.id },
+        )
 
         return issues
     }
@@ -84,6 +91,20 @@ object ContentValidator {
             }
         }
         return issues
+    }
+
+    private fun validatePortraitSubjectIds(
+        tables: ContentTables,
+        portraitSubjects: List<PortraitSubjectDef>,
+    ): List<ValidationIssue> {
+        val unitIds = tables.units.map { it.id }.toSet()
+        return portraitSubjects.mapIndexedNotNull { index, subject ->
+            if (subject.id in unitIds) {
+                ValidationIssue("events.portrait_subjects[$index].id", "collides with unit id: ${subject.id}")
+            } else {
+                null
+            }
+        }
     }
 
     /**

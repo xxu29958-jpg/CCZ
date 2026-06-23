@@ -133,7 +133,7 @@ ccz-native-pack/
 - missing references（unit→class/skill/item、class→counter/skill、map→terrain）。`[machine-gated]` validateUnits / validateClasses / validateMaps（unknownReferencesFailClosed 测试）。
 - map bounds（尺寸、行列形状、spawn 越界）。`[machine-gated]` validateMaps。
 - unknown enum。`[machine-gated]` `ContentJsonLoader` 解码边界：faction / damageKind / counterRelation 字符串经 `Decoders` 白名单化，未知值 fail-closed（`ContentJsonLoaderTest`）。未知 JSON 键也拒（`ignoreUnknownKeys=false`）。
-- event op / trigger whitelist。`[type-enforced + machine-gated]` op/触发集是 Kotlin sealed interface，内存里造不出未知 op（未知 op 只可能在未来 JSON 解码边界出现，届时 loader 白名单化）；事件**引用完整性**（unit/item 引用）由 `ContentEventValidator` 校验（eventReferencesFailClosed 测试）。
+- event op / trigger whitelist。`[type-enforced + machine-gated]` op/触发集是 Kotlin sealed interface，内存里造不出未知 op（未知 op 只可能在未来 JSON 解码边界出现，届时 loader 白名单化）；事件**引用完整性**（unit/item/portrait_subject 引用）由 `ContentEventValidator` 校验（eventReferencesFailClosed 测试）。
 
 ## Game Core
 

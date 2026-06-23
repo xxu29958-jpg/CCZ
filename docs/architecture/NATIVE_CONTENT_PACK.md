@@ -11,6 +11,7 @@ ccz-native-pack/
   manifest.json
   classes.json
   units.json
+  portrait_subjects.json
   terrain.json
   skills.json
   items.json
@@ -43,7 +44,7 @@ ccz-native-pack/
 - IDs are unique.
 - References resolve.
 - Events use known ops and trigger conditions.
-- R-script branch/choice jumps target a label defined in the same script (labels unique); portraits name a known unit.
+- R-script branch/choice jumps target a label defined in the same script (labels unique); portraits name a known unit or `events.portrait_subjects` entry.
 - Maps match declared size.
 - Assets referenced by content exist.
 

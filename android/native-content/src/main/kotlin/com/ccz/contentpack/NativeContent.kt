@@ -26,6 +26,7 @@ data class ContentTables(
 data class EventTables(
     val rScripts: List<RScript> = emptyList(),
     val sScripts: List<SScript> = emptyList(),
+    val portraitSubjects: List<PortraitSubjectDef> = emptyList(),
 )
 
 data class ContentManifest(
@@ -91,6 +92,12 @@ data class UnitLoadout(
 data class UnitAssets(
     val portrait: String? = null,
     val spriteSet: String? = null,
+)
+
+data class PortraitSubjectDef(
+    val id: String,
+    val name: String,
+    val portrait: String? = null,
 )
 
 data class TerrainDef(

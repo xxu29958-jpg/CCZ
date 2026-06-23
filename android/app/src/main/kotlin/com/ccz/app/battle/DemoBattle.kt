@@ -16,8 +16,8 @@ import com.ccz.core.event.SScript
  * enforced during deployment because the assembler threads the [BattleMap] through the spawn path.
  *
  * The assembly is cached: the pack is fixed, so the [BattleSetup] is computed once and every accessor
- * returns the same immutable value. The intro cutscene ([com.ccz.app.scenario.DemoScenario]) is still a
- * hand-built R-script pending a content path for non-combatant speakers (see KNOWN_ISSUES).
+ * returns the same immutable value. The intro cutscene reads an R-script from the same bundled content
+ * pack via [CampaignContent.introScript].
  */
 object DemoBattle {
     private val setup: BattleSetup by lazy {

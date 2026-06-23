@@ -12,7 +12,8 @@ import com.ccz.core.model.Pos
  * Validates event reference integrity for S-scripts and R-scripts: units / items
  * referenced by battle ops, triggers, and win/lose conditions must resolve to known
  * content ids; an R-script's branch/choice jumps must target a label defined in the
- * same script (labels are unique), and a portrait must name a known unit.
+ * same script (labels are unique), and a portrait must name a known unit or a known
+ * non-combat portrait subject.
  *
  * It also fails closed on the value-domain floors that are unambiguous independent of
  * any map or game-design choice: a percentage threshold ([TriggerCondition.HpBelow.pct])
@@ -29,14 +30,24 @@ import com.ccz.core.model.Pos
 internal object ContentEventValidator {
     private const val PERCENT_MAX = 100
 
-    fun validate(events: EventTables, unitIds: Set<String>, itemIds: Set<String>): List<ValidationIssue> =
-        events.sScripts.flatMap { script(it, unitIds, itemIds) } +
-            events.rScripts.flatMap { rScript(it, unitIds) }
+    fun validate(
+        events: EventTables,
+        unitIds: Set<String>,
+        itemIds: Set<String>,
+        portraitIds: Set<String>,
+    ): List<ValidationIssue> =
+        events.sScripts.flatMap { script(it, unitIds, itemIds, portraitIds) } +
+            events.rScripts.flatMap { rScript(it, portraitIds) }
 
-    private fun script(script: SScript, unitIds: Set<String>, itemIds: Set<String>): List<ValidationIssue> {
+    private fun script(
+        script: SScript,
+        unitIds: Set<String>,
+        itemIds: Set<String>,
+        portraitIds: Set<String>,
+    ): List<ValidationIssue> {
         val issues = mutableListOf<ValidationIssue>()
         (script.pre + script.post + script.mid.flatMap { it.actions }).forEach {
-            issues += battleOp(script.id, it, unitIds, itemIds)
+            issues += battleOp(script.id, it, unitIds, itemIds, portraitIds)
         }
         val triggerIds = mutableSetOf<String>()
         script.mid.forEach { t ->
@@ -56,6 +67,9 @@ internal object ContentEventValidator {
     private fun unit(path: String, id: String, unitIds: Set<String>): ValidationIssue? =
         if (id in unitIds) null else ValidationIssue(path, "unknown unit: $id")
 
+    private fun portrait(path: String, id: String, portraitIds: Set<String>): ValidationIssue? =
+        if (id in portraitIds) null else ValidationIssue(path, "unknown portrait subject: $id")
+
     /**
      * Map-independent floor on a script-op coordinate: a negative tile is off-board for
      * any map size. The upper bound against a concrete map stays a later, map-aware layer.
@@ -63,7 +77,13 @@ internal object ContentEventValidator {
     private fun pos(path: String, at: Pos): ValidationIssue? =
         if (at.x >= 0 && at.y >= 0) null else ValidationIssue(path, "negative coordinate: (${at.x}, ${at.y})")
 
-    private fun battleOp(id: String, op: BattleOp, unitIds: Set<String>, itemIds: Set<String>): List<ValidationIssue> {
+    private fun battleOp(
+        id: String,
+        op: BattleOp,
+        unitIds: Set<String>,
+        itemIds: Set<String>,
+        portraitIds: Set<String>,
+    ): List<ValidationIssue> {
         val path = "events.sScripts[$id]"
         return when (op) {
             is BattleOp.SpawnUnit -> listOfNotNull(unit(path, op.unit, unitIds), pos(path, op.at))
@@ -75,7 +95,7 @@ internal object ContentEventValidator {
                 unit(path, op.to, unitIds),
                 if (op.item in itemIds) null else ValidationIssue(path, "unknown item: ${op.item}"),
             )
-            is BattleOp.Script -> embeddedScenarioOp(path, op.op, unitIds)
+            is BattleOp.Script -> embeddedScenarioOp(path, op.op, portraitIds)
             BattleOp.ForceWin, BattleOp.ForceLose -> emptyList()
         }
     }
@@ -84,14 +104,14 @@ internal object ContentEventValidator {
      * Reference / support check for a scenario op embedded in an S-script via
      * [BattleOp.Script]. Unlike an R-script, an S-script has no label table and
      * [com.ccz.core.battle.BattleOps] only interprets [ScenarioOp.SetVar]; every other
-     * embedded op is surfaced as a presentation event. So a Portrait still needs its unit
+     * embedded op is surfaced as a presentation event. So a Portrait still needs its portrait
      * reference checked (the R-script path already does), while a Branch / Choice is
      * provably inert control flow here (its label target can never resolve) and is flagged
      * fail-closed rather than silently dropped. Presentation ops carry no reference.
      */
-    private fun embeddedScenarioOp(path: String, op: ScenarioOp, unitIds: Set<String>): List<ValidationIssue> =
+    private fun embeddedScenarioOp(path: String, op: ScenarioOp, portraitIds: Set<String>): List<ValidationIssue> =
         when (op) {
-            is ScenarioOp.Portrait -> listOfNotNull(unit(path, op.unit, unitIds))
+            is ScenarioOp.Portrait -> listOfNotNull(portrait(path, op.unit, portraitIds))
             is ScenarioOp.Branch -> listOf(ValidationIssue(path, "branch unsupported in s-script op"))
             is ScenarioOp.Choice -> listOf(ValidationIssue(path, "choice unsupported in s-script op"))
             is ScenarioOp.Dialogue,
@@ -134,14 +154,14 @@ internal object ContentEventValidator {
         }
     }
 
-    private fun rScript(script: RScript, unitIds: Set<String>): List<ValidationIssue> {
+    private fun rScript(script: RScript, portraitIds: Set<String>): List<ValidationIssue> {
         val path = "events.rScripts[${script.id}]"
         val labels = mutableSetOf<String>()
         val issues = mutableListOf<ValidationIssue>()
         script.ops.filterIsInstance<ScenarioOp.Label>().forEach { label ->
             if (!labels.add(label.name)) issues += ValidationIssue(path, "duplicate label: ${label.name}")
         }
-        script.ops.forEach { issues += scenarioOp(path, it, labels, unitIds) }
+        script.ops.forEach { issues += scenarioOp(path, it, labels, portraitIds) }
         return issues
     }
 
@@ -149,11 +169,11 @@ internal object ContentEventValidator {
         path: String,
         op: ScenarioOp,
         labels: Set<String>,
-        unitIds: Set<String>,
+        portraitIds: Set<String>,
     ): List<ValidationIssue> = when (op) {
         is ScenarioOp.Branch -> listOfNotNull(label(path, op.target, labels))
         is ScenarioOp.Choice -> op.options.mapNotNull { label(path, it.goto, labels) }
-        is ScenarioOp.Portrait -> listOfNotNull(unit(path, op.unit, unitIds))
+        is ScenarioOp.Portrait -> listOfNotNull(portrait(path, op.unit, portraitIds))
         is ScenarioOp.Dialogue,
         is ScenarioOp.SetVar,
         is ScenarioOp.Label,

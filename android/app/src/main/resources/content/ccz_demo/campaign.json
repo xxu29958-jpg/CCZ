@@ -71,6 +71,38 @@
     ]
   },
   "events": {
+    "portrait_subjects": [
+      { "id": "cao_cao", "name": "Cao Cao", "portrait": "cao_cao_calm" }
+    ],
+    "r_scripts": [
+      {
+        "id": "demo_intro",
+        "ops": [
+          { "type": "fade_in" },
+          { "type": "scene_transition", "target": "许昌·军帐" },
+          { "type": "play_bgm", "id": "war_council" },
+          { "type": "portrait", "unit": "cao_cao", "emotion": "calm" },
+          { "type": "dialogue", "line": { "speaker": "曹操", "text": "诸位，前方便是敌军布防之地。" } },
+          { "type": "dialogue", "line": { "text": "（帐内众将肃然）" } },
+          {
+            "type": "choice",
+            "prompt": "如何进军？",
+            "options": [
+              { "text": "正面强攻", "goto": "assault", "set_vars": { "plan": 1 } },
+              { "text": "分兵包抄", "goto": "flank", "set_vars": { "plan": 2 } }
+            ]
+          },
+          { "type": "label", "name": "assault" },
+          { "type": "dialogue", "line": { "speaker": "曹操", "text": "全军压上，一鼓作气！" } },
+          { "type": "branch", "variable": "plan", "equals": 1, "target": "ready" },
+          { "type": "label", "name": "flank" },
+          { "type": "dialogue", "line": { "speaker": "曹操", "text": "遣一军绕后，断其归路。" } },
+          { "type": "label", "name": "ready" },
+          { "type": "dialogue", "line": { "text": "（战鼓擂动）" } },
+          { "type": "fade_out" }
+        ]
+      }
+    ],
     "s_scripts": [
       {
         "id": "demo_battle",

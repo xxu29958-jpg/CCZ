@@ -2,6 +2,7 @@ package com.ccz.app.battle
 
 import com.ccz.contentpack.NativeContent
 import com.ccz.contentpack.json.ContentJsonLoader
+import com.ccz.core.event.RScript
 
 /**
  * The app's built-in demo campaign, **authored as a JSON content pack** (a bundled resource) and decoded
@@ -18,11 +19,16 @@ import com.ccz.contentpack.json.ContentJsonLoader
  */
 object CampaignContent {
     const val BATTLE_SCRIPT_ID = "demo_battle"
+    const val INTRO_SCRIPT_ID = "demo_intro"
     const val MAP_ID = "battle_map"
 
     private const val RESOURCE = "/content/ccz_demo/campaign.json"
 
     fun pack(): NativeContent = ContentJsonLoader.load(readResource())
+
+    fun introScript(): RScript =
+        pack().events.rScripts.singleOrNull { it.id == INTRO_SCRIPT_ID }
+            ?: error("bundled campaign intro script missing: $INTRO_SCRIPT_ID")
 
     private fun readResource(): String =
         (javaClass.getResourceAsStream(RESOURCE) ?: error("bundled campaign content missing: $RESOURCE"))

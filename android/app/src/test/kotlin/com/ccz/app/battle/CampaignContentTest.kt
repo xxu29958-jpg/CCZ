@@ -31,6 +31,13 @@ class CampaignContentTest {
         val pack = CampaignContent.pack()
         assertEquals("ccz_demo", pack.manifest.contentId)
         assertEquals(setOf("guan", "zhang", "foe", "foe2"), pack.tables.units.map { it.id }.toSet())
+        assertEquals("cao_cao_calm", pack.events.portraitSubjects.single().portrait)
+        assertEquals(CampaignContent.INTRO_SCRIPT_ID, pack.events.rScripts.single().id)
+        assertEquals(
+            "the intro R-script keeps the demo branch exercise in content",
+            15,
+            pack.events.rScripts.single().ops.size,
+        )
         assertFalse("the wall terrain decodes as impassable", pack.tables.terrain.first { it.id == "wall" }.passable)
         assertEquals("the battle script deploys four units via pre ops", 4, pack.events.sScripts.first().pre.size)
     }

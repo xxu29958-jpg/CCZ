@@ -21,6 +21,7 @@ internal fun toEvents(dto: EventsDto): EventTables =
     EventTables(
         rScripts = dto.rScripts.map { toRScript(it) },
         sScripts = dto.sScripts.map { toSScript(it) },
+        portraitSubjects = dto.portraitSubjects.map { toPortraitSubject(it) },
     )
 
 private fun toRScript(dto: RScriptDto): RScript =

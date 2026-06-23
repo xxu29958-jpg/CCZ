@@ -52,6 +52,19 @@ class ContentEventValidatorTest {
     }
 
     @Test
+    fun rScriptPortraitCanReferenceNonCombatPortraitSubject() {
+        val content = contentWith(
+            events = EventTables(
+                rScripts = listOf(RScript(id = "r1", ops = listOf(ScenarioOp.Portrait("cao_cao")))),
+                portraitSubjects = listOf(PortraitSubjectDef("cao_cao", "Cao Cao")),
+            ),
+            items = emptyList(),
+        )
+
+        assertEquals(emptyList(), ContentValidator.validate(content))
+    }
+
+    @Test
     fun unknownBranchTargetFailClosed() {
         val content = rScriptContent(
             ScenarioOp.Branch(variable = "flag", equals = 1, target = "missing"),
@@ -72,10 +85,10 @@ class ContentEventValidatorTest {
     }
 
     @Test
-    fun unknownPortraitUnitFailClosed() {
+    fun unknownPortraitSubjectFailClosed() {
         val content = rScriptContent(ScenarioOp.Portrait("ghost"))
 
-        assertTrue(ContentValidator.validate(content).any { it.message.contains("unknown unit: ghost") })
+        assertTrue(ContentValidator.validate(content).any { it.message.contains("unknown portrait subject: ghost") })
     }
 
     @Test
@@ -150,10 +163,10 @@ class ContentEventValidatorTest {
     }
 
     @Test
-    fun embeddedPortraitUnknownUnitFailClosed() {
+    fun embeddedPortraitUnknownSubjectFailClosed() {
         val content = sScriptWith(pre = listOf(BattleOp.Script(ScenarioOp.Portrait("ghost"))))
 
-        assertTrue(ContentValidator.validate(content).any { it.message.contains("unknown unit: ghost") })
+        assertTrue(ContentValidator.validate(content).any { it.message.contains("unknown portrait subject: ghost") })
     }
 
     @Test
@@ -182,6 +195,16 @@ class ContentEventValidatorTest {
                 BattleOp.Script(ScenarioOp.Portrait("zhaoyun")),
                 BattleOp.Script(ScenarioOp.FadeIn),
             ),
+        )
+
+        assertEquals(emptyList(), ContentValidator.validate(content))
+    }
+
+    @Test
+    fun embeddedPortraitSubjectValidate() {
+        val content = sScriptWith(
+            pre = listOf(BattleOp.Script(ScenarioOp.Portrait("cao_cao"))),
+            portraitSubjects = listOf(PortraitSubjectDef("cao_cao", "Cao Cao")),
         )
 
         assertEquals(emptyList(), ContentValidator.validate(content))
@@ -219,10 +242,13 @@ class ContentEventValidatorTest {
         lose: List<WinLoseCondition> = emptyList(),
         pre: List<BattleOp> = emptyList(),
         mid: List<BattleTrigger> = emptyList(),
-        post: List<BattleOp> = emptyList(),
+        portraitSubjects: List<PortraitSubjectDef> = emptyList(),
     ): NativeContent =
         contentWith(
-            events = EventTables(sScripts = listOf(SScript("s1", win, lose, pre, mid, post))),
+            events = EventTables(
+                sScripts = listOf(SScript("s1", win, lose, pre, mid, post = emptyList())),
+                portraitSubjects = portraitSubjects,
+            ),
             items = emptyList(),
         )
 
@@ -245,7 +271,10 @@ class ContentEventValidatorTest {
             post = emptyList(),
         )
 
-    private fun contentWith(events: EventTables, items: List<String>): NativeContent =
+    private fun contentWith(
+        events: EventTables,
+        items: List<String>,
+    ): NativeContent =
         NativeContent(
             manifest = ContentManifest(
                 nativeFormatVersion = ContentValidator.SUPPORTED_NATIVE_FORMAT_VERSION,

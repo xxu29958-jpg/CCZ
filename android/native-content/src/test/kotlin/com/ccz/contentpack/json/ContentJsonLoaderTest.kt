@@ -48,6 +48,11 @@ class ContentJsonLoaderTest {
                 "tiles": [["plain","plain"],["plain","plain"]],
                 "spawn_points": { "player": [ { "x": 0, "y": 0 } ] } }
             ]
+          },
+          "events": {
+            "portrait_subjects": [
+              { "id": "cao_cao", "name": "Cao Cao", "portrait": "cao_cao_neutral" }
+            ]
           }
         }
         """.trimIndent()
@@ -79,6 +84,7 @@ class ContentJsonLoaderTest {
         assertEquals(1 to 1, skill.use.range.min to skill.use.range.max)
 
         assertEquals("FAVOR", content.tables.classes.first().combat.counters["cavalry"]) // decodeCounterRelation success path
+        assertEquals("cao_cao_neutral", content.events.portraitSubjects.single().portrait)
         val map = content.tables.maps.first()
         assertEquals(Pos(0, 0), map.spawnPoints.getValue("player").first())
         assertEquals(listOf(listOf("plain", "plain"), listOf("plain", "plain")), map.tiles)
