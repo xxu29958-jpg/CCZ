@@ -197,6 +197,27 @@ class ContentValidatorTest {
         assertEquals(emptyList(), ContentValidator.validate(high), "a too-high grade saturates, not rejected")
     }
 
+    @Test
+    fun unknownTerrainCostKeyFailClosed() {
+        // A per-class move-cost override on an unknown terrain id is silently dropped at MoveReachability
+        // (lookup is by the tile's id) — reject it at load, mirroring terrain_affinity.
+        val bad = validContent(tables = defaultTables().copy(classes = listOf(classDef(terrainCost = mapOf("terrain_void" to 2)))))
+        assertTrue(ContentValidator.validate(bad).any { it.path == "classes[0].terrain_cost" })
+
+        val ok = validContent(tables = defaultTables().copy(classes = listOf(classDef(terrainCost = mapOf("plain" to 2)))))
+        assertEquals(emptyList(), ContentValidator.validate(ok), "a known terrain cost key validates")
+    }
+
+    @Test
+    fun nonPositiveUnitLevelFailClosed() {
+        // level < 1 budgets to the base panel (growth scales by level-1, coerced to 0), masking a data error.
+        val zero = validContent(tables = defaultTables().copy(units = listOf(unitDef(level = 0))))
+        assertTrue(ContentValidator.validate(zero).any { it.path == "units[0].level" })
+
+        val negative = validContent(tables = defaultTables().copy(units = listOf(unitDef(level = -3))))
+        assertTrue(ContentValidator.validate(negative).any { it.path == "units[0].level" })
+    }
+
     // Override any table via defaultTables().copy(...) to keep the parameter list small
     // (CCZ rule: bundle test knobs into the ContentTables value object, not loose params).
     private fun validContent(
@@ -229,11 +250,14 @@ class ContentValidatorTest {
     private fun emptySScript(id: String): SScript =
         SScript(id = id, win = emptyList(), lose = emptyList(), pre = emptyList(), mid = emptyList(), post = emptyList())
 
-    private fun classDef(terrainAffinity: Map<String, Int> = emptyMap()): ClassDef =
+    private fun classDef(
+        terrainAffinity: Map<String, Int> = emptyMap(),
+        terrainCost: Map<String, Int> = emptyMap(),
+    ): ClassDef =
         ClassDef(
             id = "cavalry",
             name = "Cavalry",
-            movement = ClassMovement(moveType = "horse", move = 6),
+            movement = ClassMovement(moveType = "horse", move = 6, terrainCost = terrainCost),
             combat = ClassCombat(skills = listOf("atk"), terrainAffinity = terrainAffinity),
         )
 
@@ -244,10 +268,11 @@ class ContentValidatorTest {
         classId: String = "cavalry",
         skills: List<String> = listOf("atk"),
         grade: Int = 0,
+        level: Int = 1,
     ): UnitDef =
         UnitDef(
             identity = UnitIdentity("zhaoyun", "Zhao Yun", classId, Faction.PLAYER),
-            profile = UnitProfile(level = 1, hpMax = 200, stats = CombatStats(180, 120, 60, 90), grade = grade),
+            profile = UnitProfile(level = level, hpMax = 200, stats = CombatStats(180, 120, 60, 90), grade = grade),
             loadout = UnitLoadout(skills = skills),
         )
 
