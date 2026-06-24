@@ -109,8 +109,13 @@ object CampaignAssembler {
         )
         // One ScriptContext for the whole battle: reserves + map drive the `pre` deployment here AND the
         // `mid` triggers the battle loop later runs through TriggerRunner.tick (so a mid spawn draws the
-        // same reserves and lands on the same map).
-        val scriptContext = ScriptContext(reserves = BattleAssembler.reserves(content.tables.units), map = map)
+        // same reserves and lands on the same map). Reserve panels are budgeted to each unit's level by
+        // its class growth (ADR 0006); with no growth weights this is identity (base panel unchanged).
+        val growthByClass = content.tables.classes.associate { it.id to it.combat.growth }
+        val scriptContext = ScriptContext(
+            reserves = BattleAssembler.reserves(content.tables.units, growthByClass),
+            map = map,
+        )
         return BattleSetup(context, deploy(script, scriptContext, seed), script, scriptContext)
     }
 
