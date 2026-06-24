@@ -2,6 +2,7 @@ package com.ccz.app.battle
 
 import com.ccz.contentpack.ContentValidator
 import com.ccz.core.model.Faction
+import com.ccz.core.model.Pos
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -33,6 +34,37 @@ class RealBattleTest {
         assertEquals(Faction.PLAYER, state.units.getValue("hero_2").faction) // 关羽
         assertEquals(Faction.ENEMY, state.units.getValue("hero_226").faction) // 程远志 (spawn faction override)
         assertEquals(Faction.ENEMY, state.units.getValue("hero_227").faction) // 邓茂
+    }
+
+    @Test
+    fun theBattleIsFoughtOnRealCroppedTerrain() {
+        // An 8×7 crop of the real terrainMap_1 (大兴山) — genuine legacy terrain (荒地/山地/树林), not a flat
+        // synthetic field; proves the real map layout reaches the assembled board.
+        val map = RealBattle.context().map
+        assertEquals(8, map.width)
+        assertEquals(7, map.height)
+        val terrains = (0 until map.width)
+            .flatMap { x -> (0 until map.height).map { y -> map.tileAt(Pos(x, y)).terrainId } }
+            .toSet()
+        assertTrue("the board carries real legacy terrain (荒地/山地/树林)", terrains.any { it in setOf("terrain_3", "terrain_4", "terrain_5") })
+        assertTrue("a real map has more than one terrain type", terrains.size > 1)
+    }
+
+    @Test
+    fun everyEnemyAdvancesOnItsAutoDrivenTurn() {
+        // Regression guard against stranded units on real terrain: the roster spawns 3 rows apart (out of
+        // the basic attack's reach-1), so the aggressive AI must MOVE every enemy toward the players on the
+        // enemy turn. A unit boxed in by impassable terrain (e.g. a move-1 黄巾军 ringed by 山地, cost 2)
+        // could only Wait — its position would not change, failing this test.
+        val reducer = BattleReducer(RealBattle.context(), RealBattle.script(), RealBattle.scriptContext())
+        val start = reducer.initial(RealBattle.initialState())
+        val after = reducer.endTurn(start) // player ends → AI drives the whole enemy turn → back to player
+        start.state.units.values.filter { it.faction == Faction.ENEMY }.forEach { enemy ->
+            assertTrue(
+                "enemy ${enemy.id} must be able to move on its turn (not stranded by terrain)",
+                after.state.units.getValue(enemy.id).pos != enemy.pos,
+            )
+        }
     }
 
     @Test
