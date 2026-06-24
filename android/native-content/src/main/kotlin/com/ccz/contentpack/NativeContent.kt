@@ -60,6 +60,22 @@ data class ClassCombat(
     val counters: Map<String, String> = emptyMap(),
     val terrainAffinity: Map<String, Int> = emptyMap(),
     val skills: List<String> = emptyList(),
+    val growth: ClassGrowth = ClassGrowth(),
+)
+
+/**
+ * Per-class stat growth weights consumed at assembly time by [com.ccz.contentpack.assembly.GrowthBudget]
+ * (ADR 0006). Each weight is the flat amount that stat gains per level above 1. All-zero (the default)
+ * means no growth — units assemble at their base panel, the engine's current behaviour — so this is
+ * dormant until content (or the legacy `dic_job` importer, a later phase) supplies real weights. `res`
+ * has no legacy source yet and is left 0 rather than invented.
+ */
+data class ClassGrowth(
+    val atk: Int = 0,
+    val def: Int = 0,
+    val mat: Int = 0,
+    val res: Int = 0,
+    val hp: Int = 0,
 )
 
 data class UnitDef(

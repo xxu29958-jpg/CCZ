@@ -2,6 +2,7 @@ package com.ccz.contentpack.json
 
 import com.ccz.contentpack.ClassCombat
 import com.ccz.contentpack.ClassDef
+import com.ccz.contentpack.ClassGrowth
 import com.ccz.contentpack.ClassMovement
 import com.ccz.contentpack.ItemDef
 import com.ccz.contentpack.MapDef
@@ -35,6 +36,13 @@ internal fun toClass(index: Int, dto: ClassDto): ClassDef {
             counters = dto.combat.counters.mapValues { decodeCounterRelation("$path.counters", it.value).name },
             terrainAffinity = dto.combat.terrainAffinity,
             skills = dto.combat.skills,
+            growth = ClassGrowth(
+                atk = dto.combat.growth.atk,
+                def = dto.combat.growth.def,
+                mat = dto.combat.growth.mat,
+                res = dto.combat.growth.res,
+                hp = dto.combat.growth.hp,
+            ),
         ),
     )
 }

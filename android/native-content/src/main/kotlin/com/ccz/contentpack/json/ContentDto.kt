@@ -58,6 +58,16 @@ internal data class CombatDto(
     val counters: Map<String, String> = emptyMap(),
     val terrainAffinity: Map<String, Int> = emptyMap(),
     val skills: List<String> = emptyList(),
+    val growth: GrowthDto = GrowthDto(),
+)
+
+@Serializable
+internal data class GrowthDto(
+    val atk: Int = 0,
+    val def: Int = 0,
+    val mat: Int = 0,
+    val res: Int = 0,
+    val hp: Int = 0,
 )
 
 @Serializable
