@@ -1,7 +1,5 @@
 package com.ccz.app.campaign
 
-import com.ccz.app.battle.CampaignContent
-import com.ccz.app.battle.DemoBattle
 import com.ccz.core.battle.BattleRules
 import com.ccz.core.battle.Command
 import com.ccz.core.event.ScenarioOp
@@ -18,16 +16,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Pins the app composition-layer replay wiring: the bundled content supplies the battle tables and
- * R-script table to game-core's two replay axes, while failures stay fail-closed and return no partial
- * battle/cutscene result.
+ * Pins the app composition-layer replay wiring over the REAL campaign ([CampaignRuntime]): the bundled
+ * battle pack + R-script table feed game-core's two replay axes, while failures stay fail-closed and
+ * return no partial battle/cutscene result.
  */
 class CampaignReplayDriverTest {
     private fun envelope(
         commands: List<Command> = emptyList(),
         scenarios: List<ScenarioReplay> = emptyList(),
     ): SaveEnvelope {
-        val manifest = CampaignContent.pack().manifest
+        val manifest = CampaignRuntime.battlePack().manifest
         return SaveEnvelope(
             versions = SaveVersions(
                 saveSchemaVersion = SaveVersions.SUPPORTED_SAVE_SCHEMA_VERSION,
@@ -36,30 +34,25 @@ class CampaignReplayDriverTest {
                 nativeFormatVersion = manifest.nativeFormatVersion,
                 contentVersion = manifest.contentVersion,
             ),
-            initialState = DemoBattle.initialState(),
+            initialState = CampaignRuntime.initialState(),
             commands = commands,
             scenarios = scenarios,
         )
     }
 
     @Test
-    fun replaysBattleCommandsAndScenarioChoicesFromBundledContent() {
-        val initial = DemoBattle.initialState()
+    fun replaysBattleCommandsAndScenarioChoicesFromTheRealCampaign() {
         val outcome = CampaignReplayDriver.load(
             envelope(
-                commands = listOf(
-                    Command.Attack("zhang", "foe", "strike"),
-                    Command.Move("guan", Pos(1, 3)),
-                    Command.Wait("guan"),
-                ),
-                scenarios = listOf(ScenarioReplay(CampaignContent.INTRO_SCRIPT_ID, choices = listOf(0))),
+                // 关羽 (hero_2) at (1,4) steps to the empty 荒地 (1,3), then stands down (move-then-act).
+                commands = listOf(Command.Move("hero_2", Pos(1, 3)), Command.Wait("hero_2")),
+                scenarios = listOf(ScenarioReplay(CampaignRuntime.INTRO_SCRIPT_ID, choices = listOf(0))),
             ),
         ) as CampaignReplayDriver.Outcome.Replayed
 
-        assertTrue(outcome.battleState.units.getValue("foe").hp < initial.units.getValue("foe").hp)
-        assertEquals(Pos(1, 3), outcome.battleState.units.getValue("guan").pos)
-        assertTrue(outcome.battleState.hasMoved("guan"))
-        assertTrue(outcome.battleState.hasActed("guan"))
+        assertEquals(Pos(1, 3), outcome.battleState.units.getValue("hero_2").pos)
+        assertTrue(outcome.battleState.hasMoved("hero_2"))
+        assertTrue(outcome.battleState.hasActed("hero_2"))
         val playback = outcome.scenarioPlaybacks.single()
         assertEquals("the recorded intro choice drives the scenario vars", 1, playback.vars["plan"])
         assertNull(playback.pausedAt)
@@ -78,7 +71,7 @@ class CampaignReplayDriverTest {
     @Test
     fun incompleteScenarioChoicesAreRejectedByTheScenarioAxis() {
         val outcome = CampaignReplayDriver.load(
-            envelope(scenarios = listOf(ScenarioReplay(CampaignContent.INTRO_SCRIPT_ID))),
+            envelope(scenarios = listOf(ScenarioReplay(CampaignRuntime.INTRO_SCRIPT_ID))),
         ) as CampaignReplayDriver.Outcome.ScenarioRejected
 
         assertEquals(ScenarioRejection.INCOMPLETE_REPLAY, outcome.reason)

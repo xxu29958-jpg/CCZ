@@ -1,9 +1,6 @@
 package com.ccz.app.campaign
 
-import com.ccz.app.battle.CampaignContent
-import com.ccz.app.battle.DemoBattle
 import com.ccz.core.battle.BattleState
-import com.ccz.core.event.RScript
 import com.ccz.core.event.ScenarioRunner
 import com.ccz.core.save.SaveEnvelope
 import com.ccz.core.save.SaveLoader
@@ -33,8 +30,8 @@ object CampaignReplayDriver {
     }
 
     fun load(envelope: SaveEnvelope): Outcome {
-        val context = DemoBattle.context()
-        val scripts = rScripts()
+        val context = CampaignRuntime.context()
+        val scripts = CampaignRuntime.rScripts()
         val battle = when (val loaded = SaveLoader.load(
             envelope = envelope,
             resolve = context.resolve,
@@ -49,7 +46,4 @@ object CampaignReplayDriver {
         }
         return Outcome.Replayed(battle.finalState, scenarios.playbacks)
     }
-
-    private fun rScripts(): Map<String, RScript> =
-        CampaignContent.pack().events.rScripts.associateBy { it.id }
 }
