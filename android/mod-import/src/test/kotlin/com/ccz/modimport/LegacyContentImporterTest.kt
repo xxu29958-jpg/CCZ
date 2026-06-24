@@ -32,6 +32,9 @@ class LegacyContentImporterTest {
         val guan = content.tables.units.first { it.identity.id == "hero_2" }
         assertEquals("job_3", guan.identity.classId)
         assertEquals(300, guan.profile.hpMax)
+        // the engine quality grade forged from real hero stats survives the full import into the engine model
+        assertEquals(1, guan.profile.grade, "关羽 strength 310 -> grade 1")
+        assertEquals(2, content.tables.units.first { it.identity.id == "hero_1" }.profile.grade, "刘备 strength 333 -> grade 2")
     }
 
     @Test

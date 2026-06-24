@@ -31,6 +31,8 @@ data class PackProfile(
     val level: Int,
     @SerialName("hp_max") val hpMax: Int,
     val stats: PackStats,
+    /** Engine quality tier (0 = baseline); 0 is omitted from output, so packs stay lean by default. */
+    val grade: Int = 0,
 )
 
 @Serializable
@@ -76,18 +78,15 @@ object LegacyUnitMapper {
             val hp = row.optInt("hp", 1)
             require(hp >= 1) { "hero $hid has non-positive hp $hp" }
             val skill = row.optInt("skill", 0)
+            val stats = PackStats(
+                atk = row.optInt("atk", 0),
+                def = row.optInt("def", 0),
+                mat = row.optInt("ints", 0),
+                res = row.optInt("burst", 0),
+            )
             PackUnit(
                 identity = PackIdentity(UNIT_PREFIX + hid, name, CLASS_PREFIX + jobid, DEFAULT_FACTION),
-                profile = PackProfile(
-                    level = level,
-                    hpMax = hp,
-                    stats = PackStats(
-                        atk = row.optInt("atk", 0),
-                        def = row.optInt("def", 0),
-                        mat = row.optInt("ints", 0),
-                        res = row.optInt("burst", 0),
-                    ),
-                ),
+                profile = PackProfile(level = level, hpMax = hp, stats = stats, grade = gradeFromStrength(stats)),
                 loadout = PackLoadout(skills = if (skill > 0) listOf(SKILL_PREFIX + skill) else emptyList()),
             )
         }
@@ -96,6 +95,22 @@ object LegacyUnitMapper {
     /** Serialize mapped units as the content-pack `units` table JSON array. */
     fun toUnitsJson(units: List<PackUnit>): String =
         writer.encodeToString(ListSerializer(PackUnit.serializer()), units)
+
+    /**
+     * THIS engine's own quality grade for an imported hero (0..5), forged from the one quality signal the
+     * legacy ore actually carries: combat-stat strength (atk + def + ints->mat + burst->res). `dic_hero`
+     * has no per-hero grade, and the old `dic_grade` rating table is deliberately NOT reproduced — this is
+     * an engine-designed mapping onto its six-tier growth-speed ladder (a higher grade only makes a unit's
+     * per-level growth accrue faster, ADR 0006). Thresholds are calibrated to the real 2729-hero strength
+     * distribution (median ~320, a ~15% maxed-stat cluster near 2000) so all six tiers are populated; they
+     * are a tuning knob, not a legacy constant.
+     */
+    private val GRADE_STRENGTH_THRESHOLDS = listOf(290, 330, 380, 470, 1500)
+
+    private fun gradeFromStrength(stats: PackStats): Int {
+        val strength = stats.atk + stats.def + stats.mat + stats.res
+        return GRADE_STRENGTH_THRESHOLDS.count { strength >= it }
+    }
 }
 
 private fun JsonObject.reqInt(key: String): Int =
