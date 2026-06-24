@@ -43,9 +43,14 @@ data class MapTile(
     // DEF in the damage formula, so defenders take less on forts/forests. 0 = open ground (no effect),
     // the default, so existing maps and saves that predate the field resolve combat unchanged.
     val defBonus: Int = 0,
+    // Flat evasion a unit gains while standing here (FE/AW "terrain avoid"): subtracted from the
+    // attacker's effective hit chance, so defenders are harder to hit on forests/etc. 0 = no effect,
+    // the default; only the hit threshold shifts, never the RNG draw order, so goldens stay deterministic.
+    val avoidBonus: Int = 0,
 ) {
     init {
         require(moveCost >= 1) { "moveCost must be >= 1, was $moveCost" }
         require(defBonus >= 0) { "defBonus must be >= 0, was $defBonus" }
+        require(avoidBonus >= 0) { "avoidBonus must be >= 0, was $avoidBonus" }
     }
 }

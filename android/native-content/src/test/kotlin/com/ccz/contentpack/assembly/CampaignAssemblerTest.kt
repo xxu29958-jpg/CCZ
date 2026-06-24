@@ -75,7 +75,7 @@ class CampaignAssemblerTest {
     private fun terrainDefs(): List<TerrainDef> = listOf(
         TerrainDef(id = "plain", name = "Plain", moveCost = 1),
         TerrainDef(id = "wall", name = "Wall", moveCost = 1, passable = false),
-        TerrainDef(id = "wood", name = "Wood", moveCost = 2, bonuses = TerrainBonuses(defBonus = 20)),
+        TerrainDef(id = "wood", name = "Wood", moveCost = 2, bonuses = TerrainBonuses(defBonus = 20, avoidBonus = 15)),
     )
 
     private fun classDefs(): List<ClassDef> = listOf(
@@ -144,6 +144,7 @@ class CampaignAssemblerTest {
         assertEquals(2, map.tileAt(Pos(3, 2)).moveCost, "wood move cost survives assembly at an asymmetric tile")
         assertEquals("wood", map.tileAt(Pos(3, 2)).terrainId)
         assertEquals(20, map.tileAt(Pos(3, 2)).defBonus, "wood's terrain defense carries through to the engine tile")
+        assertEquals(15, map.tileAt(Pos(3, 2)).avoidBonus, "wood's terrain avoid carries through to the engine tile")
     }
 
     @Test
