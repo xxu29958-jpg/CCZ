@@ -223,7 +223,7 @@ object CampaignAssembler {
     private fun tile(terrainId: String, byId: Map<String, TerrainDef>): MapTile {
         val def = byId[terrainId]
             ?: throw CampaignAssemblyException("map references unknown terrain '$terrainId'")
-        return MapTile(terrainId = def.id, moveCost = def.moveCost, passable = def.passable)
+        return MapTile(terrainId = def.id, moveCost = def.moveCost, passable = def.passable, defBonus = def.bonuses.defBonus)
     }
 
     private fun classes(defs: List<ClassDef>): Map<String, UnitClass> =

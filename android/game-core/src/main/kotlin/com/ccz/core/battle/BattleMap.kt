@@ -39,8 +39,13 @@ data class MapTile(
     val terrainId: String,
     val moveCost: Int,
     val passable: Boolean = true,
+    // Flat defense a unit gains while standing here (FE/AW "terrain defense"): added to its effective
+    // DEF in the damage formula, so defenders take less on forts/forests. 0 = open ground (no effect),
+    // the default, so existing maps and saves that predate the field resolve combat unchanged.
+    val defBonus: Int = 0,
 ) {
     init {
         require(moveCost >= 1) { "moveCost must be >= 1, was $moveCost" }
+        require(defBonus >= 0) { "defBonus must be >= 0, was $defBonus" }
     }
 }

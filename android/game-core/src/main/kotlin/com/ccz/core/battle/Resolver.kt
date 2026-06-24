@@ -47,6 +47,8 @@ object Resolver {
         val affinityPct = ctx.map?.let {
             ctx.classes[attacker.classId]?.terrain?.affinity?.get(it.tileAt(attacker.pos).terrainId)
         } ?: 100
+        // Defender's terrain defense: a flat bonus to its effective DEF from the tile it stands on (0 = none).
+        val terrainDef = ctx.map?.let { it.tileAt(defender.pos).defBonus } ?: 0
         val profile = Formula.rollHitProfile(attacker.rates, defender.rates, rng)
         val events = mutableListOf<Event>()
 
@@ -60,13 +62,14 @@ object Resolver {
             DamageKind.PHYSICAL -> attacker.stats.atk to defender.stats.def
             DamageKind.STRATEGY -> attacker.stats.mat to defender.stats.res
         }
+        val effectiveDef = defValue + terrainDef
         val counter = ctx.classes[attacker.classId]?.counters?.get(defender.classId)
-        val broke = atkValue - defValue > 0
+        val broke = atkValue - effectiveDef > 0
 
         fun strike(coeff: Int, isCrit: Boolean, isCombo: Boolean) {
             val damage = Formula.damage(DamageInput(
                 atk = atkValue,
-                def = defValue,
+                def = effectiveDef,
                 skillCoeffPct = coeff,
                 modifiers = DamageModifiers(terrainAffinityPct = affinityPct),
                 flags = DamageFlags(crit = isCrit, counter = counter, blocked = profile.blocked),
