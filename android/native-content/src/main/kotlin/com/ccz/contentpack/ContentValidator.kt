@@ -125,6 +125,11 @@ object ContentValidator {
      *   below 1 makes movement free/negative and breaks reachability accumulation.
      * - skill range mirrors [com.ccz.core.model.RangeSpec] (min in 0..max): an inverted band
      *   can never cover any distance; a negative min is out of domain. min == 0 is valid.
+     * - unit grade is the quality-tier index into [com.ccz.contentpack.assembly.GrowthBudget]'s
+     *   growth-multiplier ladder (>= 0): a negative tier is malformed content. The assembler clamps it
+     *   to neutral as defense-in-depth, but we reject it here so a bad pack fails at load, not silently.
+     *   No upper bound is checked — the ladder length is assembly-time [GrowthConfig], so a too-high tier
+     *   saturates at the top tier by design rather than being a content error.
      */
     private fun validateNumericBounds(tables: ContentTables): List<ValidationIssue> {
         val issues = mutableListOf<ValidationIssue>()
@@ -137,6 +142,11 @@ object ContentValidator {
             val range = skill.use.range
             if (range.min < 0 || range.min > range.max) {
                 issues += ValidationIssue("skills[$index].range", "min must be in 0..max")
+            }
+        }
+        tables.units.forEachIndexed { index, unit ->
+            if (unit.profile.grade < 0) {
+                issues += ValidationIssue("units[$index].grade", "grade must be >= 0")
             }
         }
         return issues

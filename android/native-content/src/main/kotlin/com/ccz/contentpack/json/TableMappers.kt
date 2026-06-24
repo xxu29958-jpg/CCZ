@@ -61,6 +61,7 @@ internal fun toUnit(index: Int, dto: UnitDto): UnitDef {
             hpMax = dto.profile.hpMax,
             stats = toStats(dto.profile.stats),
             rates = toRates(dto.profile.rates),
+            grade = dto.profile.grade,
         ),
         loadout = UnitLoadout(skills = dto.loadout.skills, items = dto.loadout.items),
         assets = UnitAssets(portrait = dto.assets.portrait, spriteSet = dto.assets.spriteSet),

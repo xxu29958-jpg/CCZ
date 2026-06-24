@@ -87,6 +87,7 @@ internal data class ProfileDto(
     val hpMax: Int,
     val stats: StatsDto,
     val rates: RatesDto = RatesDto(),
+    val grade: Int = 0,
 )
 
 @Serializable

@@ -84,6 +84,7 @@ final = clamp( base + growth * (level - 1) * gradeMulPct / 100 , 0 , cap )
 **第三阶段(若产品需要,各自独立 ADR,刻意不在本决策内):**
 
 - 评级转生制(嫁接 C):"等级是进度刻度、品质 grade 决定成长速度、转生 = 重置 level + 升 grade 而非叠乘属性",接到 `GrowthConfig.gradeMulPctByGrade` 上补深度,延续"线性不叠乘"反膨胀纪律。
+  - **已落地(品质档乘子维度,`feat/growth-grade-tiers`)**:`GrowthConfig.gradeMulPctByGrade` 默认从惰性 `[100]` 改为**本引擎自有**的 6 档线性梯子 `100/120/…/200`(每档 +20%,档 0 = 中性基准,顶档仅把成长**速度**翻倍),`UnitProfile.grade`(`>=0`,`ProfileDto.grade` 入 JSON 线、`ContentValidator` fail-closed 拒负值)穿进 `BattleAssembler` 预算。**这是自定设计而非复刻旧作评级**:旧作 `dic_grade`(C/B/A/S/X/X+ 六档 + up/down/skip 概率波动)只作"该有品质杠杆"的矿源启发,其档名与概率波动**刻意不复刻**(概率波动违回放确定性,见 Rollback)。旧作 `dic_hero` 本就无静态 grade,故导入单位恒 0(中性),杠杆真实但对现有内容惰性,待内容/转生层声明更高档才生效。零新增 RNG、纯整数预算、golden 走默认路径不触发、`RULES_VERSION` 不动。完整转生(重置 level + 升 grade 作进度)仍留独立 ADR。
 - 战中 exp / 升级 spine:跨 `Combatant`/`BattleProgress`/`Event`/save schema 的 god-object 风险区,需持久化 + `Command.LevelUp` + `SaveLoader.commandIntegrity` fail-closed 校验;若 golden 默认场景会触发且改变同场后续伤害/事件流,**必须重生成 golden 同步 bump `RULES_VERSION`**。
 - 真随机成长(理念保留自 B):若产品要 FE 风随机长进,**只能**用与战斗 RNG 完全隔离的独立 `Rng` 实例 + 独立 seed,纳入有版本号的养成层轴守护,**绝不复用 `BattleState.rngState`**;本决策不引入,留作未来独立 ADR。
 

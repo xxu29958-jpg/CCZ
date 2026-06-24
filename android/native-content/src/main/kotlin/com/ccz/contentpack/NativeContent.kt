@@ -100,6 +100,12 @@ data class UnitProfile(
     val hpMax: Int,
     val stats: CombatStats,
     val rates: CombatRates = CombatRates(),
+    /** Quality tier (0 = neutral baseline) into this engine's own grade → growth-multiplier ladder
+     *  (`GrowthConfig.gradeMulPctByGrade`, ADR 0006 "评级"): it scales how fast class growth accrues at
+     *  assembly time. A non-negative tier index, designed here rather than ported from the old rating
+     *  system; units default to 0 (budget exactly as before), and a higher tier is only set by content
+     *  that declares one. */
+    val grade: Int = 0,
 )
 
 data class UnitLoadout(
