@@ -14,7 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.ccz.app.battle.BattleReducer
 import com.ccz.app.battle.BattleScreen
-import com.ccz.app.battle.DemoBattle
+import com.ccz.app.battle.RealBattle
 import com.ccz.app.scenario.DemoScenario
 import com.ccz.app.scenario.ScenarioReducer
 import com.ccz.app.scenario.ScenarioScreen
@@ -25,8 +25,8 @@ import com.ccz.app.scenario.ScenarioScreen
  * [BattleReducer] (Gameplay.submit / legalDestinations / legalTargets / legalSkills); for the cutscene it
  * is [ScenarioReducer] driving the deterministic ScenarioRunner. The app never computes damage, decides
  * range/legality, mutates state, consumes RNG, decides outcomes, or evolves scenario vars/branches — it
- * only draws the authority's output. The battle and intro cutscene now run off the same bundled
- * native-content pack; [DemoBattle] assembles the battle, and [DemoScenario] supplies the R-script.
+ * only draws the authority's output. [RealBattle] assembles the playable battle from a content pack
+ * generated out of the user's real legacy data; [DemoScenario] supplies the intro R-script.
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,7 +41,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** Plays the intro cutscene, then hands off to the battle once it finishes. */
+/**
+ * Plays the intro cutscene, then hands off to the battle once it finishes.
+ * NOTE: the intro is still the 曹操 demo cutscene (ccz_demo `demo_intro`) and does NOT match the
+ * 刘备-vs-黄巾 real battle — a placeholder until a matching 大兴山 intro R-script ships in the real pack.
+ */
 @Composable
 private fun AppHost() {
     var inScenario by remember { mutableStateOf(true) }
@@ -56,9 +60,9 @@ private fun AppHost() {
 
 @Composable
 private fun BattleHost() {
-    val context = remember { DemoBattle.context() }
-    val reducer = remember { BattleReducer(context, DemoBattle.script(), DemoBattle.scriptContext()) }
-    val initial = remember { reducer.initial(DemoBattle.initialState()) }
+    val context = remember { RealBattle.context() }
+    val reducer = remember { BattleReducer(context, RealBattle.script(), RealBattle.scriptContext()) }
+    val initial = remember { reducer.initial(RealBattle.initialState()) }
     BattleScreen(
         map = context.map,
         reducer = reducer,
