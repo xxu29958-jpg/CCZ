@@ -18,6 +18,7 @@ import com.ccz.core.event.BattleTrigger
 import com.ccz.core.event.SScript
 import com.ccz.core.event.TriggerCondition
 import com.ccz.core.event.WinLoseCondition
+import com.ccz.core.model.ClassTerrain
 import com.ccz.core.model.CounterRelation
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
@@ -227,7 +228,14 @@ object CampaignAssembler {
 
     private fun classes(defs: List<ClassDef>): Map<String, UnitClass> =
         defs.associate {
-            it.id to UnitClass(it.id, it.name, it.movement.moveType, it.movement.move, counters(it), it.movement.terrainCost)
+            it.id to UnitClass(
+                id = it.id,
+                name = it.name,
+                moveType = it.movement.moveType,
+                move = it.movement.move,
+                counters = counters(it),
+                terrain = ClassTerrain(moveCost = it.movement.terrainCost, affinity = it.combat.terrainAffinity),
+            )
         }
 
     private fun counters(def: ClassDef): Map<String, CounterRelation> =

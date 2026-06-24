@@ -37,9 +37,7 @@ object CampaignReplayDriver {
         val scripts = rScripts()
         val battle = when (val loaded = SaveLoader.load(
             envelope = envelope,
-            classes = context.classes,
-            skills = context.skills,
-            rules = context.rules,
+            resolve = context.resolve,
             scripts = scripts,
         )) {
             is SaveLoader.Outcome.Loaded -> loaded

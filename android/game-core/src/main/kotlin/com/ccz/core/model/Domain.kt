@@ -52,14 +52,21 @@ data class UnitClass(
     val moveType: String,
     val move: Int,
     val counters: Map<String, CounterRelation> = emptyMap(),
-    /**
-     * Per-terrain move cost for this class, keyed by [MapTile.terrainId]: a value `>= 1` overrides the
-     * tile's own [MapTile.moveCost] for this class; a value `<= 0` makes the terrain impassable for it.
-     * A terrain absent from the map falls back to the tile's global cost/passability, so an empty map
-     * (the default) preserves terrain-agnostic movement — the per-class movement model is opt-in and
-     * activates only for classes that declare costs (Advance-Wars-style movement types).
-     */
-    val terrainCost: Map<String, Int> = emptyMap(),
+    val terrain: ClassTerrain = ClassTerrain(),
+)
+
+/**
+ * A class's terrain interaction, keyed by [MapTile.terrainId] (grouped so [UnitClass] stays within the
+ * parameter gate). Both maps are opt-in: an absent terrain (or the empty default) is neutral.
+ *
+ * - [moveCost]: per-class enter cost — `>= 1` overrides the tile's own [MapTile.moveCost], `<= 0` makes
+ *   the terrain impassable for the class (Advance-Wars movement types; mirrors legacy `dic_jobWalk`).
+ * - [affinity]: combat percent applied to the unit's outgoing damage from the tile it stands on
+ *   (100 = neutral, 120 = +20%); favorable-ground combat (FFT/Fire Emblem; mirrors `dic_jobTerrain`).
+ */
+data class ClassTerrain(
+    val moveCost: Map<String, Int> = emptyMap(),
+    val affinity: Map<String, Int> = emptyMap(),
 )
 
 data class CombatIdentity(
