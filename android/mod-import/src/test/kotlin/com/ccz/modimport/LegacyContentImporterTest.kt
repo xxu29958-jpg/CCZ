@@ -35,6 +35,18 @@ class LegacyContentImporterTest {
     }
 
     @Test
+    fun jobWalkTerrainCostFlowsThroughLoaderIntoClassMovement() {
+        val withWalk = sources().copy(
+            // job 1 on terrain 2 costs 2, on terrain 1 (cost 1) omitted; job 3 has no walk row
+            dicJobWalk = """[{"id":1,"1":1,"2":2}]""",
+        )
+        val content = LegacyContentImporter.load(meta, withWalk)
+        val job1 = content.tables.classes.first { it.id == "job_1" }
+        assertEquals(mapOf("terrain_2" to 2), job1.movement.terrainCost)
+        assertTrue(content.tables.classes.first { it.id == "job_3" }.movement.terrainCost.isEmpty())
+    }
+
+    @Test
     fun emittedPackJsonUsesSnakeCaseWireKeys() {
         val json = LegacyContentImporter.buildPackJson(meta, sources())
         for (key in listOf("native_format_version", "content_id", "move_type", "class_id", "hp_max", "power_coeff")) {
