@@ -18,11 +18,12 @@ import com.ccz.core.model.Pos
  * (unique ids, resolvable references) by ContentValidator, so duplicate ids are
  * not re-checked here. The unit's loadout / assets are presentation.
  *
- * The unit's combat panel is BUDGETED to its [level][com.ccz.contentpack.UnitProfile.level] via
- * [GrowthBudget] using its class's [ClassGrowth] (ADR 0006): a pure, deterministic, assembly-time
- * closed form baked into the snapshot, so replay never recomputes and the battle RNG is untouched.
- * With the default empty growth map (no class supplies weights) every panel equals its base — the
- * engine's prior behaviour — which is why goldens stay byte-identical.
+ * The unit's combat panel is BUDGETED to its [level][com.ccz.contentpack.UnitProfile.level], scaled by
+ * its quality [grade][com.ccz.contentpack.UnitProfile.grade], via [GrowthBudget] using its class's
+ * [ClassGrowth] (ADR 0006): a pure, deterministic, assembly-time closed form baked into the snapshot, so
+ * replay never recomputes and the battle RNG is untouched. With the default empty growth map (no class
+ * supplies weights) every panel equals its base — the engine's prior behaviour — which is why goldens
+ * stay byte-identical; grade only matters once growth weights are present.
  */
 object BattleAssembler {
     /** Sentinel position for an unplaced reserve; SpawnUnit overwrites it with op.at. */
@@ -44,8 +45,8 @@ object BattleAssembler {
     ): ScriptContext = ScriptContext(reserves(units, growthByClass, cfg))
 
     private fun UnitDef.toReserveCombatant(growth: ClassGrowth, cfg: GrowthConfig): Combatant {
-        // Grade dimension is dormant in this phase: grade 0 -> the neutral (100%) tier (ADR 0006).
-        val gradeMulPct = GrowthBudget.gradeMulPct(grade = 0, cfg = cfg)
+        // Quality tier scales how fast class growth accrues; grade 0 (the default) is the neutral 100%.
+        val gradeMulPct = GrowthBudget.gradeMulPct(grade = profile.grade, cfg = cfg)
         val hpMax = GrowthBudget.budgetHp(profile.hpMax, growth, profile.level, gradeMulPct, cfg)
         return Combatant(
             identity = CombatIdentity(

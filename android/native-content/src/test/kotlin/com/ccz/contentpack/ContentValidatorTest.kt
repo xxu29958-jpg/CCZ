@@ -186,6 +186,17 @@ class ContentValidatorTest {
         assertEquals(emptyList(), ContentValidator.validate(content))
     }
 
+    @Test
+    fun negativeUnitGradeFailClosed() {
+        // grade is a non-negative quality-tier index; a negative tier is malformed content. A too-high
+        // tier is NOT an error (the assembler saturates it at the top tier), so only the lower bound gates.
+        val negative = validContent(tables = defaultTables().copy(units = listOf(unitDef(grade = -1))))
+        assertTrue(ContentValidator.validate(negative).any { it.path == "units[0].grade" })
+
+        val high = validContent(tables = defaultTables().copy(units = listOf(unitDef(grade = 99))))
+        assertEquals(emptyList(), ContentValidator.validate(high), "a too-high grade saturates, not rejected")
+    }
+
     // Override any table via defaultTables().copy(...) to keep the parameter list small
     // (CCZ rule: bundle test knobs into the ContentTables value object, not loose params).
     private fun validContent(
@@ -232,10 +243,11 @@ class ContentValidatorTest {
     private fun unitDef(
         classId: String = "cavalry",
         skills: List<String> = listOf("atk"),
+        grade: Int = 0,
     ): UnitDef =
         UnitDef(
             identity = UnitIdentity("zhaoyun", "Zhao Yun", classId, Faction.PLAYER),
-            profile = UnitProfile(level = 1, hpMax = 200, stats = CombatStats(180, 120, 60, 90)),
+            profile = UnitProfile(level = 1, hpMax = 200, stats = CombatStats(180, 120, 60, 90), grade = grade),
             loadout = UnitLoadout(skills = skills),
         )
 

@@ -4,16 +4,23 @@ import com.ccz.contentpack.ClassGrowth
 import com.ccz.core.model.CombatStats
 
 /**
- * Tuning for [GrowthBudget]: a soft cap that flattens the legacy stat inflation (the old game's
- * 9M/40M run-time ceilings are an inflation artifact, deliberately not reproduced) and the grade →
- * multiplier table. Defaults are NEUTRAL: a single-entry `gradeMulPctByGrade = [100]` means every
- * unit budgets at 100% regardless of grade, so the grade dimension is structurally present but
- * dormant until a later phase (per ADR 0006) feeds real `dic_grade` tiers in.
+ * Tuning for [GrowthBudget]: a soft cap that flattens stat inflation (the old game's 9M/40M run-time
+ * ceilings are an inflation artifact we deliberately do NOT reproduce) and THIS engine's own quality-tier
+ * → growth-multiplier ladder.
+ *
+ * Grade ("评级") is this engine's quality lever — designed here, not ported from the old game's rating
+ * table: a non-negative tier index that scales how fast a unit's per-level growth accrues. The default
+ * ladder is six tiers at a flat +20%/tier (100..200): tier 0 is the NEUTRAL 100% baseline and the top
+ * tier doubles growth SPEED only — deliberately linear and shallow so elite units pull ahead without the
+ * old game's multiplicative runaway. Units default to grade 0, so content that declares no grade budgets
+ * exactly as before; the lever is real but inert until content sets a higher tier. (The old "评级" data
+ * was only the ore that suggested a quality lever is worth having — its tier names and random
+ * up/down-grade churn are intentionally not reproduced.)
  */
 data class GrowthConfig(
     val statCap: Int = 999,
     val hpCap: Int = 9999,
-    val gradeMulPctByGrade: List<Int> = listOf(100),
+    val gradeMulPctByGrade: List<Int> = listOf(100, 120, 140, 160, 180, 200),
 ) {
     init {
         require(statCap >= 0) { "statCap must be >= 0, was $statCap" }
@@ -33,9 +40,10 @@ data class GrowthConfig(
  * `Formula.mulDiv` TRUNCATE), in [Long] so a large level × growth can't overflow before the clamp.
  */
 object GrowthBudget {
-    /** Grade multiplier percent for [grade]; out-of-range grades fall back to the last (highest) tier. */
+    /** Growth multiplier percent for [grade], clamped into the tier table (negatives → neutral first
+     *  tier, too-high → top tier) so malformed grades can never crash or over-reward. */
     fun gradeMulPct(grade: Int, cfg: GrowthConfig): Int =
-        cfg.gradeMulPctByGrade.getOrElse(grade) { cfg.gradeMulPctByGrade.last() }
+        cfg.gradeMulPctByGrade[grade.coerceIn(0, cfg.gradeMulPctByGrade.lastIndex)]
 
     private fun budget(base: Int, growth: Int, level: Int, gradeMulPct: Int, cap: Int): Int {
         val levels = (level - 1).coerceAtLeast(0).toLong()
