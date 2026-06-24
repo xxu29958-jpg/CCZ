@@ -45,8 +45,27 @@ class LegacyClassMapperTest {
     }
 
     @Test
-    fun mapsDicJobRowsToPackClassesIgnoringRichFields() {
-        // real dic_job rows carry spe/atk/def/.../hp_up/atkid/seid/info — all ignored for this slice
+    fun foldsDicJobGrowthWeightsIntoCombatGrowth() {
+        // dic_job growth: atk/def straight, ints->mat (bridge), hp_up->hp, res no source (0)
+        val combat = LegacyClassMapper.mapClasses(
+            """[{"jobid":1,"name":"骑兵","move":5,"atk":4,"def":2,"ints":3,"hp_up":6}]""",
+        ).single().combat
+        assertEquals(PackGrowth(atk = 4, def = 2, mat = 3, res = 0, hp = 6), combat?.growth)
+    }
+
+    @Test
+    fun growthAndAffinityCoexistInOneCombatBlock() {
+        val combat = LegacyClassMapper.mapClasses(
+            """[{"jobid":1,"name":"骑兵","move":5,"atk":4}]""",
+            dicJobTerrainJson = """[{"id":1,"2":12}]""",
+        ).single().combat
+        assertEquals(120, combat?.terrainAffinity?.get("terrain_2"))
+        assertEquals(4, combat?.growth?.atk)
+    }
+
+    @Test
+    fun foldsGrowthWeightsAndIgnoresAssetFields() {
+        // real dic_job rows carry spe/atkid/seid/info (ignored) plus atk/hp_up growth weights (folded)
         val json = """
             [
               {"jobid":1,"name":"群雄","spe":6,"atk":3,"hp_up":5,"move":2,"atkid":1,"seid":"267&","info":"x"},
@@ -57,8 +76,16 @@ class LegacyClassMapperTest {
         val classes = LegacyClassMapper.mapClasses(json)
 
         assertEquals(2, classes.size)
-        assertEquals(PackClass("job_1", "群雄", PackMovement(LegacyClassMapper.DEFAULT_MOVE_TYPE, 2)), classes[0])
-        assertEquals(PackClass("job_2", "英雄", PackMovement(LegacyClassMapper.DEFAULT_MOVE_TYPE, 1)), classes[1])
+        assertEquals(
+            PackClass(
+                "job_1",
+                "群雄",
+                PackMovement(LegacyClassMapper.DEFAULT_MOVE_TYPE, 2),
+                PackCombat(growth = PackGrowth(atk = 3, hp = 5)),
+            ),
+            classes[0],
+        )
+        assertEquals(PackClass("job_2", "英雄", PackMovement(LegacyClassMapper.DEFAULT_MOVE_TYPE, 1)), classes[1], "no growth -> null combat")
     }
 
     @Test

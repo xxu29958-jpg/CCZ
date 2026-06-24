@@ -59,6 +59,18 @@ class LegacyContentImporterTest {
     }
 
     @Test
+    fun jobGrowthFlowsThroughLoaderIntoClassGrowth() {
+        val withGrowth = sources().copy(
+            // job 1 grows atk 5 / ints->mat 3 / hp 4 per level; job 3 has no growth
+            dicJob = """[{"jobid":1,"name":"群雄","move":2,"atk":5,"ints":3,"hp_up":4},{"jobid":3,"name":"骑兵","move":2}]""",
+        )
+        val content = LegacyContentImporter.load(meta, withGrowth)
+        val job1 = content.tables.classes.first { it.id == "job_1" }
+        assertEquals(com.ccz.contentpack.ClassGrowth(atk = 5, mat = 3, hp = 4), job1.combat.growth)
+        assertEquals(com.ccz.contentpack.ClassGrowth(), content.tables.classes.first { it.id == "job_3" }.combat.growth)
+    }
+
+    @Test
     fun emittedPackJsonUsesSnakeCaseWireKeys() {
         val json = LegacyContentImporter.buildPackJson(meta, sources())
         for (key in listOf("native_format_version", "content_id", "move_type", "class_id", "hp_max", "power_coeff")) {
