@@ -60,7 +60,17 @@ object EnemyAi {
         // backing up) and melee units close to striking distance. The current tile is never one (the
         // caller already found no in-range target there), so this only ever yields a real move.
         val firing = destinations.filter { canAttackFrom(it, skills, foes) }
-        if (firing.isNotEmpty()) return firing.minWith(compareBy({ manhattan(it, actor.pos) }, { it.x }, { it.y }))
+        // Among firing tiles, prefer the most favorable combat ground (highest terrain affinity), then
+        // nearest by Manhattan, then a stable x/y tie-break. With no affinities every tile ties at 100,
+        // so this reduces to the prior nearest-tile choice (terrain only refines, never destabilizes).
+        if (firing.isNotEmpty()) {
+            return firing.minWith(
+                compareByDescending<Pos> { terrainAffinityAt(context, actor, it) }
+                    .thenBy { manhattan(it, actor.pos) }
+                    .thenBy { it.x }
+                    .thenBy { it.y },
+            )
+        }
         // No firing position reachable: close on the nearest foe (only if a tile is strictly closer).
         val foe = nearestUnit(state, actor.pos, foes.map { it.id }.toSet()) ?: return null
         val best = destinations.minWith(compareBy({ manhattan(it, foe.pos) }, { it.x }, { it.y }))
@@ -70,6 +80,10 @@ object EnemyAi {
     /** True if from [tile] some skill's range covers some foe — i.e. the unit could attack after moving there. */
     private fun canAttackFrom(tile: Pos, skills: List<Skill>, foes: List<Combatant>): Boolean =
         skills.any { skill -> foes.any { foe -> skill.range.covers(manhattan(tile, foe.pos)) } }
+
+    /** The actor class's combat affinity (percent) for the terrain on [tile]; 100 when neutral/unknown. */
+    private fun terrainAffinityAt(context: BattleContext, actor: Combatant, tile: Pos): Int =
+        context.classes[actor.classId]?.terrain?.affinity?.get(context.map.tileAt(tile).terrainId) ?: 100
 
     private fun foesOf(state: BattleState, actor: Combatant): List<Combatant> =
         state.units.values.filter { it.alive && !sameSide(it.faction, actor.faction) }
