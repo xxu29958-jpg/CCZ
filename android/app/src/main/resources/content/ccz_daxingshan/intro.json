@@ -1,0 +1,57 @@
+{
+  "manifest": {
+    "native_format_version": "1",
+    "content_id": "ccz_daxingshan_intro",
+    "content_version": "0.1.0",
+    "source": { "mod": "trssgshz" },
+    "entry": "daxingshan_intro"
+  },
+  "tables": {
+    "classes": [],
+    "units": [],
+    "terrain": [],
+    "skills": [],
+    "items": [],
+    "maps": []
+  },
+  "events": {
+    "portrait_subjects": [
+      { "id": "liubei", "name": "刘备", "portrait": "liubei_calm" },
+      { "id": "guanyu", "name": "关羽", "portrait": "guanyu_calm" },
+      { "id": "zhangfei", "name": "张飞", "portrait": "zhangfei_angry" }
+    ],
+    "r_scripts": [
+      {
+        "id": "daxingshan_intro",
+        "ops": [
+          { "type": "fade_in" },
+          { "type": "scene_transition", "target": "幽州·大兴山" },
+          { "type": "play_bgm", "id": "march" },
+          { "type": "portrait", "unit": "liubei", "emotion": "calm" },
+          { "type": "dialogue", "line": { "speaker": "刘备", "text": "黄巾贼寇据守大兴山，残害百姓。我等既已结义，当为汉室扫除奸佞。" } },
+          { "type": "portrait", "unit": "zhangfei", "emotion": "angry" },
+          { "type": "dialogue", "line": { "speaker": "张飞", "text": "大哥放心！俺这条丈八蛇矛，杀他个片甲不留！" } },
+          { "type": "portrait", "unit": "guanyu", "emotion": "calm" },
+          { "type": "dialogue", "line": { "speaker": "关羽", "text": "三弟莫躁。贼众我寡，山势险峻，当以智取。" } },
+          {
+            "type": "choice",
+            "prompt": "如何进军？",
+            "options": [
+              { "text": "正面破阵", "goto": "assault", "set_vars": { "plan": 1 } },
+              { "text": "诱敌出山", "goto": "lure", "set_vars": { "plan": 2 } }
+            ]
+          },
+          { "type": "label", "name": "assault" },
+          { "type": "dialogue", "line": { "speaker": "刘备", "text": "全军并进，直取贼首！" } },
+          { "type": "branch", "variable": "plan", "equals": 1, "target": "ready" },
+          { "type": "label", "name": "lure" },
+          { "type": "dialogue", "line": { "speaker": "关羽", "text": "云长愿为前锋，诱其下山。" } },
+          { "type": "label", "name": "ready" },
+          { "type": "dialogue", "line": { "text": "（三骑并辔，直上大兴山）" } },
+          { "type": "fade_out" }
+        ]
+      }
+    ],
+    "s_scripts": []
+  }
+}

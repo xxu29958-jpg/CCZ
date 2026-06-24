@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import com.ccz.app.battle.BattleReducer
 import com.ccz.app.battle.BattleScreen
 import com.ccz.app.battle.RealBattle
-import com.ccz.app.scenario.DemoScenario
+import com.ccz.app.scenario.RealScenario
 import com.ccz.app.scenario.ScenarioReducer
 import com.ccz.app.scenario.ScenarioScreen
 
@@ -26,7 +26,7 @@ import com.ccz.app.scenario.ScenarioScreen
  * is [ScenarioReducer] driving the deterministic ScenarioRunner. The app never computes damage, decides
  * range/legality, mutates state, consumes RNG, decides outcomes, or evolves scenario vars/branches — it
  * only draws the authority's output. [RealBattle] assembles the playable battle from a content pack
- * generated out of the user's real legacy data; [DemoScenario] supplies the intro R-script.
+ * generated out of the user's real legacy data; [RealScenario] supplies the matching 大兴山 intro R-script.
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,16 +41,12 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/**
- * Plays the intro cutscene, then hands off to the battle once it finishes.
- * NOTE: the intro is still the 曹操 demo cutscene (ccz_demo `demo_intro`) and does NOT match the
- * 刘备-vs-黄巾 real battle — a placeholder until a matching 大兴山 intro R-script ships in the real pack.
- */
+/** Plays the 大兴山 intro cutscene ([RealScenario]), then hands off to the matching real battle. */
 @Composable
 private fun AppHost() {
     var inScenario by remember { mutableStateOf(true) }
     if (inScenario) {
-        val reducer = remember { ScenarioReducer(DemoScenario.script()) }
+        val reducer = remember { ScenarioReducer(RealScenario.script()) }
         val initial = remember { reducer.initial() }
         ScenarioScreen(reducer = reducer, initial = initial, onFinished = { inScenario = false })
     } else {
