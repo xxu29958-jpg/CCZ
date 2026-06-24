@@ -11,6 +11,7 @@ import kotlinx.serialization.json.Json
 data class PackContent(
     val manifest: PackManifest,
     val tables: PackTables,
+    val events: PackEvents? = null,
 )
 
 @Serializable
@@ -31,6 +32,7 @@ data class PackTables(
     val units: List<PackUnit> = emptyList(),
     val skills: List<PackSkill> = emptyList(),
     val terrain: List<PackTerrain> = emptyList(),
+    val maps: List<PackMap> = emptyList(),
 )
 
 /** Pack identity supplied by the caller (grouped to keep the importer API within the parameter gate). */
