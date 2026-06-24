@@ -68,6 +68,16 @@ class RealBattleTest {
     }
 
     @Test
+    fun terrainCoverIsLiveOnTheBattleMap() {
+        // 大兴山 terrain (荒地/山地/树林) carries designed defender bonuses (def/avoid) through the importer →
+        // loader → assembler into the engine MapTile, so positioning matters (e.g. 山地 grants +def/+avoid).
+        // Also proves the def_bonus/avoid_bonus wire keys decode (a bad key would fail the strict loader).
+        val map = RealBattle.context().map
+        val tiles = (0 until map.width).flatMap { x -> (0 until map.height).map { y -> map.tileAt(Pos(x, y)) } }
+        assertTrue("some tile grants defender cover (def/avoid)", tiles.any { it.defBonus > 0 || it.avoidBonus > 0 })
+    }
+
+    @Test
     fun growthAndGradeBudgetRealHeroPanelsOnTheField() {
         val state = RealBattle.initialState()
 

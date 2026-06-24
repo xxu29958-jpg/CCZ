@@ -387,32 +387,53 @@
             {
                 "id": "terrain_3",
                 "name": "树林",
-                "move_cost": 1
+                "move_cost": 1,
+                "bonuses": {
+                    "avoid_bonus": 15
+                }
             },
             {
                 "id": "terrain_4",
                 "name": "荒地",
-                "move_cost": 1
+                "move_cost": 1,
+                "bonuses": {
+                    "avoid_bonus": 5
+                }
             },
             {
                 "id": "terrain_5",
                 "name": "山地",
-                "move_cost": 1
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 15,
+                    "avoid_bonus": 10
+                }
             },
             {
                 "id": "terrain_6",
                 "name": "岩山",
-                "move_cost": 1
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 25,
+                    "avoid_bonus": 10
+                }
             },
             {
                 "id": "terrain_7",
                 "name": "山崖",
-                "move_cost": 1
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 25,
+                    "avoid_bonus": 10
+                }
             },
             {
                 "id": "terrain_8",
                 "name": "雪原",
-                "move_cost": 1
+                "move_cost": 1,
+                "bonuses": {
+                    "avoid_bonus": 5
+                }
             },
             {
                 "id": "terrain_9",
@@ -452,47 +473,77 @@
             {
                 "id": "terrain_16",
                 "name": "城墙",
-                "move_cost": 1
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 30
+                }
             },
             {
                 "id": "terrain_17",
                 "name": "城内",
-                "move_cost": 1
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 20
+                }
             },
             {
                 "id": "terrain_18",
                 "name": "城门",
-                "move_cost": 1
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 20
+                }
             },
             {
                 "id": "terrain_19",
                 "name": "城池",
-                "move_cost": 1
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 20
+                }
             },
             {
                 "id": "terrain_20",
                 "name": "关隘",
-                "move_cost": 1
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 20
+                }
             },
             {
                 "id": "terrain_21",
                 "name": "鹿砦",
-                "move_cost": 1
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 20
+                }
             },
             {
                 "id": "terrain_22",
                 "name": "村庄",
-                "move_cost": 1
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 10,
+                    "heal": 10
+                }
             },
             {
                 "id": "terrain_23",
                 "name": "兵营",
-                "move_cost": 1
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 10,
+                    "heal": 10
+                }
             },
             {
                 "id": "terrain_24",
                 "name": "民居",
-                "move_cost": 1
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 10,
+                    "heal": 10
+                }
             },
             {
                 "id": "terrain_25",

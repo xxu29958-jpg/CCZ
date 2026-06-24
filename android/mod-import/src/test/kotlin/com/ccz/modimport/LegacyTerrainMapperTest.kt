@@ -16,6 +16,18 @@ class LegacyTerrainMapperTest {
     }
 
     @Test
+    fun assignsDesignedDefenderBonusesByTerrainType() {
+        // Engine-design cover by terrain type (not mined): open ground none, forest evasion, mountain
+        // defense+evasion, village defense+heal.
+        val json = """[{"mapid":1,"name":"平原"},{"mapid":3,"name":"树林"},{"mapid":5,"name":"山地"},{"mapid":22,"name":"村庄"}]"""
+        val terrain = LegacyTerrainMapper.mapTerrain(json).associateBy { it.id }
+        assertEquals(PackBonuses(), terrain.getValue("terrain_1").bonuses)
+        assertEquals(PackBonuses(avoidBonus = 15), terrain.getValue("terrain_3").bonuses)
+        assertEquals(PackBonuses(defBonus = 15, avoidBonus = 10), terrain.getValue("terrain_5").bonuses)
+        assertEquals(PackBonuses(defBonus = 10, heal = 10), terrain.getValue("terrain_22").bonuses)
+    }
+
+    @Test
     fun emitsSnakeCaseTerrainJson() {
         val out = LegacyTerrainMapper.toTerrainJson(listOf(PackTerrain("terrain_1", "平原", 1)))
         assertTrue(out.contains("\"move_cost\""), out)
