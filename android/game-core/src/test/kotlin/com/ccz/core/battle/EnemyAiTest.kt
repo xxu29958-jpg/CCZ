@@ -1,8 +1,10 @@
 package com.ccz.core.battle
 
+import com.ccz.core.model.ClassTerrain
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
 import com.ccz.core.model.RangeSpec
+import com.ccz.core.model.UnitClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -15,6 +17,30 @@ import kotlin.test.assertTrue
  */
 class EnemyAiTest {
     private val ctx = contextOf(flat(6, 1)) // default skill "atk" (melee), class move = 5
+
+    @Test
+    fun repositionsOntoFavorableCombatTerrainAmongFiringTiles() {
+        // 'inf' favors hill (+20%); a 3x3 with a hill firing tile at (1,0) vs a plain firing tile at (0,1),
+        // both adjacent to the foe at (1,1) and equidistant from the actor. Without terrain the x/y
+        // tie-break picks plain (0,1); the terrain-aware planner takes the hill.
+        val classes = mapOf(
+            "inf" to UnitClass("inf", "Infantry", "foot", 5, terrain = ClassTerrain(affinity = mapOf("hill" to 120))),
+        )
+        val map = BattleMap(
+            3, 3,
+            listOf(
+                listOf(MapTile("plain", 1), MapTile("hill", 1), MapTile("plain", 1)),
+                listOf(MapTile("plain", 1), MapTile("plain", 1), MapTile("plain", 1)),
+                listOf(MapTile("plain", 1), MapTile("plain", 1), MapTile("plain", 1)),
+            ),
+        )
+        val state = stateOf(
+            combatant("e", Faction.ENEMY, Pos(0, 0)),
+            combatant("p", Faction.PLAYER, Pos(1, 1)),
+            active = Faction.ENEMY,
+        )
+        assertEquals(Command.Move("e", Pos(1, 0)), EnemyAi.nextCommand(state, contextOf(map, classes = classes)))
+    }
 
     @Test
     fun attacksAnAdjacentFoe() {
