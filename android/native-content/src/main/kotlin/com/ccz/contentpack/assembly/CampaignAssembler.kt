@@ -229,6 +229,7 @@ object CampaignAssembler {
             passable = def.passable,
             defBonus = def.bonuses.defBonus,
             avoidBonus = def.bonuses.avoidBonus,
+            heal = def.bonuses.heal,
         )
     }
 
