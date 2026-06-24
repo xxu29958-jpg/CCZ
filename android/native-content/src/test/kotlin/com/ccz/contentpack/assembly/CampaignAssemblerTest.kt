@@ -13,6 +13,7 @@ import com.ccz.contentpack.RangeDef
 import com.ccz.contentpack.SkillDef
 import com.ccz.contentpack.SkillUse
 import com.ccz.contentpack.SourceInfo
+import com.ccz.contentpack.TerrainBonuses
 import com.ccz.contentpack.TerrainDef
 import com.ccz.contentpack.UnitDef
 import com.ccz.contentpack.UnitIdentity
@@ -74,7 +75,7 @@ class CampaignAssemblerTest {
     private fun terrainDefs(): List<TerrainDef> = listOf(
         TerrainDef(id = "plain", name = "Plain", moveCost = 1),
         TerrainDef(id = "wall", name = "Wall", moveCost = 1, passable = false),
-        TerrainDef(id = "wood", name = "Wood", moveCost = 2),
+        TerrainDef(id = "wood", name = "Wood", moveCost = 2, bonuses = TerrainBonuses(defBonus = 20)),
     )
 
     private fun classDefs(): List<ClassDef> = listOf(
@@ -142,6 +143,7 @@ class CampaignAssemblerTest {
         // (3,2): asymmetric x!=y, valid only on a 4x3 map — a transpose would read the wrong tile or go OOB.
         assertEquals(2, map.tileAt(Pos(3, 2)).moveCost, "wood move cost survives assembly at an asymmetric tile")
         assertEquals("wood", map.tileAt(Pos(3, 2)).terrainId)
+        assertEquals(20, map.tileAt(Pos(3, 2)).defBonus, "wood's terrain defense carries through to the engine tile")
     }
 
     @Test
