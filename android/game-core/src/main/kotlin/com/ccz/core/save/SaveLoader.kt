@@ -3,10 +3,10 @@ package com.ccz.core.save
 import com.ccz.core.battle.BattleRules
 import com.ccz.core.battle.BattleState
 import com.ccz.core.battle.Command
+import com.ccz.core.battle.ResolveContext
 import com.ccz.core.battle.Resolver
 import com.ccz.core.event.RScript
 import com.ccz.core.model.Skill
-import com.ccz.core.model.UnitClass
 
 /**
  * Loads a [SaveEnvelope] by validating its version axes fail-closed, then replaying
@@ -35,18 +35,16 @@ object SaveLoader {
 
     fun load(
         envelope: SaveEnvelope,
-        classes: Map<String, UnitClass>,
-        skills: Map<String, Skill> = Resolver.DEMO_SKILLS,
-        rules: BattleRules = BattleRules.DEFAULT,
+        resolve: ResolveContext,
         scripts: Map<String, RScript> = emptyMap(),
     ): Outcome {
         val rejection = check(envelope.versions)
-            ?: commandIntegrity(envelope, skills)
+            ?: commandIntegrity(envelope, resolve.skills)
             ?: scenarioIntegrity(envelope, scripts)
         return if (rejection != null) {
             Outcome.Rejected(rejection)
         } else {
-            Outcome.Loaded(replay(envelope, classes, skills, rules))
+            Outcome.Loaded(replay(envelope, resolve))
         }
     }
 
@@ -92,15 +90,10 @@ object SaveLoader {
     private fun scenarioIntegrity(envelope: SaveEnvelope, scripts: Map<String, RScript>): SaveRejection? =
         if (envelope.scenarios.any { it.scriptId !in scripts }) SaveRejection.CORRUPT_SCENARIO else null
 
-    private fun replay(
-        envelope: SaveEnvelope,
-        classes: Map<String, UnitClass>,
-        skills: Map<String, Skill>,
-        rules: BattleRules,
-    ): BattleState {
+    private fun replay(envelope: SaveEnvelope, resolve: ResolveContext): BattleState {
         var state = envelope.initialState
         envelope.commands.forEach { command ->
-            state = Resolver.apply(state, command, classes, skills, rules).state
+            state = Resolver.apply(state, command, resolve).state
         }
         return state
     }

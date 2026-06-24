@@ -22,7 +22,7 @@ object Gameplay {
         return if (reason != null) {
             Outcome.Rejected(reason)
         } else {
-            Outcome.Accepted(Resolver.apply(state, command, context.classes, context.skills, context.rules))
+            Outcome.Accepted(Resolver.apply(state, command, context.resolve))
         }
     }
 
@@ -45,7 +45,7 @@ object Gameplay {
         val unitClass = context.classes[unit.classId] ?: return emptySet()
         val occupancy = occupancyOf(state, exclude = unit.id)
         return MoveReachability.reachableStops(
-            unit.pos, context.map, occupancy, Mover(unitClass.move, unit.faction, unitClass.terrainCost),
+            unit.pos, context.map, occupancy, Mover(unitClass.move, unit.faction, unitClass.terrain.moveCost),
         )
     }
 

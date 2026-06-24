@@ -31,7 +31,7 @@ class GoldenReplayTest {
         var state = fresh()
         val log = StringBuilder("rules=").append(BattleRules.RULES_VERSION).append('\n')
         COMMANDS.forEach { command ->
-            val resolution = Resolver.apply(state, command, CLASSES)
+            val resolution = Resolver.apply(state, command, ResolveContext(CLASSES))
             state = resolution.state
             resolution.events.forEach { log.append("E ").append(it).append('\n') }
         }

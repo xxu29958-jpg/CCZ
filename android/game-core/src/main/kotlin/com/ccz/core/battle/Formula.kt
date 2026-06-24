@@ -64,6 +64,8 @@ data class DamageInput(
 data class DamageModifiers(
     val generalDmgPct: Int = 100,
     val fiveStatPct: Int = 100,
+    /** Attacker's terrain affinity (percent) from the tile it stands on; 100 = neutral (no effect). */
+    val terrainAffinityPct: Int = 100,
 )
 
 data class DamageFlags(
@@ -97,6 +99,7 @@ object Formula {
         value = mulDiv(value, input.skillCoeffPct, 100, rules.rounding)
         value = mulDiv(value, input.modifiers.generalDmgPct, 100, rules.rounding)
         value = mulDiv(value, input.modifiers.fiveStatPct, 100, rules.rounding)
+        value = mulDiv(value, input.modifiers.terrainAffinityPct, 100, rules.rounding)
 
         if (input.flags.crit) value = mulDiv(value, rules.damage.critPct, 100, rules.rounding)
 

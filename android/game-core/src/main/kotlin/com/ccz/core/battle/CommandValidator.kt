@@ -57,7 +57,7 @@ object CommandValidator {
         val occupancy = occupancyOf(state, exclude = unit.id)
         if (command.to in occupancy) return RejectReason.DESTINATION_OCCUPIED
         val stops = MoveReachability.reachableStops(
-            unit.pos, context.map, occupancy, Mover(unitClass.move, unit.faction, unitClass.terrainCost),
+            unit.pos, context.map, occupancy, Mover(unitClass.move, unit.faction, unitClass.terrain.moveCost),
         )
         return if (command.to in stops) null else RejectReason.OUT_OF_MOVE_RANGE
     }

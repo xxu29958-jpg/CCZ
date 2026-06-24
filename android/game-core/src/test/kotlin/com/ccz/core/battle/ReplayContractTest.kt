@@ -36,7 +36,7 @@ class ReplayContractTest {
     @Test
     fun resolverReturnsNewStateWithoutMutatingInputState() {
         val initial = fresh(seed = 12345L)
-        val resolution = Resolver.apply(initial, Command.Move("zhaoyun", Pos(4, 2)), classes)
+        val resolution = Resolver.apply(initial, Command.Move("zhaoyun", Pos(4, 2)), ResolveContext(classes))
 
         assertEquals(Pos(2, 2), initial.unit("zhaoyun").pos)
         assertEquals(Pos(4, 2), resolution.state.unit("zhaoyun").pos)
@@ -46,7 +46,7 @@ class ReplayContractTest {
         var state = fresh(seed)
         val events = mutableListOf<Event>()
         commands.forEach { command ->
-            val resolution = Resolver.apply(state, command, classes)
+            val resolution = Resolver.apply(state, command, ResolveContext(classes))
             state = resolution.state
             events += resolution.events
         }

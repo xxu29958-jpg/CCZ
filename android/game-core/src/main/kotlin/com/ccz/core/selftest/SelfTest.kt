@@ -2,6 +2,7 @@ package com.ccz.core.selftest
 
 import com.ccz.core.battle.Command
 import com.ccz.core.battle.Event
+import com.ccz.core.battle.ResolveContext
 import com.ccz.core.battle.Resolver
 import com.ccz.core.battle.BattleState
 import com.ccz.core.model.AccuracyRates
@@ -110,7 +111,7 @@ private fun runScenario(
     var state = fresh(seed)
     val events = mutableListOf<Event>()
     for (command in commands) {
-        val resolution = Resolver.apply(state, command, classes)
+        val resolution = Resolver.apply(state, command, ResolveContext(classes))
         state = resolution.state
         events += resolution.events
     }

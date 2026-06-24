@@ -17,6 +17,9 @@ data class BattleContext(
     val loadouts: Map<String, List<String>> = emptyMap(),
     val rules: BattleRules = BattleRules.DEFAULT,
 ) {
+    /** The subset the [Resolver] needs — classes/skills/rules plus the map for position-dependent rules. */
+    val resolve: ResolveContext get() = ResolveContext(classes, skills, rules, map)
+
     /**
      * Whether [unitId] is allowed to attack with [skillId] under its skill loadout. A unit that
      * has a loadout configured (an entry in [loadouts]) may use only the skills that loadout

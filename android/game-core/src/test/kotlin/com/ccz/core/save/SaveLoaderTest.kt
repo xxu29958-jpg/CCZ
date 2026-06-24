@@ -2,6 +2,7 @@ package com.ccz.core.save
 
 import com.ccz.core.battle.BattleRules
 import com.ccz.core.battle.Command
+import com.ccz.core.battle.ResolveContext
 import com.ccz.core.battle.Resolver
 import com.ccz.core.battle.combatant
 import com.ccz.core.battle.stateOf
@@ -16,6 +17,7 @@ import kotlin.test.assertNotEquals
 
 class SaveLoaderTest {
     private val classes = mapOf("inf" to UnitClass("inf", "Infantry", "foot", 5))
+    private val resolve = ResolveContext(classes)
 
     // Two attacks consume RNG, so replay determinism is meaningfully exercised (not just a no-op fold).
     private val commands = listOf(
@@ -49,7 +51,7 @@ class SaveLoaderTest {
     fun rejectsFutureSaveSchemaVersion() {
         val future = versions(schema = SaveVersions.SUPPORTED_SAVE_SCHEMA_VERSION + 1)
         assertEquals(SaveRejection.FUTURE_SCHEMA_VERSION, SaveLoader.check(future))
-        val outcome = SaveLoader.load(envelope(future), classes)
+        val outcome = SaveLoader.load(envelope(future), resolve)
         assertEquals(SaveRejection.FUTURE_SCHEMA_VERSION, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
     }
 
@@ -57,7 +59,7 @@ class SaveLoaderTest {
     fun rejectsRulesVersionMismatch() {
         val drifted = versions(rules = BattleRules.RULES_VERSION + 1)
         assertEquals(SaveRejection.RULES_VERSION_MISMATCH, SaveLoader.check(drifted))
-        val outcome = SaveLoader.load(envelope(drifted), classes) // also exercise the full load() gate
+        val outcome = SaveLoader.load(envelope(drifted), resolve) // also exercise the full load() gate
         assertEquals(SaveRejection.RULES_VERSION_MISMATCH, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
     }
 
@@ -66,15 +68,15 @@ class SaveLoaderTest {
         assertEquals(null, SaveLoader.check(versions()))
         // only a FUTURE schema is rejected; an older one is loadable (migration is a later concern)
         assertEquals(null, SaveLoader.check(versions(schema = SaveVersions.SUPPORTED_SAVE_SCHEMA_VERSION - 1)))
-        assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(envelope(), classes))
+        assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(envelope(), resolve))
     }
 
     @Test
     fun replayReproducesManualResolverRun() {
         val env = envelope()
         var manual = env.initialState
-        commands.forEach { manual = Resolver.apply(manual, it, classes).state }
-        val loaded = assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(env, classes))
+        commands.forEach { manual = Resolver.apply(manual, it, resolve).state }
+        val loaded = assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(env, resolve))
         assertEquals(manual, loaded.finalState)
         // prove the replay actually advanced RNG (not a no-op fold that would pass trivially)
         assertNotEquals(env.initialState.rngState, loaded.finalState.rngState)
@@ -83,22 +85,22 @@ class SaveLoaderTest {
     @Test
     fun replayIsDeterministicAcrossTwoLoads() {
         val env = envelope()
-        val first = assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(env, classes))
-        val second = assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(env, classes))
+        val first = assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(env, resolve))
+        val second = assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(env, resolve))
         assertEquals(first.finalState, second.finalState)
     }
 
     @Test
     fun rejectsCommandReferencingAbsentUnitGracefully() {
         val env = envelope().copy(commands = listOf(Command.Attack("ghost", "e", "atk")))
-        val outcome = SaveLoader.load(env, classes) // clean rejection, not a mid-replay exception
+        val outcome = SaveLoader.load(env, resolve) // clean rejection, not a mid-replay exception
         assertEquals(SaveRejection.CORRUPT_COMMAND, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
     }
 
     @Test
     fun rejectsCommandReferencingAbsentSkillGracefully() {
         val env = envelope().copy(commands = listOf(Command.Attack("h", "e", "no_such_skill")))
-        val outcome = SaveLoader.load(env, classes)
+        val outcome = SaveLoader.load(env, resolve)
         assertEquals(SaveRejection.CORRUPT_COMMAND, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
     }
 
@@ -106,14 +108,14 @@ class SaveLoaderTest {
     fun rejectsMoveReferencingAbsentUnitGracefully() {
         // valid version, so the Move integrity branch is actually exercised (not version-short-circuited)
         val env = envelope().copy(commands = listOf(Command.Move("ghost", Pos(1, 1))))
-        val outcome = SaveLoader.load(env, classes)
+        val outcome = SaveLoader.load(env, resolve)
         assertEquals(SaveRejection.CORRUPT_COMMAND, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
     }
 
     @Test
     fun rejectsAttackReferencingAbsentTargetGracefully() {
         val env = envelope().copy(commands = listOf(Command.Attack("h", "ghost", "atk")))
-        val outcome = SaveLoader.load(env, classes)
+        val outcome = SaveLoader.load(env, resolve)
         assertEquals(SaveRejection.CORRUPT_COMMAND, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
     }
 
@@ -121,14 +123,14 @@ class SaveLoaderTest {
     fun rejectsWaitReferencingAbsentUnitGracefully() {
         // The Wait integrity branch mirrors Move: a unit ref absent from the initial roster is corrupt.
         val env = envelope().copy(commands = listOf(Command.Wait("ghost")))
-        val outcome = SaveLoader.load(env, classes)
+        val outcome = SaveLoader.load(env, resolve)
         assertEquals(SaveRejection.CORRUPT_COMMAND, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
     }
 
     @Test
     fun acceptsEmptyCommandEnvelope() {
         val env = envelope().copy(commands = emptyList())
-        assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(env, classes))
+        assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(env, resolve))
     }
 
     @Test
@@ -136,14 +138,14 @@ class SaveLoaderTest {
         // both a future schema AND a corrupt command — the version gate is checked first
         val future = versions(schema = SaveVersions.SUPPORTED_SAVE_SCHEMA_VERSION + 1)
         val env = envelope(future).copy(commands = listOf(Command.Move("ghost", Pos(1, 1))))
-        val outcome = SaveLoader.load(env, classes)
+        val outcome = SaveLoader.load(env, resolve)
         assertEquals(SaveRejection.FUTURE_SCHEMA_VERSION, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
     }
 
     @Test
     fun rejectsScenarioReferencingAbsentScriptGracefully() {
         val env = envelope().copy(scenarios = listOf(ScenarioReplay("missing")))
-        val outcome = SaveLoader.load(env, classes, scripts = emptyMap())
+        val outcome = SaveLoader.load(env, resolve, scripts = emptyMap())
         assertEquals(SaveRejection.CORRUPT_SCENARIO, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
     }
 
@@ -151,7 +153,7 @@ class SaveLoaderTest {
     fun acceptsScenarioReferencingKnownScript() {
         val env = envelope().copy(scenarios = listOf(ScenarioReplay("intro")))
         val scripts = mapOf("intro" to RScript("intro", emptyList()))
-        assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(env, classes, scripts = scripts))
+        assertIs<SaveLoader.Outcome.Loaded>(SaveLoader.load(env, resolve, scripts = scripts))
     }
 
     @Test
@@ -161,7 +163,7 @@ class SaveLoaderTest {
             commands = listOf(Command.Move("ghost", Pos(1, 1))),
             scenarios = listOf(ScenarioReplay("missing")),
         )
-        val outcome = SaveLoader.load(env, classes, scripts = emptyMap())
+        val outcome = SaveLoader.load(env, resolve, scripts = emptyMap())
         assertEquals(SaveRejection.CORRUPT_COMMAND, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
     }
 }
