@@ -3,6 +3,9 @@ package com.ccz.app.battle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,9 +45,17 @@ private data class CellModel(
  */
 @Composable
 fun BattleBoard(map: BattleMap, ui: BattleUiState, onTapTile: (Pos) -> Unit) {
-    Column {
+    // Precompute occupancy + effect lookups ONCE per render — the per-cell unitAt/effects scan was
+    // O(units) per tile, i.e. O(width·height·units); these maps make each cell an O(1) lookup.
+    val unitsByPos = ui.state.units.values.filter { it.alive }.associateBy { it.pos }
+    val effectsByPos = ui.effects.mapNotNull { e -> ui.state.units[e.unit]?.pos?.let { it to e } }.toMap()
+    // Real maps are larger than a phone screen; scroll both axes so any map size pans (cells are fixed-size).
+    Column(modifier = Modifier.verticalScroll(rememberScrollState()).horizontalScroll(rememberScrollState())) {
         for (y in 0 until map.height) {
-            BoardRow(cells = rowCells(map, ui, y), onTapTile = onTapTile)
+            BoardRow(
+                cells = (0 until map.width).map { x -> cellAt(map, ui.selection, unitsByPos, effectsByPos, Pos(x, y)) },
+                onTapTile = onTapTile,
+            )
         }
     }
 }
@@ -76,7 +87,18 @@ private fun GridCell(cell: CellModel, onTap: (Pos) -> Unit) {
 private fun UnitMarker(unit: Combatant) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = unit.name.take(2), color = factionColor(unit.faction), fontWeight = FontWeight.Bold)
-        Text(text = unit.hp.toString(), fontSize = 10.sp)
+        // hp/hpMax with a health-tier color so the player can read how hurt a unit is, not just its raw hp.
+        Text(text = "${unit.hp}/${unit.hpMax}", fontSize = 9.sp, color = hpColor(unit.hp, unit.hpMax))
+    }
+}
+
+/** Green/amber/red by remaining-HP ratio — a quick health read for targeting decisions. */
+private fun hpColor(hp: Int, hpMax: Int): Color {
+    val ratio = if (hpMax > 0) hp.toFloat() / hpMax else 0f
+    return when {
+        ratio >= 0.66f -> Color(0xFF2E7D32)
+        ratio >= 0.33f -> Color(0xFFF9A825)
+        else -> Color(0xFFC62828)
     }
 }
 
@@ -92,27 +114,23 @@ private fun EffectBadge(effect: BattleEffect, modifier: Modifier = Modifier) {
     Text(text = text, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = modifier)
 }
 
-private fun rowCells(map: BattleMap, ui: BattleUiState, y: Int): List<CellModel> =
-    (0 until map.width).map { x -> cellAt(map, ui, Pos(x, y)) }
-
-private fun cellAt(map: BattleMap, ui: BattleUiState, pos: Pos): CellModel {
-    val unit = ui.state.unitAt(pos)
-    val selection = ui.selection
+private fun cellAt(
+    map: BattleMap,
+    selection: Selection?,
+    unitsByPos: Map<Pos, Combatant>,
+    effectsByPos: Map<Pos, BattleEffect>,
+    pos: Pos,
+): CellModel {
+    val unit = unitsByPos[pos]
     val mark = when {
         unit != null && unit.id == selection?.unit -> CellMark.SELECTED
         unit != null && unit.id in (selection?.targets ?: emptySet()) -> CellMark.TARGET
         pos in (selection?.destinations ?: emptySet()) -> CellMark.MOVE
         else -> CellMark.NONE
     }
-    return CellModel(
-        pos = pos,
-        tile = map.tileAt(pos),
-        unit = unit,
-        mark = mark,
-        // The latest effect anchored to whoever stands (or just fell) on this tile — a defeated
-        // unit keeps its tile in state, so its "KO" still lands here even though it stops rendering.
-        effect = ui.effects.lastOrNull { ui.state.units[it.unit]?.pos == pos },
-    )
+    // effectsByPos already anchors the latest effect to whoever stands (or just fell) on each tile — a
+    // defeated unit keeps its tile in state, so its "KO" still lands here even though it stops rendering.
+    return CellModel(pos = pos, tile = map.tileAt(pos), unit = unit, mark = mark, effect = effectsByPos[pos])
 }
 
 private fun tileColor(cell: CellModel): Color = when {
