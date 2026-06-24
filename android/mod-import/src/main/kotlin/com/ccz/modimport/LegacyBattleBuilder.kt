@@ -65,6 +65,14 @@ data class BattleSpec(
     val placements: List<Placement>,
 )
 
+/** A battle fought on a *real* ported legacy map (its size/terrain come from the map, not the spec). */
+data class MapBattleSpec(
+    val battleId: String,
+    val mapId: String,
+    val protect: String,
+    val placements: List<Placement>,
+)
+
 /**
  * Builds a *playable* native content pack from ported legacy tables plus a synthesized map and
  * battle script — the end-to-end seam that drives ported data through [ContentJsonLoader] and
@@ -117,6 +125,52 @@ object LegacyBattleBuilder {
     /** Build the battle pack and load it through the engine's content loader. */
     fun load(meta: PackMeta, sources: LegacyTableSources, spec: BattleSpec): NativeContent =
         ContentJsonLoader.load(toJson(buildBattle(meta, sources, spec)))
+
+    /**
+     * Build a playable pack that fights on a **real ported legacy map** (decrypted `terrainMap`):
+     * its size and terrain come from the map. Any terrain id the map references but the `terrain`
+     * catalog lacks (e.g. an edge/void id like `terrain_0`) is auto-filled as a default passable
+     * terrain, so coverage validation passes without hand-curating the catalog.
+     */
+    fun buildBattleOnMap(
+        meta: PackMeta,
+        sources: LegacyTableSources,
+        terrainMapJson: String,
+        spec: MapBattleSpec,
+    ): PackContent {
+        require(spec.placements.isNotEmpty()) { "battle needs at least one placement" }
+        val map = LegacyMapMapper.mapMap(terrainMapJson, spec.mapId)
+        val width = map.size.width
+        val height = map.size.height
+        val battle = PackBattle(
+            id = spec.battleId,
+            win = listOf(PackCondition(ANNIHILATE)),
+            lose = listOf(PackCondition(PROTECT, unit = spec.protect)),
+            pre = spec.placements.map { p ->
+                require(p.x in 0 until width && p.y in 0 until height) {
+                    "placement of '${p.unit}' at (${p.x}, ${p.y}) is off the ${width}x$height map '${spec.mapId}'"
+                }
+                PackSpawn(type = SPAWN, unit = p.unit, at = PackPos(p.x, p.y), faction = if (p.enemy) ENEMY else null)
+            },
+        )
+        val base = LegacyContentImporter.buildPack(meta.copy(entry = spec.battleId), sources)
+        val terrain = base.tables.terrain + missingTerrain(base.tables.terrain, map)
+        return base.copy(
+            tables = base.tables.copy(maps = listOf(map), terrain = terrain),
+            events = PackEvents(sScripts = listOf(battle)),
+        )
+    }
+
+    /** Build the real-map battle pack and load it through the engine's content loader. */
+    fun loadOnMap(meta: PackMeta, sources: LegacyTableSources, terrainMapJson: String, spec: MapBattleSpec): NativeContent =
+        ContentJsonLoader.load(toJson(buildBattleOnMap(meta, sources, terrainMapJson, spec)))
+
+    /** Default passable terrain entries for every map tile id missing from [catalog] (coverage fill). */
+    private fun missingTerrain(catalog: List<PackTerrain>, map: PackMap): List<PackTerrain> {
+        val have = catalog.mapTo(HashSet()) { it.id }
+        return map.tiles.flatten().toSortedSet().filterNot { it in have }
+            .map { PackTerrain(id = it, name = it, moveCost = LegacyTerrainMapper.BASE_MOVE_COST) }
+    }
 
     /** The map id derived for a battle (one synthesized map per battle). */
     fun mapId(battleId: String): String = "${battleId}_map"
