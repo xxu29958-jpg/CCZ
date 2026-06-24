@@ -89,6 +89,12 @@ object ContentValidator {
             cls.combat.terrainAffinity.keys.filterNot { it in indexes.terrainIds }.forEach {
                 issues += ValidationIssue("classes[$index].terrain_affinity", "unknown terrain: $it")
             }
+            // Mirror terrain_affinity: a per-class move-cost override keyed on an unknown terrain id is
+            // silently dropped at MoveReachability (the lookup is by the tile's id), so the author's
+            // intended cost/impassability never applies — fail closed instead of fail open.
+            cls.movement.terrainCost.keys.filterNot { it in indexes.terrainIds }.forEach {
+                issues += ValidationIssue("classes[$index].terrain_cost", "unknown terrain: $it")
+            }
         }
         return issues
     }
@@ -130,6 +136,8 @@ object ContentValidator {
      *   to neutral as defense-in-depth, but we reject it here so a bad pack fails at load, not silently.
      *   No upper bound is checked — the ladder length is assembly-time [GrowthConfig], so a too-high tier
      *   saturates at the top tier by design rather than being a content error.
+     * - unit level mirrors [com.ccz.contentpack.assembly.GrowthBudget]'s `level-1` growth scaling (>= 1):
+     *   level 0 / negative silently budgets to the base panel (levels coerced to 0), masking a data error.
      */
     private fun validateNumericBounds(tables: ContentTables): List<ValidationIssue> {
         val issues = mutableListOf<ValidationIssue>()
@@ -147,6 +155,9 @@ object ContentValidator {
         tables.units.forEachIndexed { index, unit ->
             if (unit.profile.grade < 0) {
                 issues += ValidationIssue("units[$index].grade", "grade must be >= 0")
+            }
+            if (unit.profile.level < 1) {
+                issues += ValidationIssue("units[$index].level", "level must be >= 1")
             }
         }
         return issues
