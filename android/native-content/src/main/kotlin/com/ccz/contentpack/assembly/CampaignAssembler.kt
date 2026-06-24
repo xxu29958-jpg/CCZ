@@ -226,7 +226,9 @@ object CampaignAssembler {
     }
 
     private fun classes(defs: List<ClassDef>): Map<String, UnitClass> =
-        defs.associate { it.id to UnitClass(it.id, it.name, it.movement.moveType, it.movement.move, counters(it)) }
+        defs.associate {
+            it.id to UnitClass(it.id, it.name, it.movement.moveType, it.movement.move, counters(it), it.movement.terrainCost)
+        }
 
     private fun counters(def: ClassDef): Map<String, CounterRelation> =
         def.combat.counters.mapValues { (cls, relation) ->

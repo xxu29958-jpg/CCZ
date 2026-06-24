@@ -47,7 +47,11 @@ internal data class ClassDto(
 )
 
 @Serializable
-internal data class MovementDto(val moveType: String, val move: Int)
+internal data class MovementDto(
+    val moveType: String,
+    val move: Int,
+    val terrainCost: Map<String, Int> = emptyMap(),
+)
 
 @Serializable
 internal data class CombatDto(
