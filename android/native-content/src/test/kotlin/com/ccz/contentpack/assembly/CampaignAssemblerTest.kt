@@ -2,6 +2,7 @@ package com.ccz.contentpack.assembly
 
 import com.ccz.contentpack.ClassCombat
 import com.ccz.contentpack.ClassDef
+import com.ccz.contentpack.ClassGrowth
 import com.ccz.contentpack.ClassMovement
 import com.ccz.contentpack.ContentManifest
 import com.ccz.contentpack.ContentTables
@@ -83,7 +84,8 @@ class CampaignAssemblerTest {
             id = "cav",
             name = "Cavalry",
             movement = ClassMovement(moveType = "horse", move = 5),
-            combat = ClassCombat(counters = mapOf("inf" to "FAVOR")),
+            // Growth weights so the budgeting path is exercised; inert for level-1 units (scales by level-1).
+            combat = ClassCombat(counters = mapOf("inf" to "FAVOR"), growth = ClassGrowth(atk = 5, def = 2, res = 1, hp = 14)),
         ),
         ClassDef(id = "inf", name = "Infantry", movement = ClassMovement(moveType = "foot", move = 4)),
     )
@@ -106,7 +108,14 @@ class CampaignAssemblerTest {
         unitDef("foe", "inf", Faction.ENEMY, hpMax = 80, skills = listOf("shot")),
         // "extra" declares no loadout — it must be omitted from the loadouts map (unconstrained default),
         // not locked out, and it is not deployed (no pre-op references it), so it stays an off-map reserve.
-        unitDef("extra", "inf", Faction.ENEMY, hpMax = 50, skills = emptyList()),
+        // It is also a level-10 grade-2 cavalry veteran (built inline to keep the shared helper at <=5
+        // params), so its reserve panel exercises growth × grade budgeting through CampaignAssembler
+        // (the deployed level-1 units leave that path at identity).
+        UnitDef(
+            identity = UnitIdentity(id = "extra", name = "Name-extra", classId = "cav", faction = Faction.ENEMY),
+            profile = UnitProfile(level = 10, hpMax = 50, stats = CombatStats(atk = 50, def = 30, mat = 10, res = 20), grade = 2),
+            loadout = UnitLoadout(skills = emptyList()),
+        ),
     )
 
     private fun unitDef(id: String, classId: String, faction: Faction, hpMax: Int, skills: List<String>): UnitDef =
@@ -184,6 +193,28 @@ class CampaignAssemblerTest {
         assertEquals(Faction.ENEMY, state.units.getValue("foe").faction)
         assertEquals(1, state.turn)
         assertEquals(Faction.PLAYER, state.active)
+    }
+
+    @Test
+    fun assembleBudgetsReserveByClassGrowthAndUnitGrade() {
+        // CampaignAssembler derives growthByClass from each class's combat.growth and budgets every reserve
+        // panel by its unit's level × grade. "extra" is a level-10 grade-2 cavalry veteran; cavalry grows
+        // +5 atk / +2 def / +1 res / +14 hp per level, grade 2 = the 140% tier, over (10-1) levels:
+        //   atk 50 + 5*9*140/100 = 113, def 30 + 2*9*140/100 = 55, res 20 + 1*9*140/100 = 32,
+        //   hp 50 + 14*9*140/100 = 226. mat has no growth weight, so it stays 10.
+        val reserves = CampaignAssembler.assemble(content(), "b", "m").scriptContext.reserves
+        val veteran = reserves.getValue("extra")
+        assertEquals(113, veteran.stats.atk)
+        assertEquals(55, veteran.stats.def)
+        assertEquals(10, veteran.stats.mat)
+        assertEquals(32, veteran.stats.res)
+        assertEquals(226, veteran.hpMax)
+
+        // The same cavalry growth is inert for the deployed level-1 hero (scales by level-1 = 0), so its
+        // panel stays at base — which is why adding class growth left the level-1 battle byte-identical.
+        val hero = reserves.getValue("hero")
+        assertEquals(50, hero.stats.atk)
+        assertEquals(100, hero.hpMax)
     }
 
     @Test

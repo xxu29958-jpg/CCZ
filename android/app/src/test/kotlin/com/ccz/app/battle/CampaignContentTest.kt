@@ -30,7 +30,7 @@ class CampaignContentTest {
         // the values the assembler depends on — including the wall's passable=false and the deployment ops.
         val pack = CampaignContent.pack()
         assertEquals("ccz_demo", pack.manifest.contentId)
-        assertEquals(setOf("guan", "zhang", "foe", "foe2"), pack.tables.units.map { it.id }.toSet())
+        assertEquals(setOf("guan", "zhang", "foe", "foe2", "zhao"), pack.tables.units.map { it.id }.toSet())
         assertEquals("cao_cao_calm", pack.events.portraitSubjects.single().portrait)
         assertEquals(CampaignContent.INTRO_SCRIPT_ID, pack.events.rScripts.single().id)
         assertEquals(
@@ -55,6 +55,32 @@ class CampaignContentTest {
         assertEquals(Pos(1, 4), state.units.getValue("foe2").pos)
         assertEquals(1, state.turn)
         assertEquals(Faction.PLAYER, state.active)
+    }
+
+    @Test
+    fun theVeteranReserveIsBudgetedByLevelAndGrade() {
+        // Zhao is a veteran cavalry reserve (level 10, grade 2) NOT deployed by any pre-op — so he is
+        // absent from the deployed battle (proven above) but present as an off-map reserve template,
+        // budgeted through the real JSON -> loader -> CampaignAssembler path. Cavalry growth is +5 atk /
+        // +2 def / +1 res / +14 hp per level; grade 2 = the 140% tier. Over (10-1) levels:
+        //   atk 110 + 5*9*140/100 = 173, def 85 + 2*9*140/100 = 110, res 55 + 1*9*140/100 = 67,
+        //   hp 230 + 14*9*140/100 = 406. mat has no growth weight, so it stays 30.
+        val state = DemoBattle.initialState()
+        assertFalse("the veteran reserve is not auto-deployed onto the field", "zhao" in state.units)
+
+        val zhao = DemoBattle.scriptContext().reserves.getValue("zhao")
+        assertEquals(173, zhao.stats.atk)
+        assertEquals(110, zhao.stats.def)
+        assertEquals(30, zhao.stats.mat)
+        assertEquals(67, zhao.stats.res)
+        assertEquals(406, zhao.hpMax)
+        assertEquals("a reserve enters at full hp", 406, zhao.hp)
+
+        // The same cavalry growth is inert for a level-1 unit (growth scales by level-1 = 0), so Guan's
+        // panel stays his base — which is why adding growth left the playable battle byte-identical.
+        val guan = DemoBattle.scriptContext().reserves.getValue("guan")
+        assertEquals("growth only bites above level 1: Guan keeps his base atk", 120, guan.stats.atk)
+        assertEquals("Guan keeps his base hp", 240, guan.hpMax)
     }
 
     @Test

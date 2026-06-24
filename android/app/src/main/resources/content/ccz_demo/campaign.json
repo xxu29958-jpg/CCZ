@@ -8,7 +8,10 @@
   },
   "tables": {
     "classes": [
-      { "id": "cavalry", "name": "Cavalry", "movement": { "move_type": "horse", "move": 5 } },
+      {
+        "id": "cavalry", "name": "Cavalry", "movement": { "move_type": "horse", "move": 5 },
+        "combat": { "growth": { "atk": 5, "def": 2, "res": 1, "hp": 14 } }
+      },
       { "id": "infantry", "name": "Infantry", "movement": { "move_type": "foot", "move": 4 } },
       { "id": "archer", "name": "Archer", "movement": { "move_type": "foot", "move": 4 } }
     ],
@@ -32,6 +35,11 @@
         "identity": { "id": "foe2", "name": "Enemy Spearman", "class_id": "infantry", "faction": "ENEMY" },
         "profile": { "level": 1, "hp_max": 200, "stats": { "atk": 120, "def": 80, "mat": 40, "res": 60 } },
         "loadout": { "skills": ["strike"] }
+      },
+      {
+        "identity": { "id": "zhao", "name": "Zhao Yun", "class_id": "cavalry", "faction": "PLAYER" },
+        "profile": { "level": 10, "hp_max": 230, "stats": { "atk": 110, "def": 85, "mat": 30, "res": 55 }, "grade": 2 },
+        "loadout": { "skills": ["strike", "spear"] }
       }
     ],
     "terrain": [
