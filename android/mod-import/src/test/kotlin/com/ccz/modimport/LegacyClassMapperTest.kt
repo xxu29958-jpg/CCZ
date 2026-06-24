@@ -7,6 +7,27 @@ import kotlin.test.assertTrue
 
 class LegacyClassMapperTest {
     @Test
+    fun foldsDicJobTerrainIntoCombatAffinity() {
+        val job = """[{"jobid":1,"name":"骑兵","move":5}]"""
+        // legacy coefficient ×10: terrain 1 = 10 (neutral, omitted), terrain 2 = 12 -> 120%, terrain 3 = 8 -> 80%
+        val terrain = """[{"id":1,"1":10,"2":12,"3":8}]"""
+
+        val combat = LegacyClassMapper.mapClasses(job, dicJobTerrainJson = terrain).single().combat
+
+        assertEquals(mapOf("terrain_2" to 120, "terrain_3" to 80), combat?.terrainAffinity)
+    }
+
+    @Test
+    fun combatIsNullWhenNoJobTerrainOrAllNeutral() {
+        assertEquals(null, LegacyClassMapper.mapClasses("""[{"jobid":1,"name":"步兵","move":3}]""").single().combat)
+        val allNeutral = LegacyClassMapper.mapClasses(
+            """[{"jobid":1,"name":"步兵","move":3}]""",
+            dicJobTerrainJson = """[{"id":1,"1":10,"2":10}]""",
+        ).single().combat
+        assertEquals(null, allNeutral, "all-neutral affinity emits no combat block")
+    }
+
+    @Test
     fun foldsDicJobWalkIntoPerClassTerrainCost() {
         val job = """[{"jobid":1,"name":"骑兵","move":5}]"""
         // terrain 1 = cost 1 (omitted, = tile base), terrain 2 = cost 2, terrain 3 = 255 impassable -> 0

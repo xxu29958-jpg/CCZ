@@ -47,6 +47,18 @@ class LegacyContentImporterTest {
     }
 
     @Test
+    fun jobTerrainAffinityFlowsThroughLoaderIntoClassCombat() {
+        val withTerrain = sources().copy(
+            // job 1: terrain 2 favorable (12 -> 120%), terrain 1 neutral (omitted); job 3 has no row
+            dicJobTerrain = """[{"id":1,"1":10,"2":12}]""",
+        )
+        val content = LegacyContentImporter.load(meta, withTerrain)
+        val job1 = content.tables.classes.first { it.id == "job_1" }
+        assertEquals(mapOf("terrain_2" to 120), job1.combat.terrainAffinity)
+        assertTrue(content.tables.classes.first { it.id == "job_3" }.combat.terrainAffinity.isEmpty())
+    }
+
+    @Test
     fun emittedPackJsonUsesSnakeCaseWireKeys() {
         val json = LegacyContentImporter.buildPackJson(meta, sources())
         for (key in listOf("native_format_version", "content_id", "move_type", "class_id", "hp_max", "power_coeff")) {

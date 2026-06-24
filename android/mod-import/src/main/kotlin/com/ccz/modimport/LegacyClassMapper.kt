@@ -23,6 +23,7 @@ data class PackClass(
     val id: String,
     val name: String,
     val movement: PackMovement,
+    val combat: PackCombat? = null,
 )
 
 @Serializable
@@ -30,6 +31,11 @@ data class PackMovement(
     @SerialName("move_type") val moveType: String,
     val move: Int,
     @SerialName("terrain_cost") val terrainCost: Map<String, Int> = emptyMap(),
+)
+
+@Serializable
+data class PackCombat(
+    @SerialName("terrain_affinity") val terrainAffinity: Map<String, Int> = emptyMap(),
 )
 
 /**
@@ -49,13 +55,20 @@ object LegacyClassMapper {
     private const val TERRAIN_PREFIX = "terrain_"
     private const val LEGACY_IMPASSABLE = 255
     private const val BASE_TILE_COST = 1
+    private const val NEUTRAL_AFFINITY = 10
+    private const val AFFINITY_SCALE = 10
 
     private val reader = Json { ignoreUnknownKeys = true; isLenient = true }
     private val writer = Json { prettyPrint = true }
 
-    /** Parse + map a decrypted `dic_job` table (BOM tolerated), optionally with `dic_jobWalk` movement. */
-    fun mapClasses(dicJobJson: String, dicJobWalkJson: String? = null): List<PackClass> {
+    /** Parse + map `dic_job` (BOM tolerated), optionally folding `dic_jobWalk` movement + `dic_jobTerrain` affinity. */
+    fun mapClasses(
+        dicJobJson: String,
+        dicJobWalkJson: String? = null,
+        dicJobTerrainJson: String? = null,
+    ): List<PackClass> {
         val walk = dicJobWalkJson?.let(::parseJobWalk) ?: emptyMap()
+        val affinity = dicJobTerrainJson?.let(::parseJobTerrain) ?: emptyMap()
         val jobs = reader.decodeFromString(ListSerializer(LegacyJob.serializer()), dicJobJson.removePrefix("﻿"))
         val seen = HashSet<Int>(jobs.size)
         return jobs.map { job ->
@@ -63,6 +76,7 @@ object LegacyClassMapper {
             require(seen.add(job.jobid)) { "duplicate jobid: ${job.jobid}" }
             require(job.move >= 0) { "job ${job.jobid} has negative move ${job.move}" }
             require(job.name.isNotBlank()) { "job ${job.jobid} has blank name" }
+            val terrainAffinity = affinity[job.jobid].orEmpty()
             PackClass(
                 id = ID_PREFIX + job.jobid,
                 name = job.name,
@@ -71,6 +85,7 @@ object LegacyClassMapper {
                     move = job.move,
                     terrainCost = walk[job.jobid].orEmpty(),
                 ),
+                combat = if (terrainAffinity.isEmpty()) null else PackCombat(terrainAffinity),
             )
         }
     }
@@ -97,6 +112,25 @@ object LegacyClassMapper {
                 }
             }
             result[id] = cost
+        }
+        return result
+    }
+
+    /** dic_jobTerrain → per-job {terrain_<col> → combat %}: legacy coefficient ×10 (10→100 neutral, omitted). */
+    private fun parseJobTerrain(json: String): Map<Int, Map<String, Int>> {
+        val rows = reader.parseToJsonElement(json.removePrefix("﻿")).jsonArray
+        val result = HashMap<Int, Map<String, Int>>(rows.size)
+        for (element in rows) {
+            val row = element.jsonObject
+            val id = (row["id"] ?: continue).jsonPrimitive.int
+            val pct = LinkedHashMap<String, Int>()
+            for ((key, value) in row) {
+                val col = if (key == "id") null else key.toIntOrNull()
+                if (col == null) continue
+                val raw = value.jsonPrimitive.int
+                if (raw != NEUTRAL_AFFINITY) pct[TERRAIN_PREFIX + col] = raw * AFFINITY_SCALE
+            }
+            result[id] = pct
         }
         return result
     }
