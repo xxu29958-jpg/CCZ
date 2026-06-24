@@ -1,0 +1,342 @@
+{
+    "manifest": {
+        "native_format_version": "1",
+        "content_id": "ccz_daxingshan",
+        "content_version": "0.1.0",
+        "source": {
+            "mod": "trssgshz"
+        },
+        "entry": "daxingshan"
+    },
+    "tables": {
+        "classes": [
+            {
+                "id": "job_1",
+                "name": "群雄",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 2
+                },
+                "combat": {
+                    "growth": {
+                        "atk": 3,
+                        "def": 3,
+                        "mat": 3,
+                        "hp": 5
+                    }
+                }
+            },
+            {
+                "id": "job_4",
+                "name": "裨将",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 2
+                },
+                "combat": {
+                    "growth": {
+                        "atk": 4,
+                        "def": 4,
+                        "mat": 3,
+                        "hp": 6
+                    }
+                }
+            },
+            {
+                "id": "job_7",
+                "name": "重骑兵",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 2
+                },
+                "combat": {
+                    "growth": {
+                        "atk": 4,
+                        "def": 4,
+                        "mat": 1,
+                        "hp": 6
+                    }
+                }
+            },
+            {
+                "id": "job_68",
+                "name": "黄巾军",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 1
+                },
+                "combat": {
+                    "growth": {
+                        "atk": 3,
+                        "def": 2,
+                        "mat": 2,
+                        "hp": 5
+                    }
+                }
+            }
+        ],
+        "units": [
+            {
+                "identity": {
+                    "id": "hero_1",
+                    "name": "刘备",
+                    "class_id": "job_1",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 6,
+                    "hp_max": 168,
+                    "stats": {
+                        "atk": 78,
+                        "def": 87,
+                        "mat": 83,
+                        "res": 85
+                    },
+                    "grade": 2
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_2",
+                    "name": "关羽",
+                    "class_id": "job_4",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 8,
+                    "hp_max": 170,
+                    "stats": {
+                        "atk": 98,
+                        "def": 95,
+                        "mat": 77,
+                        "res": 79
+                    },
+                    "grade": 2
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_3",
+                    "name": "张飞",
+                    "class_id": "job_7",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 7,
+                    "hp_max": 170,
+                    "stats": {
+                        "atk": 99,
+                        "def": 86,
+                        "mat": 61,
+                        "res": 81
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_226",
+                    "name": "程远志",
+                    "class_id": "job_7",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 5,
+                    "hp_max": 150,
+                    "stats": {
+                        "atk": 79,
+                        "def": 81,
+                        "mat": 67,
+                        "res": 73
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_227",
+                    "name": "邓茂",
+                    "class_id": "job_68",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 4,
+                    "hp_max": 140,
+                    "stats": {
+                        "atk": 75,
+                        "def": 73,
+                        "mat": 50,
+                        "res": 73
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            }
+        ],
+        "skills": [
+            {
+                "id": "skill_1",
+                "name": "普攻",
+                "kind": "PHYSICAL",
+                "power_coeff": 100,
+                "use": {
+                    "range": {
+                        "min": 1,
+                        "max": 1
+                    },
+                    "area": "single",
+                    "targeting": "enemy"
+                }
+            }
+        ],
+        "terrain": [
+            {
+                "id": "terrain_1",
+                "name": "平原",
+                "move_cost": 1
+            }
+        ],
+        "maps": [
+            {
+                "id": "daxingshan_map",
+                "size": {
+                    "width": 7,
+                    "height": 5
+                },
+                "tileset": "legacy",
+                "tiles": [
+                    [
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1"
+                    ],
+                    [
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1"
+                    ],
+                    [
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1"
+                    ],
+                    [
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1"
+                    ],
+                    [
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1",
+                        "terrain_1"
+                    ]
+                ]
+            }
+        ]
+    },
+    "events": {
+        "s_scripts": [
+            {
+                "id": "daxingshan",
+                "win": [
+                    {
+                        "type": "annihilate_enemies"
+                    }
+                ],
+                "lose": [
+                    {
+                        "type": "protect_alive",
+                        "unit": "hero_1"
+                    }
+                ],
+                "pre": [
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_2",
+                        "at": {
+                            "x": 1,
+                            "y": 1
+                        }
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_3",
+                        "at": {
+                            "x": 1,
+                            "y": 2
+                        }
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_1",
+                        "at": {
+                            "x": 0,
+                            "y": 2
+                        }
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_226",
+                        "at": {
+                            "x": 6,
+                            "y": 1
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_227",
+                        "at": {
+                            "x": 6,
+                            "y": 3
+                        },
+                        "faction": "ENEMY"
+                    }
+                ]
+            }
+        ]
+    }
+}

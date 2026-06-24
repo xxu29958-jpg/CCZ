@@ -30,3 +30,14 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+// Offline converter entrypoint (NOT a gate): reads the user's local decrypted legacy tables and writes a
+// playable real-data battle pack. Run e.g.:
+//   ./gradlew :mod-import:generateLegacyBattle -PextractedDir=<dir> -PoutPath=<file>
+tasks.register<JavaExec>("generateLegacyBattle") {
+    group = "ccz"
+    description = "Generate a real-data battle content pack from local legacy tables (offline converter)."
+    mainClass.set("com.ccz.modimport.LegacyPackGenerator")
+    classpath = sourceSets["main"].runtimeClasspath
+    args((project.findProperty("extractedDir") as String?).orEmpty(), (project.findProperty("outPath") as String?).orEmpty())
+}

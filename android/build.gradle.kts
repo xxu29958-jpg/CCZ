@@ -105,7 +105,9 @@ tasks.register("verifyTextEncoding") {
     description = "Fails if a git-tracked text file is not valid UTF-8, a .ps1 lacks a UTF-8 BOM, " +
         "or contains a U+FFFD replacement char (mojibake)."
     val repoRoot = rootDir.parentFile
-    val exts = setOf("md", "kt", "kts", "txt", "yml", "yaml", "ps1", "properties")
+    // `json` is included: content packs are tracked JSON carrying CJK names (e.g. 武将 / 兵种), exactly the
+    // text an encoding gate must inspect — omitting it left committed Chinese packs unchecked.
+    val exts = setOf("md", "kt", "kts", "txt", "yml", "yaml", "ps1", "properties", "json")
     doLast {
         // -z NUL-delimits output and -c core.quotepath=false keeps non-ASCII paths (e.g. Chinese
         // filenames) verbatim, so they are NOT octal-escaped and then silently skipped — those are
