@@ -51,6 +51,8 @@ data class LegacyTableSources(
     val mapTerrain: String,
     /** Optional `dic_jobWalk` (per-class terrain movement); blank = terrain-agnostic classes. */
     val dicJobWalk: String = "",
+    /** Optional `dic_jobTerrain` (per-class terrain combat affinity); blank = neutral classes. */
+    val dicJobTerrain: String = "",
 )
 
 /**
@@ -77,7 +79,11 @@ object LegacyContentImporter {
                 entry = meta.entry,
             ),
             tables = PackTables(
-                classes = LegacyClassMapper.mapClasses(sources.dicJob, sources.dicJobWalk.ifBlank { null }),
+                classes = LegacyClassMapper.mapClasses(
+                    sources.dicJob,
+                    sources.dicJobWalk.ifBlank { null },
+                    sources.dicJobTerrain.ifBlank { null },
+                ),
                 units = LegacyUnitMapper.mapUnits(sources.dicHero),
                 skills = LegacySkillMapper.mapSkills(sources.dicSkill),
                 terrain = LegacyTerrainMapper.mapTerrain(sources.mapTerrain),
