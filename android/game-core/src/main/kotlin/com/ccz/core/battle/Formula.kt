@@ -79,8 +79,8 @@ object Formula {
      * RNG consumption order is a deterministic contract:
      * hit -> crit -> combo -> block.
      */
-    fun rollHitProfile(attacker: CombatRates, defender: CombatRates, rng: Rng): HitProfile {
-        val hit = rng.nextPercent() < (attacker.hit - defender.evade).coerceIn(0, 100)
+    fun rollHitProfile(attacker: CombatRates, defender: CombatRates, rng: Rng, defenderAvoidBonus: Int = 0): HitProfile {
+        val hit = rng.nextPercent() < (attacker.hit - defender.evade - defenderAvoidBonus).coerceIn(0, 100)
         if (!hit) return HitProfile(hit = false, crit = false, combo = false, blocked = false)
 
         val crit = rng.nextPercent() < (attacker.crit - defender.critResist).coerceIn(0, 100)

@@ -47,9 +47,11 @@ object Resolver {
         val affinityPct = ctx.map?.let {
             ctx.classes[attacker.classId]?.terrain?.affinity?.get(it.tileAt(attacker.pos).terrainId)
         } ?: 100
-        // Defender's terrain defense: a flat bonus to its effective DEF from the tile it stands on (0 = none).
-        val terrainDef = ctx.map?.let { it.tileAt(defender.pos).defBonus } ?: 0
-        val profile = Formula.rollHitProfile(attacker.rates, defender.rates, rng)
+        // Defender's terrain bonuses from the tile it stands on: flat DEF + flat evasion (0 = none).
+        val defenderTile = ctx.map?.tileAt(defender.pos)
+        val terrainDef = defenderTile?.defBonus ?: 0
+        val terrainAvoid = defenderTile?.avoidBonus ?: 0
+        val profile = Formula.rollHitProfile(attacker.rates, defender.rates, rng, terrainAvoid)
         val events = mutableListOf<Event>()
 
         if (!profile.hit) {
