@@ -79,23 +79,37 @@ private fun Hud(ui: BattleUiState, script: SScript, onEndTurn: () -> Unit) {
 
 /** The battle's win/lose goals as a one-line objective, names resolved from the live roster; null if none. */
 private fun objectiveText(script: SScript, state: BattleState): String? {
-    val win = script.win.joinToString(" / ") { conditionText(it, state) }
-    val lose = script.lose.joinToString(" / ") { conditionText(it, state) }
+    val win = script.win.joinToString(" / ") { winText(it, state) }
+    val lose = script.lose.joinToString(" / ") { loseText(it, state) }
     return listOfNotNull(
         win.takeIf { it.isNotEmpty() }?.let { "胜: $it" },
         lose.takeIf { it.isNotEmpty() }?.let { "败: $it" },
     ).joinToString("  ·  ").ifEmpty { null }
 }
 
-private fun conditionText(condition: WinLoseCondition, state: BattleState): String {
+/** A win condition phrased as a GOAL to achieve. */
+private fun winText(condition: WinLoseCondition, state: BattleState): String {
     fun name(id: String) = state.units[id]?.name ?: id
     return when (condition) {
         is WinLoseCondition.AnnihilateEnemies -> "击破全部敌军"
         is WinLoseCondition.UnitDead -> "击杀 ${name(condition.unit)}"
         is WinLoseCondition.DefeatUnit -> "击破 ${name(condition.unit)}"
-        is WinLoseCondition.ProtectAlive -> "${name(condition.unit)} 存活"
+        is WinLoseCondition.ProtectAlive -> "保全 ${name(condition.unit)}"
         is WinLoseCondition.ReachTile -> "${name(condition.unit)} 抵达 (${condition.pos.x}, ${condition.pos.y})"
         is WinLoseCondition.SurviveTurns -> "坚守 ${condition.turns} 回合"
+    }
+}
+
+/** The SAME conditions phrased as a DEFEAT trigger — what makes you lose (e.g. ProtectAlive → unit falls). */
+private fun loseText(condition: WinLoseCondition, state: BattleState): String {
+    fun name(id: String) = state.units[id]?.name ?: id
+    return when (condition) {
+        is WinLoseCondition.ProtectAlive -> "${name(condition.unit)} 阵亡"
+        is WinLoseCondition.UnitDead -> "${name(condition.unit)} 阵亡"
+        is WinLoseCondition.SurviveTurns -> "未能坚守 ${condition.turns} 回合"
+        is WinLoseCondition.AnnihilateEnemies -> "敌军未被击破"
+        is WinLoseCondition.DefeatUnit -> "未能击破 ${name(condition.unit)}"
+        is WinLoseCondition.ReachTile -> "${name(condition.unit)} 未抵达 (${condition.pos.x}, ${condition.pos.y})"
     }
 }
 
