@@ -23,11 +23,32 @@ object Resolver {
         is Command.Move -> move(state, command)
         is Command.Attack -> attack(state, command, ctx)
         is Command.Wait -> Resolution(state.markActed(command.unit), listOf(Event.Waited(command.unit)))
-        is Command.EndTurn -> Resolution(
-            // Reset the per-turn action economy so the next side's units start fresh.
-            state.copy(active = nextFaction(command.faction), turn = state.turn + 1).clearTurnActions(),
-            listOf(Event.TurnEnded(command.faction)),
-        )
+        is Command.EndTurn -> endTurn(state, command, ctx)
+    }
+
+    private fun endTurn(state: BattleState, command: Command.EndTurn, ctx: ResolveContext): Resolution {
+        val next = nextFaction(command.faction)
+        // Reset the per-turn action economy so the next side's units start fresh, then apply terrain
+        // healing to that side's units as their phase begins (FE/AW fort/village recovery).
+        val advanced = state.copy(active = next, turn = state.turn + 1).clearTurnActions()
+        val (healed, healEvents) = applyTerrainHeal(advanced, next, ctx)
+        return Resolution(healed, listOf(Event.TurnEnded(command.faction)) + healEvents)
+    }
+
+    /** Heal the [faction]'s living units standing on healing tiles (capped at max HP); inert with no map. */
+    private fun applyTerrainHeal(state: BattleState, faction: Faction, ctx: ResolveContext): Pair<BattleState, List<Event>> {
+        val map = ctx.map ?: return state to emptyList()
+        var result = state
+        val events = mutableListOf<Event>()
+        state.units.values.filter { it.alive && it.faction == faction }.sortedBy { it.id }.forEach { unit ->
+            val heal = map.tileAt(unit.pos).heal
+            if (heal > 0 && unit.hp < unit.hpMax) {
+                val gained = (unit.hp + heal).coerceAtMost(unit.hpMax) - unit.hp
+                result = result.withUnit(unit.withHp(unit.hp + gained))
+                events += Event.Healed(unit.id, gained)
+            }
+        }
+        return result to events
     }
 
     private fun move(state: BattleState, command: Command.Move): Resolution {

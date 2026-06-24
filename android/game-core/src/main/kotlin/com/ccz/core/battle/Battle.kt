@@ -25,6 +25,7 @@ sealed interface Event {
     ) : Event
 
     data class Died(val unit: String) : Event
+    data class Healed(val unit: String, val amount: Int) : Event
     data class Waited(val unit: String) : Event
     data class TurnEnded(val faction: Faction) : Event
     data class BattleEnded(val outcome: BattleOutcome) : Event

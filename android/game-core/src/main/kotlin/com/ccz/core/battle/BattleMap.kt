@@ -47,10 +47,14 @@ data class MapTile(
     // attacker's effective hit chance, so defenders are harder to hit on forests/etc. 0 = no effect,
     // the default; only the hit threshold shifts, never the RNG draw order, so goldens stay deterministic.
     val avoidBonus: Int = 0,
+    // HP a unit on this tile recovers at the start of its side's turn (FE/AW fort/village heal), capped
+    // at its max HP. 0 = no healing, the default; deterministic (no RNG), so goldens stay unchanged.
+    val heal: Int = 0,
 ) {
     init {
         require(moveCost >= 1) { "moveCost must be >= 1, was $moveCost" }
         require(defBonus >= 0) { "defBonus must be >= 0, was $defBonus" }
         require(avoidBonus >= 0) { "avoidBonus must be >= 0, was $avoidBonus" }
+        require(heal >= 0) { "heal must be >= 0, was $heal" }
     }
 }
