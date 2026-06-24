@@ -64,5 +64,6 @@ private fun BattleHost() {
         reducer = reducer,
         initial = initial,
         skillLabel = { id -> context.skills[id]?.name ?: id },
+        script = RealBattle.script(),
     )
 }

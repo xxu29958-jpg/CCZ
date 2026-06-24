@@ -20,6 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ccz.core.battle.BattleMap
 import com.ccz.core.battle.BattleOutcome
+import com.ccz.core.battle.BattleState
+import com.ccz.core.event.SScript
+import com.ccz.core.event.WinLoseCondition
 
 /**
  * Top-level battle UI. Holds the rendered [BattleUiState] and routes every input through
@@ -28,11 +31,17 @@ import com.ccz.core.battle.BattleOutcome
  * [skillLabel] maps a skill id to its display name (read from the context's skill table).
  */
 @Composable
-fun BattleScreen(map: BattleMap, reducer: BattleReducer, initial: BattleUiState, skillLabel: (String) -> String) {
+fun BattleScreen(
+    map: BattleMap,
+    reducer: BattleReducer,
+    initial: BattleUiState,
+    skillLabel: (String) -> String,
+    script: SScript,
+) {
     var ui by remember { mutableStateOf(initial) }
     Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
         OutcomeBanner(outcome = ui.outcome)
-        Hud(ui = ui, onEndTurn = { ui = reducer.endTurn(ui) })
+        Hud(ui = ui, script = script, onEndTurn = { ui = reducer.endTurn(ui) })
         Spacer(modifier = Modifier.height(12.dp))
         SkillBar(ui = ui, skillLabel = skillLabel, onSelectSkill = { ui = reducer.selectSkill(ui, it) })
         WaitButton(ui = ui, onWait = { ui = reducer.wait(ui) })
@@ -57,13 +66,36 @@ private fun OutcomeBanner(outcome: BattleOutcome) {
 }
 
 @Composable
-private fun Hud(ui: BattleUiState, onEndTurn: () -> Unit) {
+private fun Hud(ui: BattleUiState, script: SScript, onEndTurn: () -> Unit) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f)) {
             Text(text = "Turn ${ui.state.turn} · ${sideLabel(ui.state.active)}")
+            objectiveText(script, ui.state)?.let { Text(text = it, style = MaterialTheme.typography.bodySmall) }
             Text(text = ui.selection?.unit?.let { "Selected: ${ui.state.units[it]?.name ?: it}" } ?: "Tap a unit to select")
         }
         Button(onClick = onEndTurn) { Text(text = "End Turn") }
+    }
+}
+
+/** The battle's win/lose goals as a one-line objective, names resolved from the live roster; null if none. */
+private fun objectiveText(script: SScript, state: BattleState): String? {
+    val win = script.win.joinToString(" / ") { conditionText(it, state) }
+    val lose = script.lose.joinToString(" / ") { conditionText(it, state) }
+    return listOfNotNull(
+        win.takeIf { it.isNotEmpty() }?.let { "胜: $it" },
+        lose.takeIf { it.isNotEmpty() }?.let { "败: $it" },
+    ).joinToString("  ·  ").ifEmpty { null }
+}
+
+private fun conditionText(condition: WinLoseCondition, state: BattleState): String {
+    fun name(id: String) = state.units[id]?.name ?: id
+    return when (condition) {
+        is WinLoseCondition.AnnihilateEnemies -> "击破全部敌军"
+        is WinLoseCondition.UnitDead -> "击杀 ${name(condition.unit)}"
+        is WinLoseCondition.DefeatUnit -> "击破 ${name(condition.unit)}"
+        is WinLoseCondition.ProtectAlive -> "${name(condition.unit)} 存活"
+        is WinLoseCondition.ReachTile -> "${name(condition.unit)} 抵达 (${condition.pos.x}, ${condition.pos.y})"
+        is WinLoseCondition.SurviveTurns -> "坚守 ${condition.turns} 回合"
     }
 }
 
