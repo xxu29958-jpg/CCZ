@@ -45,13 +45,19 @@ object LegacyPackGenerator {
     /** One combatant: a real hero id, where it stands (window-local), its side, and deploy level. */
     data class RosterEntry(val hid: Int, val x: Int, val y: Int, val enemy: Boolean, val level: Int)
 
-    /** 大兴山之战 — 桃园三兄弟 vs 黄巾，real heroes at deploy levels so growth × grade visibly differ. */
+    /**
+     * 大兴山之战 — 桃园三兄弟 vs 黄巾，real heroes at deploy levels so growth × grade visibly differ.
+     * All five spawn in the connected 荒地/树林 corridor (window cols 0-2) — never on the 山地 (terrain_5)
+     * block, whose cost-2 tiles would strand the move-1 黄巾军 (邓茂). Players (bottom, y4-5) and enemies
+     * (top, y1) start 3 rows apart, out of the skill's reach-1, so the aggressive AI advances every enemy
+     * rather than anyone being stuck or fighting from spawn.
+     */
     private val DAXINGSHAN = listOf(
-        RosterEntry(hid = 2, x = 2, y = 2, enemy = false, level = 8), // 关羽  裨将   grade 2
-        RosterEntry(hid = 3, x = 2, y = 3, enemy = false, level = 7), // 张飞  重骑兵 grade 1
-        RosterEntry(hid = 1, x = 1, y = 3, enemy = false, level = 6), // 刘备  群雄   grade 2
-        RosterEntry(hid = 226, x = 5, y = 2, enemy = true, level = 5), // 程远志 重骑兵 grade 1
-        RosterEntry(hid = 227, x = 5, y = 3, enemy = true, level = 4), // 邓茂   黄巾军 grade 0
+        RosterEntry(hid = 2, x = 1, y = 4, enemy = false, level = 8), // 关羽  裨将   grade 2
+        RosterEntry(hid = 3, x = 1, y = 5, enemy = false, level = 7), // 张飞  重骑兵 grade 1
+        RosterEntry(hid = 1, x = 0, y = 4, enemy = false, level = 6), // 刘备  群雄   grade 2
+        RosterEntry(hid = 226, x = 1, y = 1, enemy = true, level = 5), // 程远志 重骑兵 grade 1
+        RosterEntry(hid = 227, x = 0, y = 1, enemy = true, level = 4), // 邓茂   黄巾军 grade 0
     )
 
     /** Generate the 大兴山 battle pack JSON from the legacy tables under [extractedRoot] (json/ + terrainJson/). */

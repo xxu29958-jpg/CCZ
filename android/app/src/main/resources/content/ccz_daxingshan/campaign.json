@@ -628,32 +628,32 @@
                         "type": "spawn_unit",
                         "unit": "hero_2",
                         "at": {
-                            "x": 2,
-                            "y": 2
+                            "x": 1,
+                            "y": 4
                         }
                     },
                     {
                         "type": "spawn_unit",
                         "unit": "hero_3",
                         "at": {
-                            "x": 2,
-                            "y": 3
+                            "x": 1,
+                            "y": 5
                         }
                     },
                     {
                         "type": "spawn_unit",
                         "unit": "hero_1",
                         "at": {
-                            "x": 1,
-                            "y": 3
+                            "x": 0,
+                            "y": 4
                         }
                     },
                     {
                         "type": "spawn_unit",
                         "unit": "hero_226",
                         "at": {
-                            "x": 5,
-                            "y": 2
+                            "x": 1,
+                            "y": 1
                         },
                         "faction": "ENEMY"
                     },
@@ -661,8 +661,8 @@
                         "type": "spawn_unit",
                         "unit": "hero_227",
                         "at": {
-                            "x": 5,
-                            "y": 3
+                            "x": 0,
+                            "y": 1
                         },
                         "faction": "ENEMY"
                     }

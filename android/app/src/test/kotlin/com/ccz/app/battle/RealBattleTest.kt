@@ -51,6 +51,23 @@ class RealBattleTest {
     }
 
     @Test
+    fun everyEnemyAdvancesOnItsAutoDrivenTurn() {
+        // Regression guard against stranded units on real terrain: the roster spawns 3 rows apart (out of
+        // the basic attack's reach-1), so the aggressive AI must MOVE every enemy toward the players on the
+        // enemy turn. A unit boxed in by impassable terrain (e.g. a move-1 黄巾军 ringed by 山地, cost 2)
+        // could only Wait — its position would not change, failing this test.
+        val reducer = BattleReducer(RealBattle.context(), RealBattle.script(), RealBattle.scriptContext())
+        val start = reducer.initial(RealBattle.initialState())
+        val after = reducer.endTurn(start) // player ends → AI drives the whole enemy turn → back to player
+        start.state.units.values.filter { it.faction == Faction.ENEMY }.forEach { enemy ->
+            assertTrue(
+                "enemy ${enemy.id} must be able to move on its turn (not stranded by terrain)",
+                after.state.units.getValue(enemy.id).pos != enemy.pos,
+            )
+        }
+    }
+
+    @Test
     fun growthAndGradeBudgetRealHeroPanelsOnTheField() {
         val state = RealBattle.initialState()
 
