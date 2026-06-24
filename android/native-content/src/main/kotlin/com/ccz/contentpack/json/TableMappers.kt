@@ -28,7 +28,7 @@ internal fun toClass(index: Int, dto: ClassDto): ClassDef {
     return ClassDef(
         id = dto.id,
         name = dto.name,
-        movement = ClassMovement(dto.movement.moveType, dto.movement.move),
+        movement = ClassMovement(dto.movement.moveType, dto.movement.move, dto.movement.terrainCost),
         combat = ClassCombat(
             // Counter values are validated + canonicalized to the enum name (fail-closed on unknown);
             // the class-id keys are preserved. Domain stores strings (no game-core enum dep here).

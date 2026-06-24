@@ -52,6 +52,14 @@ data class UnitClass(
     val moveType: String,
     val move: Int,
     val counters: Map<String, CounterRelation> = emptyMap(),
+    /**
+     * Per-terrain move cost for this class, keyed by [MapTile.terrainId]: a value `>= 1` overrides the
+     * tile's own [MapTile.moveCost] for this class; a value `<= 0` makes the terrain impassable for it.
+     * A terrain absent from the map falls back to the tile's global cost/passability, so an empty map
+     * (the default) preserves terrain-agnostic movement — the per-class movement model is opt-in and
+     * activates only for classes that declare costs (Advance-Wars-style movement types).
+     */
+    val terrainCost: Map<String, Int> = emptyMap(),
 )
 
 data class CombatIdentity(

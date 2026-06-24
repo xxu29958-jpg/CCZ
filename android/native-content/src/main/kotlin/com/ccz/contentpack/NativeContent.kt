@@ -52,6 +52,8 @@ data class ClassDef(
 data class ClassMovement(
     val moveType: String,
     val move: Int,
+    /** Per-terrain move cost for this class (terrainId → cost; `<= 0` impassable). Empty = tile default. */
+    val terrainCost: Map<String, Int> = emptyMap(),
 )
 
 data class ClassCombat(
