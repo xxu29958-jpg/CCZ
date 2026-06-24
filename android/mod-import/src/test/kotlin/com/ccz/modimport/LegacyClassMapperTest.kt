@@ -7,6 +7,23 @@ import kotlin.test.assertTrue
 
 class LegacyClassMapperTest {
     @Test
+    fun foldsDicJobWalkIntoPerClassTerrainCost() {
+        val job = """[{"jobid":1,"name":"骑兵","move":5}]"""
+        // terrain 1 = cost 1 (omitted, = tile base), terrain 2 = cost 2, terrain 3 = 255 impassable -> 0
+        val walk = """[{"id":1,"1":1,"2":2,"3":255}]"""
+
+        val movement = LegacyClassMapper.mapClasses(job, walk).single().movement
+
+        assertEquals(mapOf("terrain_2" to 2, "terrain_3" to 0), movement.terrainCost)
+    }
+
+    @Test
+    fun terrainCostEmptyWhenNoJobWalkSupplied() {
+        val classes = LegacyClassMapper.mapClasses("""[{"jobid":1,"name":"步兵","move":3}]""")
+        assertTrue(classes.single().movement.terrainCost.isEmpty())
+    }
+
+    @Test
     fun mapsDicJobRowsToPackClassesIgnoringRichFields() {
         // real dic_job rows carry spe/atk/def/.../hp_up/atkid/seid/info — all ignored for this slice
         val json = """
