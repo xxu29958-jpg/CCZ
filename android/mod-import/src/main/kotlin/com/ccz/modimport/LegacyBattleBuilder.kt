@@ -52,8 +52,14 @@ data class PackCondition(
 @Serializable
 data class PackPos(val x: Int, val y: Int)
 
-/** Where a ported unit deploys, and which side it fights for. */
-data class Placement(val unit: String, val x: Int, val y: Int, val enemy: Boolean = false)
+/**
+ * Where a ported unit deploys, which side it fights for, and the LEVEL it deploys at. The legacy ore
+ * carries no usable per-hero deploy level (`dic_hero.level` is uniformly 1; `dic_turn` is an appearance
+ * group, not a level), so deploy levels are a battle-spec design input — exactly the "战役元数据指定的
+ * 出场等级" ADR 0006 names. A unit placed above level 1 is budgeted by its class growth × quality grade
+ * at assembly time; this is what makes the growth/grade levers actually bite for ported heroes.
+ */
+data class Placement(val unit: String, val x: Int, val y: Int, val enemy: Boolean = false, val level: Int = 1)
 
 /** A synthesized skirmish over ported data: a flat map plus a deploy-and-fight battle script. */
 data class BattleSpec(
@@ -114,7 +120,10 @@ object LegacyBattleBuilder {
         )
         val base = LegacyContentImporter.buildPack(meta.copy(entry = spec.battleId), sources)
         return base.copy(
-            tables = base.tables.copy(maps = listOf(map)),
+            tables = base.tables.copy(
+                units = rosterWithDeployLevels(base.tables.units, spec.placements),
+                maps = listOf(map),
+            ),
             events = PackEvents(sScripts = listOf(battle)),
         )
     }
@@ -156,7 +165,11 @@ object LegacyBattleBuilder {
         val base = LegacyContentImporter.buildPack(meta.copy(entry = spec.battleId), sources)
         val terrain = base.tables.terrain + missingTerrain(base.tables.terrain, map)
         return base.copy(
-            tables = base.tables.copy(maps = listOf(map), terrain = terrain),
+            tables = base.tables.copy(
+                units = rosterWithDeployLevels(base.tables.units, spec.placements),
+                maps = listOf(map),
+                terrain = terrain,
+            ),
             events = PackEvents(sScripts = listOf(battle)),
         )
     }
@@ -164,6 +177,21 @@ object LegacyBattleBuilder {
     /** Build the real-map battle pack and load it through the engine's content loader. */
     fun loadOnMap(meta: PackMeta, sources: LegacyTableSources, terrainMapJson: String, spec: MapBattleSpec): NativeContent =
         ContentJsonLoader.load(toJson(buildBattleOnMap(meta, sources, terrainMapJson, spec)))
+
+    /**
+     * Stamp each placement's deploy level onto its unit in the roster (units not placed keep their
+     * imported level 1). The override is the one input that lets a ported hero deploy above level 1, so
+     * its class growth × quality grade actually scale the assembled panel (ADR 0006); level 1 placements
+     * leave the roster untouched, so a battle that names no levels is byte-identical to before.
+     */
+    private fun rosterWithDeployLevels(units: List<PackUnit>, placements: List<Placement>): List<PackUnit> {
+        placements.forEach { require(it.level >= 1) { "placement of '${it.unit}' has non-positive deploy level ${it.level}" } }
+        val levels = placements.associate { it.unit to it.level }
+        return units.map { unit ->
+            val level = levels[unit.identity.id] ?: unit.profile.level
+            if (level == unit.profile.level) unit else unit.copy(profile = unit.profile.copy(level = level))
+        }
+    }
 
     /** Default passable terrain entries for every map tile id missing from [catalog] (coverage fill). */
     private fun missingTerrain(catalog: List<PackTerrain>, map: PackMap): List<PackTerrain> {

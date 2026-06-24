@@ -88,6 +88,40 @@ class LegacyBattleEndToEndTest {
     }
 
     @Test
+    fun deployLevelMakesGrowthAndGradeBudgetPortedHeroPanels() {
+        // The capstone: a ported hero deployed above level 1 is budgeted by its class growth × quality
+        // grade (ADR 0006). The ore gives no deploy level (all dic_hero level 1), so the BattleSpec
+        // supplies it — the seam that makes the growth (#84) and grade (#87) levers visible for real
+        // heroes. job 1 grows +5 atk / +10 hp per level; the hero's strength 100+100+90+60 = 350 forges
+        // grade 2 (140% tier). Over (10-1) levels: atk 100 + 5*9*140/100 = 163, hp 200 + 10*9*140/100 = 326.
+        val growthSources = LegacyTableSources(
+            dicJob = """[{"jobid":1,"name":"群雄","move":3,"atk":5,"hp_up":10}]""",
+            dicSkill = """[{"skid":1,"name":"普攻","type":0,"hurt_num":50,"mp_consume":0}]""",
+            dicHero = """[{"hid":1,"name":"关羽","jobid":1,"atk":100,"def":100,"ints":90,"burst":60,"level":1,"hp":200,"skill":1}]""",
+            mapTerrain = """[{"mapid":1,"name":"平原"}]""",
+        )
+        fun assembleAtLevel(level: Int) = CampaignAssembler.assemble(
+            LegacyBattleBuilder.load(
+                meta,
+                growthSources,
+                BattleSpec("lv", 3, 1, "terrain_1", "hero_1", listOf(Placement("hero_1", 0, 0, level = level))),
+            ),
+            "lv",
+            LegacyBattleBuilder.mapId("lv"),
+        ).initialState.units.getValue("hero_1")
+
+        val veteran = assembleAtLevel(10)
+        assertEquals(163, veteran.stats.atk, "level 10 × +5 atk growth × grade-2 140% over base 100")
+        assertEquals(326, veteran.hpMax, "level 10 × +10 hp growth × grade-2 140% over base 200")
+
+        // Same hero/class data; only the deploy level differs. Level 1 → growth×(1-1)=0 → base panel,
+        // proving the deploy level is the unlock, not a change to the ported data.
+        val rookie = assembleAtLevel(1)
+        assertEquals(100, rookie.stats.atk, "level 1 stays at base atk")
+        assertEquals(200, rookie.hpMax, "level 1 stays at base hp")
+    }
+
+    @Test
     fun portedUnitsCanFightThroughGameCore() {
         val content = LegacyBattleBuilder.load(meta, sources(), spec)
         val setup = CampaignAssembler.assemble(content, spec.battleId, LegacyBattleBuilder.mapId(spec.battleId))
