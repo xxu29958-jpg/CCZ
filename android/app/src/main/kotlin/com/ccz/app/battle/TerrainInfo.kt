@@ -1,6 +1,7 @@
 package com.ccz.app.battle
 
 import com.ccz.core.battle.BattleMap
+import com.ccz.core.model.Combatant
 import com.ccz.core.model.Pos
 
 /**
@@ -48,3 +49,11 @@ fun terrainBonusLines(info: TerrainInfo): List<String> = buildList {
     if (info.avoidBonus > 0) add("回避 +${info.avoidBonus}")
     if (info.heal > 0) add("回血 +${info.heal}")
 }
+
+/**
+ * One-line readout of a unit's CURRENT combat panel — HP plus the four stats — so the player can see the
+ * live effect of a heal / buff / debuff on the inspect panel (ADR 0008 effects otherwise only flash a
+ * one-shot badge). A pure read of authoritative [Combatant] state; it computes nothing.
+ */
+fun combatantSummary(unit: Combatant): String =
+    "HP ${unit.hp}/${unit.hpMax} · ATK ${unit.stats.atk} · DEF ${unit.stats.def} · MAT ${unit.stats.mat} · RES ${unit.stats.res}"

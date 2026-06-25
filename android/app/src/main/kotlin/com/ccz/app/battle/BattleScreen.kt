@@ -72,12 +72,16 @@ private fun TerrainPanel(map: BattleMap, ui: BattleUiState, terrainName: (String
     val pos = ui.inspected ?: return
     val info = terrainInfoAt(map, terrainName, pos) ?: return
     val lines = terrainBonusLines(info)
-    val occupant = ui.state.unitAt(pos)?.name
+    val occupant = ui.state.unitAt(pos)
     Column(modifier = Modifier.padding(top = 12.dp)) {
         Text(text = "地形: ${info.name} (${pos.x}, ${pos.y})", style = MaterialTheme.typography.bodyMedium)
         Text(text = "移动消耗 ${info.moveCost}", style = MaterialTheme.typography.bodySmall)
         if (lines.isNotEmpty()) Text(text = lines.joinToString("  ·  "), style = MaterialTheme.typography.bodySmall)
-        occupant?.let { Text(text = "占据: $it", style = MaterialTheme.typography.bodySmall) }
+        occupant?.let {
+            Text(text = "占据: ${it.name}", style = MaterialTheme.typography.bodySmall)
+            // The live combat panel, so a heal/buff/debuff (ADR 0008) is visible here, not just a one-shot badge.
+            Text(text = combatantSummary(it), style = MaterialTheme.typography.bodySmall)
+        }
     }
 }
 

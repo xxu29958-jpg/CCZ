@@ -2,6 +2,12 @@ package com.ccz.app.battle
 
 import com.ccz.core.battle.BattleMap
 import com.ccz.core.battle.MapTile
+import com.ccz.core.model.CombatIdentity
+import com.ccz.core.model.CombatRates
+import com.ccz.core.model.CombatStats
+import com.ccz.core.model.CombatVitals
+import com.ccz.core.model.Combatant
+import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -61,5 +67,17 @@ class TerrainInfoTest {
         val lines = terrainBonusLines(terrainInfoAt(map, ::nameOf, Pos(2, 0))!!)
         assertEquals("impassability is reported first", "不可通行", lines.first())
         assertTrue("a wall still lists its defense cover", "防御 +30" in lines)
+    }
+
+    @Test
+    fun combatantSummaryShowsHpAndAllFourStats() {
+        val unit = Combatant(
+            identity = CombatIdentity("u", "Hero", "cls", Faction.PLAYER),
+            pos = Pos(0, 0),
+            vitals = CombatVitals(hp = 30, hpMax = 100),
+            stats = CombatStats(atk = 80, def = 20, mat = 30, res = 10),
+            rates = CombatRates(),
+        )
+        assertEquals("HP 30/100 · ATK 80 · DEF 20 · MAT 30 · RES 10", combatantSummary(unit))
     }
 }
