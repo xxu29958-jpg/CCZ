@@ -119,4 +119,8 @@ data class Skill(
     val kind: DamageKind,
     val powerCoeff: Int,
     val range: RangeSpec = RangeSpec.MELEE,
+    // Engine-owned effects this skill applies beyond damage (ADR 0008). Default empty = a pure damage
+    // skill, byte-identical to before (existing Skill construction, DEMO_SKILLS, and goldens are unchanged).
+    // A skill with non-empty effects is a "cast" skill, resolved via Command.Cast / Resolver.cast.
+    val effects: List<SkillEffect> = emptyList(),
 )

@@ -259,7 +259,7 @@ object CampaignAssembler {
 
     private fun skills(defs: List<SkillDef>): Map<String, Skill> =
         defs.associate {
-            it.id to Skill(it.id, it.name, it.kind, it.powerCoeff, RangeSpec(it.use.range.min, it.use.range.max))
+            it.id to Skill(it.id, it.name, it.kind, it.powerCoeff, RangeSpec(it.use.range.min, it.use.range.max), it.effects)
         }
 
     // Only units that declare a loadout enter the table; an empty loadout means "unconstrained"

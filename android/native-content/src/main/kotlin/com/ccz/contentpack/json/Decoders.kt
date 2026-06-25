@@ -2,6 +2,7 @@ package com.ccz.contentpack.json
 
 import com.ccz.core.model.CounterRelation
 import com.ccz.core.model.DamageKind
+import com.ccz.core.model.EffectTarget
 import com.ccz.core.model.Faction
 
 /**
@@ -20,3 +21,7 @@ internal fun decodeDamageKind(path: String, value: String): DamageKind =
 internal fun decodeCounterRelation(path: String, value: String): CounterRelation =
     CounterRelation.entries.firstOrNull { it.name == value.uppercase() }
         ?: throw ContentDecodeException("$path: unknown counter relation: $value")
+
+internal fun decodeEffectTarget(path: String, value: String): EffectTarget =
+    EffectTarget.entries.firstOrNull { it.name == value.uppercase() }
+        ?: throw ContentDecodeException("$path: unknown effect target: $value")

@@ -23,6 +23,7 @@ import com.ccz.core.model.BurstRates
 import com.ccz.core.model.CombatRates
 import com.ccz.core.model.CombatStats
 import com.ccz.core.model.Pos
+import com.ccz.core.model.SkillEffect
 
 internal fun toClass(index: Int, dto: ClassDto): ClassDef {
     val path = "classes[$index]"
@@ -89,7 +90,14 @@ internal fun toSkill(index: Int, dto: SkillDto): SkillDef =
             targeting = dto.use.targeting,
             mpCost = dto.use.mpCost,
         ),
+        effects = dto.effects.mapIndexed { i, effect -> toSkillEffect("skills[$index].effects[$i]", effect) },
     )
+
+private fun toSkillEffect(path: String, dto: SkillEffectDto): SkillEffect = when (dto) {
+    // amount is carried as-is (a bound, not an enum), validated >= 1 by ContentValidator; only the
+    // target band is whitelisted fail-closed here, mirroring how kind decodes through decodeDamageKind.
+    is SkillEffectDto.Heal -> SkillEffect.Heal(decodeEffectTarget("$path.target", dto.target), dto.amount)
+}
 
 internal fun toItem(dto: ItemDto): ItemDef =
     ItemDef(

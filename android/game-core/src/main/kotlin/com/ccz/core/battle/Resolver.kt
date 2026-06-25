@@ -3,6 +3,7 @@ package com.ccz.core.battle
 import com.ccz.core.model.DamageKind
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Skill
+import com.ccz.core.model.SkillEffect
 import com.ccz.core.model.UnitClass
 import com.ccz.core.rng.Rng
 
@@ -22,8 +23,37 @@ object Resolver {
     fun apply(state: BattleState, command: Command, ctx: ResolveContext): Resolution = when (command) {
         is Command.Move -> move(state, command)
         is Command.Attack -> attack(state, command, ctx)
+        is Command.Cast -> cast(state, command, ctx)
         is Command.Wait -> Resolution(state.markActed(command.unit), listOf(Event.Waited(command.unit)))
         is Command.EndTurn -> endTurn(state, command, ctx)
+    }
+
+    /**
+     * Resolves a [Command.Cast]: applies the skill's effects to the target, deterministically and
+     * RNG-FREE — [BattleState.rngState] is returned unchanged (like Move/Wait), so a cast perturbs no
+     * draw order and the damage golden is unaffected (ADR 0008). The caster is marked acted (the cast
+     * spends its turn action). Phase 1 handles a single [SkillEffect.Heal]; the exhaustive `when` makes
+     * a future effect variant a compile error until handled here.
+     */
+    private fun cast(state: BattleState, command: Command.Cast, ctx: ResolveContext): Resolution {
+        val skill = ctx.skills.getValue(command.skill)
+        var target = state.unit(command.target)
+        val events = mutableListOf<Event>()
+        skill.effects.forEach { effect ->
+            when (effect) {
+                is SkillEffect.Heal -> {
+                    // Guard amount > 0 (ContentValidator enforces >= 1; this is defense-in-depth so a bad
+                    // amount can never reduce HP) and only heal a living, not-full target — same shape as
+                    // applyTerrainHeal. No RNG, pure integer clamp.
+                    if (effect.amount > 0 && target.alive && target.hp < target.hpMax) {
+                        val gained = (target.hp + effect.amount).coerceAtMost(target.hpMax) - target.hp
+                        target = target.withHp(target.hp + gained)
+                        events += Event.Healed(target.id, gained)
+                    }
+                }
+            }
+        }
+        return Resolution(state.withUnit(target).markActed(command.caster), events)
     }
 
     private fun endTurn(state: BattleState, command: Command.EndTurn, ctx: ResolveContext): Resolution {

@@ -93,6 +93,42 @@ class ContentJsonLoaderTest {
         assertEquals(listOf(listOf("plain", "plain"), listOf("plain", "plain")), map.tiles)
     }
 
+    /** Injects a skill `effects` array (ADR 0008) onto the sample pack's lone skill. */
+    private fun packWithEffect(effectJson: String): String =
+        samplePack().replace(
+            "\"targeting\": \"enemy\" } }",
+            "\"targeting\": \"enemy\" }, \"effects\": [ $effectJson ] }",
+        )
+
+    @Test
+    fun decodesSkillHealEffect() {
+        val content = ContentJsonLoader.load(packWithEffect("{ \"type\": \"heal\", \"target\": \"ally\", \"amount\": 30 }"))
+        val heal = content.tables.skills.first().effects.single() as com.ccz.core.model.SkillEffect.Heal
+        assertEquals(com.ccz.core.model.EffectTarget.ALLY, heal.target)
+        assertEquals(30, heal.amount)
+    }
+
+    @Test
+    fun unknownSkillEffectTypeFailsClosed() {
+        assertFailsWith<ContentDecodeException> {
+            ContentJsonLoader.load(packWithEffect("{ \"type\": \"teleport\", \"target\": \"ally\", \"amount\": 30 }"))
+        }
+    }
+
+    @Test
+    fun unknownEffectTargetFailsClosed() {
+        assertFailsWith<ContentDecodeException> {
+            ContentJsonLoader.load(packWithEffect("{ \"type\": \"heal\", \"target\": \"martian\", \"amount\": 30 }"))
+        }
+    }
+
+    @Test
+    fun nonPositiveHealAmountIsAValidationIssue() {
+        // Shape decodes (amount is a plain Int); ContentValidator catches the bound (>= 1), fail-closed.
+        val content = ContentJsonLoader.load(packWithEffect("{ \"type\": \"heal\", \"target\": \"ally\", \"amount\": 0 }"))
+        assertTrue(ContentValidator.validate(content).any { it.path.contains("effects") && it.message.contains("heal amount") })
+    }
+
     @Test
     fun unknownFactionFailsClosed() {
         assertFailsWith<ContentDecodeException> { ContentJsonLoader.load(samplePack(faction = "NEUTRAL")) }

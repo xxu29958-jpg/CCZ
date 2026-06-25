@@ -1,5 +1,9 @@
 package com.ccz.core.battle
 
+import com.ccz.core.model.Combatant
+import com.ccz.core.model.EffectTarget
+import com.ccz.core.model.SkillEffect
+
 /** Why a command is illegal. `null` from [CommandValidator.check] means legal. */
 enum class RejectReason {
     NOT_ACTIVE_FACTION,
@@ -20,6 +24,11 @@ enum class RejectReason {
     WRONG_END_TURN_FACTION,
     UNIT_ALREADY_MOVED,
     UNIT_ALREADY_ACTED,
+    // Cast (effect skill) rejections (ADR 0008): the skill carries no effects (not a cast skill),
+    // the target does not match the effect's SELF/ALLY band, or it is out of the cast's range.
+    SKILL_HAS_NO_EFFECT,
+    CAST_TARGET_INVALID,
+    OUT_OF_CAST_RANGE,
 }
 
 /**
@@ -40,6 +49,7 @@ object CommandValidator {
     fun check(state: BattleState, command: Command, context: BattleContext): RejectReason? = when (command) {
         is Command.Move -> checkMove(state, command, context)
         is Command.Attack -> checkAttack(state, command, context)
+        is Command.Cast -> checkCast(state, command, context)
         is Command.Wait -> checkWait(state, command)
         is Command.EndTurn ->
             if (command.faction == state.active) null else RejectReason.WRONG_END_TURN_FACTION
@@ -75,6 +85,37 @@ object CommandValidator {
         if (sameSide(attacker.faction, target.faction)) return RejectReason.TARGET_FRIENDLY
         val distance = manhattan(attacker.pos, target.pos)
         return if (skill.range.covers(distance)) null else RejectReason.OUT_OF_ATTACK_RANGE
+    }
+
+    /**
+     * A cast applies an effect skill to a SELF/ALLY target (the inverse of attack's enemy targeting).
+     * Legal for an eligible, un-acted caster using a known, loadout-allowed skill that HAS effects, on a
+     * living target within range whose relation to the caster satisfies every effect's [EffectTarget]
+     * band: SELF requires target == caster; ALLY requires a same-side target (which includes the caster).
+     * RNG-free, mutates nothing — mirrors [checkAttack] but for the friendly-targeting path.
+     */
+    private fun checkCast(state: BattleState, command: Command.Cast, context: BattleContext): RejectReason? {
+        actorEligibility(state, command.caster, state.active)?.let { return it }
+        if (state.hasActed(command.caster)) return RejectReason.UNIT_ALREADY_ACTED
+        val caster = state.units.getValue(command.caster)
+        val skill = context.skills[command.skill] ?: return RejectReason.UNKNOWN_SKILL
+        if (!context.loadoutAllows(command.caster, command.skill)) return RejectReason.SKILL_NOT_IN_LOADOUT
+        if (skill.effects.isEmpty()) return RejectReason.SKILL_HAS_NO_EFFECT
+        val target = state.units[command.target] ?: return RejectReason.TARGET_NOT_FOUND
+        if (!target.alive) return RejectReason.TARGET_DEAD
+        skill.effects.forEach { effect -> castTargetReject(effect, caster, target)?.let { return it } }
+        return if (skill.range.covers(manhattan(caster.pos, target.pos))) null else RejectReason.OUT_OF_CAST_RANGE
+    }
+
+    /** The reason [target] does not match [effect]'s target band relative to [caster], or null if it does. */
+    private fun castTargetReject(effect: SkillEffect, caster: Combatant, target: Combatant): RejectReason? =
+        when (effect) {
+            is SkillEffect.Heal -> bandReject(effect.target, caster, target)
+        }
+
+    private fun bandReject(band: EffectTarget, caster: Combatant, target: Combatant): RejectReason? = when (band) {
+        EffectTarget.SELF -> if (caster.id == target.id) null else RejectReason.CAST_TARGET_INVALID
+        EffectTarget.ALLY -> if (sameSide(caster.faction, target.faction)) null else RejectReason.CAST_TARGET_INVALID
     }
 
     /** Wait stands the unit down for the turn; legal for an eligible unit that has not yet acted. */

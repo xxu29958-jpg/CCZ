@@ -28,9 +28,11 @@ import com.ccz.core.event.WinLoseCondition
 import com.ccz.core.model.CombatStats
 import com.ccz.core.model.CounterRelation
 import com.ccz.core.model.DamageKind
+import com.ccz.core.model.EffectTarget
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
 import com.ccz.core.model.RangeSpec
+import com.ccz.core.model.SkillEffect
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -93,6 +95,7 @@ class CampaignAssemblerTest {
     private fun skillDefs(): List<SkillDef> = listOf(
         skillDef("hit", powerCoeff = 100, min = 1, max = 1),
         skillDef("shot", powerCoeff = 80, min = 2, max = 3),
+        skillDef("heal", powerCoeff = 0, min = 0, max = 1).copy(effects = listOf(SkillEffect.Heal(EffectTarget.ALLY, 25))),
     )
 
     private fun skillDef(id: String, powerCoeff: Int, min: Int, max: Int): SkillDef = SkillDef(
@@ -173,6 +176,14 @@ class CampaignAssemblerTest {
         assertEquals(100, skills.getValue("hit").powerCoeff)
         assertEquals(DamageKind.PHYSICAL, skills.getValue("hit").kind)
         assertEquals(RangeSpec(2, 3), skills.getValue("shot").range)
+    }
+
+    @Test
+    fun assembleThreadsSkillEffectsIntoTheCoreSkill() {
+        // ADR 0008: a content skill's effects must reach the core Skill so Resolver.cast can apply them
+        // (CampaignAssembler.skills() previously dropped everything but id/name/kind/powerCoeff/range).
+        val heal = CampaignAssembler.assemble(content(), "b", "m").context.skills.getValue("heal")
+        assertEquals(listOf(SkillEffect.Heal(EffectTarget.ALLY, 25)), heal.effects)
     }
 
     @Test

@@ -74,6 +74,7 @@ internal object SaveMappers {
     private fun commandDto(c: Command): CommandDto = when (c) {
         is Command.Move -> CommandDto.Move(c.unit, PosDto(c.to.x, c.to.y))
         is Command.Attack -> CommandDto.Attack(c.attacker, c.target, c.skill)
+        is Command.Cast -> CommandDto.Cast(c.caster, c.target, c.skill)
         is Command.Wait -> CommandDto.Wait(c.unit)
         is Command.EndTurn -> CommandDto.EndTurn(c.faction.name)
     }
@@ -127,6 +128,7 @@ internal object SaveMappers {
     private fun command(c: CommandDto): Command = when (c) {
         is CommandDto.Move -> Command.Move(c.unit, Pos(c.to.x, c.to.y))
         is CommandDto.Attack -> Command.Attack(c.attacker, c.target, c.skill)
+        is CommandDto.Cast -> Command.Cast(c.caster, c.target, c.skill)
         is CommandDto.Wait -> Command.Wait(c.unit)
         is CommandDto.EndTurn -> Command.EndTurn(faction("command.end_turn.faction", c.faction))
     }

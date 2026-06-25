@@ -29,4 +29,7 @@ internal fun phraseOf(reason: RejectReason): String = when (reason) {
     RejectReason.WRONG_END_TURN_FACTION -> "Not your turn to end"
     RejectReason.UNIT_ALREADY_MOVED -> "Already moved this turn"
     RejectReason.UNIT_ALREADY_ACTED -> "Already acted this turn"
+    RejectReason.SKILL_HAS_NO_EFFECT -> "That skill has no effect to cast"
+    RejectReason.CAST_TARGET_INVALID -> "Invalid target for this skill"
+    RejectReason.OUT_OF_CAST_RANGE -> "Out of cast range"
 }
