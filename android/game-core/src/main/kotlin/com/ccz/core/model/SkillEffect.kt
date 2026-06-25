@@ -51,6 +51,16 @@ sealed interface SkillEffect {
      * requires it `>= 1` and the target band [EffectTarget.ENEMY] (an ailment is hostile, like a heal is friendly).
      */
     data class ApplyAilment(val target: EffectTarget, val ailment: Ailment, val duration: Int) : SkillEffect
+
+    /**
+     * Lifts ALL active [Ailment]s from a friendly target (ADR 0008) — the counterplay to [ApplyAilment]: a
+     * cleansed unit's silence/stun is cleared so it may act again. A friendly effect (a [EffectTarget.SELF] or
+     * [EffectTarget.ALLY] band — `ContentValidator` rejects an [EffectTarget.ENEMY] cleanse), resolved with ZERO
+     * RNG and no new persistent state (it only empties the already-serialized [Combatant.ailments]). It does NOT
+     * touch timed stat-debuffs ([ActiveEffect]) — those are numeric and self-expiring; cleanse removes the
+     * disabling AILMENTS. No-op (no event) on a target carrying none.
+     */
+    data class Cleanse(val target: EffectTarget) : SkillEffect
 }
 
 /**

@@ -51,6 +51,7 @@ internal fun describeCast(events: List<Event>, state: BattleState): String =
             is Event.StatChanged ->
                 "${unitName(state, event.unit)} ${event.stat.name.lowercase()} ${if (event.amount >= 0) "+${event.amount}" else "${event.amount}"}"
             is Event.StatusApplied -> "${unitName(state, event.unit)} ${statusLabel(event.status)}"
+            is Event.StatusCleared -> "${unitName(state, event.unit)} 净化"
             else -> event::class.simpleName ?: "event"
         }
     }

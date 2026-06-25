@@ -42,12 +42,14 @@ class CastTest {
         Skill("crush", "Crush", DamageKind.PHYSICAL, 0, RangeSpec(1, 3), listOf(SkillEffect.StatDelta(EffectTarget.ENEMY, AffectedStat.ATK, -100, duration = 1)))
     private val silenceSkill =
         Skill("silence", "Silence", DamageKind.PHYSICAL, 0, RangeSpec(1, 3), listOf(SkillEffect.ApplyAilment(EffectTarget.ENEMY, Ailment.SILENCE, 2)))
+    private val cleanseSkill =
+        Skill("cleanse", "Cleanse", DamageKind.PHYSICAL, 0, RangeSpec(0, 1), listOf(SkillEffect.Cleanse(EffectTarget.ALLY)))
     private val ctx = contextOf(
         flat(6, 1),
         skills = mapOf(
             "heal" to healSkill, "self_heal" to selfHealSkill, "atk" to atkSkill, "pheal" to percentHealSkill,
             "buff" to buffSkill, "debuff" to debuffSkill, "tbuff" to timedBuffSkill, "crush" to bigDebuffSkill,
-            "silence" to silenceSkill,
+            "silence" to silenceSkill, "cleanse" to cleanseSkill,
         ),
     )
 
@@ -265,6 +267,33 @@ class CastTest {
         val state = field().let { it.withUnit(it.unit("foe").copy(ailments = listOf(ActiveAilment(Ailment.SILENCE, 1)))) }
         val result = accept(state, Command.Cast("medic", "foe", "silence"))
         assertEquals(listOf(ActiveAilment(Ailment.SILENCE, 2)), result.state.unit("foe").ailments, "refreshed, not stacked")
+    }
+
+    @Test
+    fun cleanseLiftsAllAilmentsFromAnAllyWithoutDrawingRng() {
+        // Cleanse (ADR 0008) — the counterplay to ailments: an ally carrying SILENCE + STUN is fully cleared,
+        // emitting Event.StatusCleared, with no RNG drawn. (Timed stat-debuffs are untouched — they self-expire.)
+        val state = field().let {
+            it.withUnit(it.unit("ally").copy(ailments = listOf(ActiveAilment(Ailment.SILENCE, 2), ActiveAilment(Ailment.STUN, 1))))
+        }
+        val result = accept(state, Command.Cast("medic", "ally", "cleanse"))
+        assertTrue(result.state.unit("ally").ailments.isEmpty(), "every ailment is lifted")
+        assertEquals(state.rngState, result.state.rngState, "a cleanse draws no RNG")
+        assertEquals("ally", result.events.filterIsInstance<Event.StatusCleared>().single().unit)
+        assertTrue(result.state.hasActed("medic"), "the caster spent its action")
+    }
+
+    @Test
+    fun cleanseOnAnUnafflictedAllyIsANoOpButStillSpendsTheAction() {
+        val result = accept(field(), Command.Cast("medic", "ally", "cleanse"))
+        assertTrue(result.events.filterIsInstance<Event.StatusCleared>().isEmpty(), "no event when there is nothing to lift")
+        assertTrue(result.state.hasActed("medic"), "the action is still spent")
+    }
+
+    @Test
+    fun cleansingAnEnemyIsRejected() {
+        // Cleanse is a friendly effect (ALLY band) — targeting an enemy is rejected, like a heal.
+        assertEquals(RejectReason.CAST_TARGET_INVALID, reject(field(), Command.Cast("medic", "foe", "cleanse")))
     }
 
     @Test

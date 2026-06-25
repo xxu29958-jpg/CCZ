@@ -22,6 +22,9 @@ sealed interface BattleEffect {
 
     /** An ailment landed on [unit] (ADR 0008); [status] is the authority's raw status id, labelled at render. */
     data class Afflicted(override val unit: String, val status: String) : BattleEffect
+
+    /** [unit]'s ailments were lifted by a cleanse (ADR 0008) — the counterplay readout to [Afflicted]. */
+    data class Cleansed(override val unit: String) : BattleEffect
 }
 
 /**
@@ -38,6 +41,7 @@ internal fun effectsOf(events: List<Event>): List<BattleEffect> = events.mapNotN
         is Event.Healed -> BattleEffect.Healed(event.unit, event.amount)
         is Event.StatChanged -> BattleEffect.Buffed(event.unit, event.stat.name, event.amount)
         is Event.StatusApplied -> BattleEffect.Afflicted(event.unit, event.status)
+        is Event.StatusCleared -> BattleEffect.Cleansed(event.unit)
         else -> null
     }
 }
