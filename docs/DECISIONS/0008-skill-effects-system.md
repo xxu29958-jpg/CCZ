@@ -31,6 +31,15 @@ Status: Accepted（Phase 1 已落地）
 > 随后补齐 **debuff**:`EffectTarget` 加 `ENEMY`、`StatDelta.amount` 改有符号(正 buff / 负 debuff),`castTargetAllows`
 > 加 ENEMY 带(`!sameSide`),`ContentValidator` 加 heal-不得-target-enemy 一致性 + `StatDelta` amount≠0;关羽「震慑」
 > (enemy atk-15)可玩,日志/徽章按符号显示。仍零 schema/RULES bump(瞬时、内容授权量级、cast 零 RNG)。
+>
+> **Phase 3 时长 stat-delta 已落地**:`StatDelta.duration`(>0 = 定时)+ 新 `ActiveEffect` 持久态(`Combatant.effects`);
+> `Resolver.cast` 记录、`Resolver.endTurn` 每回合边界递减、到期反转(id-sorted、零 RNG)。**save schema v3→v4**:
+> `CombatantDto.effects` 默认空(向后兼容,旧档解空)、`affectedStat` decode 白名单 fail-closed;`encodeDefaults=true` 故
+> v4 档总带 `effects` 键 → 旧 build 在 decode 阶段经未知键 fail-closed(早于 FUTURE gate,见 `SaveEnvelope` KDoc)。
+> **不 bump RULES_VERSION**:tick 确定无 RNG、不改公式常量,golden 无 effects 故为 no-op、逐字节不变;回放安全
+> (save = fresh initialState〔effects 空〕+ folded commands,cast/tick 确定重现)。时长 tick 语义 = 每 `EndTurn` 递减,
+> duration N 覆盖 N 个回合边界(用户确认)。咆哮/震慑改 duration 3。**剩**:status ailment(毒 DoT/麻痹命令门)→
+> cleanse → 概率/RNG(届时 RULES_VERSION 1→2)→ AoE/召唤/控制/天气/被动 aura。
 
 ## Context
 

@@ -81,6 +81,11 @@ data class CombatVitals(
     val hpMax: Int,
 )
 
+// 7 flat fields: a combat entity (identity/pos/vitals/stats/rates) plus its two condition layers (the inert
+// `statuses` tag set + timed `effects`). Kept FLAT rather than grouped because the save format is additive —
+// `effects` is a new top-level field (default empty) so pre-Phase-3 saves still decode; grouping would move
+// `statuses` under a sub-object and break that forward-compat. Not a god-object, so the param gate is suppressed.
+@Suppress("LongParameterList")
 data class Combatant(
     val identity: CombatIdentity,
     val pos: Pos,
@@ -88,6 +93,9 @@ data class Combatant(
     val stats: CombatStats,
     val rates: CombatRates,
     val statuses: Set<String> = emptySet(),
+    // Timed stat modifications currently active (ADR 0008 Phase 3); empty for a fresh/instant-only unit.
+    // Default empty keeps existing construction and pre-Phase-3 saves byte-identical.
+    val effects: List<ActiveEffect> = emptyList(),
 ) {
     val id: String get() = identity.id
     val name: String get() = identity.name

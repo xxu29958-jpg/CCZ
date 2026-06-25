@@ -164,8 +164,11 @@ object ContentValidator {
                 val effPath = "skills[$index].effects[$effectIndex]"
                 val issue = when (effect) {
                     is SkillEffect.Heal -> healIssue(effect, effPath)
-                    is SkillEffect.StatDelta ->
-                        if (effect.amount == 0) ValidationIssue("$effPath.amount", "stat delta amount must be non-zero") else null
+                    is SkillEffect.StatDelta -> when {
+                        effect.amount == 0 -> ValidationIssue("$effPath.amount", "stat delta amount must be non-zero")
+                        effect.duration < 0 -> ValidationIssue("$effPath.duration", "stat delta duration must be >= 0")
+                        else -> null
+                    }
                 }
                 if (issue != null) issues += issue
             }

@@ -1,7 +1,9 @@
 package com.ccz.core.battle
 
+import com.ccz.core.model.ActiveEffect
 import com.ccz.core.model.AffectedStat
 import com.ccz.core.model.CombatStats
+import com.ccz.core.model.Combatant
 import com.ccz.core.model.DamageKind
 import com.ccz.core.model.Faction
 import com.ccz.core.model.HealMode
@@ -32,44 +34,63 @@ object Resolver {
     }
 
     /**
-     * Resolves a [Command.Cast]: applies the skill's effects to the target, deterministically and
-     * RNG-FREE — [BattleState.rngState] is returned unchanged (like Move/Wait), so a cast perturbs no
-     * draw order and the damage golden is unaffected (ADR 0008). The caster is marked acted (the cast
-     * spends its turn action). Phase 1 handles a single [SkillEffect.Heal]; the exhaustive `when` makes
-     * a future effect variant a compile error until handled here.
+     * Resolves a [Command.Cast]: folds the skill's effects onto the target, deterministically and RNG-FREE —
+     * [BattleState.rngState] is returned unchanged (like Move/Wait), so a cast perturbs no draw order and the
+     * damage golden is unaffected (ADR 0008). The caster is marked acted (the cast spends its turn action).
+     * Each effect is applied by a guard-clause helper ([applyEffect]); the exhaustive `when` there makes a new
+     * effect variant a compile error until handled.
      */
     private fun cast(state: BattleState, command: Command.Cast, ctx: ResolveContext): Resolution {
         val skill = ctx.skills.getValue(command.skill)
         var target = state.unit(command.target)
         val events = mutableListOf<Event>()
         skill.effects.forEach { effect ->
-            when (effect) {
-                is SkillEffect.Heal -> {
-                    // FLAT = the amount directly; PERCENT_MAX = a percent of max HP via integer-truncating
-                    // math (hpMax * amount / 100; hpMax is small so no overflow, no floats). Guard amount > 0
-                    // (ContentValidator enforces the bounds; this is defense-in-depth so a bad amount can never
-                    // reduce HP) and only heal a living, not-full target — same clamp shape as applyTerrainHeal.
-                    val healAmount = when (effect.mode) {
-                        HealMode.FLAT -> effect.amount
-                        HealMode.PERCENT_MAX -> target.hpMax * effect.amount / 100
-                    }
-                    if (healAmount > 0 && target.alive && target.hp < target.hpMax) {
-                        val gained = (target.hp + healAmount).coerceAtMost(target.hpMax) - target.hp
-                        target = target.withHp(target.hp + gained)
-                        events += Event.Healed(target.id, gained)
-                    }
-                }
-                is SkillEffect.StatDelta -> {
-                    // Instant flat stat buff into the panel (ContentValidator enforces amount >= 1; the
-                    // floor-at-0 is defense-in-depth). No RNG.
-                    if (effect.amount != 0 && target.alive) {
-                        target = target.copy(stats = applyStatDelta(target.stats, effect.stat, effect.amount))
-                        events += Event.StatChanged(target.id, effect.stat, effect.amount)
-                    }
-                }
-            }
+            val (next, event) = applyEffect(target, effect)
+            target = next
+            if (event != null) events += event
         }
         return Resolution(state.withUnit(target).markActed(command.caster), events)
+    }
+
+    /** Applies one [SkillEffect] to [target], returning the new combatant and the event it surfaced (or null). */
+    private fun applyEffect(target: Combatant, effect: SkillEffect): Pair<Combatant, Event?> = when (effect) {
+        is SkillEffect.Heal -> applyHeal(target, effect)
+        is SkillEffect.StatDelta -> applyStatDeltaEffect(target, effect)
+    }
+
+    /**
+     * FLAT = the amount directly; PERCENT_MAX = a percent of max HP via integer-truncating math
+     * (hpMax * amount / 100; hpMax is small so no overflow, no floats). No-op (null event) for a non-positive
+     * amount or a dead/full target — same clamp shape as [applyTerrainHeal].
+     */
+    private fun applyHeal(target: Combatant, effect: SkillEffect.Heal): Pair<Combatant, Event?> {
+        val healAmount = when (effect.mode) {
+            HealMode.FLAT -> effect.amount
+            HealMode.PERCENT_MAX -> target.hpMax * effect.amount / 100
+        }
+        if (healAmount <= 0 || !target.alive || target.hp >= target.hpMax) return target to null
+        val gained = (target.hp + healAmount).coerceAtMost(target.hpMax) - target.hp
+        return target.withHp(target.hp + gained) to Event.Healed(target.id, gained)
+    }
+
+    /**
+     * Signed stat change folded into the panel. Records/emits the REALIZED delta (after the floor-at-0 clamp),
+     * not the requested amount, so a timed effect's expiry reverses EXACTLY what was applied — a debuff that
+     * floored a low stat restores the original value instead of inflating it. duration 0 = permanent (no record).
+     */
+    private fun applyStatDeltaEffect(target: Combatant, effect: SkillEffect.StatDelta): Pair<Combatant, Event?> {
+        if (effect.amount == 0 || !target.alive) return target to null
+        val before = statValue(target.stats, effect.stat)
+        val newStats = applyStatDelta(target.stats, effect.stat, effect.amount)
+        val applied = statValue(newStats, effect.stat) - before
+        if (applied == 0) return target to null
+        val withStats = target.copy(stats = newStats)
+        val next = if (effect.duration > 0) {
+            withStats.copy(effects = withStats.effects + ActiveEffect(effect.stat, applied, effect.duration))
+        } else {
+            withStats
+        }
+        return next to Event.StatChanged(target.id, effect.stat, applied)
     }
 
     private fun applyStatDelta(stats: CombatStats, stat: AffectedStat, amount: Int): CombatStats = when (stat) {
@@ -79,13 +100,45 @@ object Resolver {
         AffectedStat.RES -> stats.copy(res = (stats.res + amount).coerceAtLeast(0))
     }
 
+    private fun statValue(stats: CombatStats, stat: AffectedStat): Int = when (stat) {
+        AffectedStat.ATK -> stats.atk
+        AffectedStat.DEF -> stats.def
+        AffectedStat.MAT -> stats.mat
+        AffectedStat.RES -> stats.res
+    }
+
     private fun endTurn(state: BattleState, command: Command.EndTurn, ctx: ResolveContext): Resolution {
         val next = nextFaction(command.faction)
         // Reset the per-turn action economy so the next side's units start fresh, then apply terrain
         // healing to that side's units as their phase begins (FE/AW fort/village recovery).
         val advanced = state.copy(active = next, turn = state.turn + 1).clearTurnActions()
         val (healed, healEvents) = applyTerrainHeal(advanced, next, ctx)
-        return Resolution(healed, listOf(Event.TurnEnded(command.faction)) + healEvents)
+        return Resolution(tickEffects(healed), listOf(Event.TurnEnded(command.faction)) + healEvents)
+    }
+
+    /**
+     * Decrements every active timed effect by one turn-boundary (ADR 0008 Phase 3); an effect reaching 0
+     * is reversed (its recorded delta subtracted back) and dropped. Deterministic, id-sorted, NO RNG — so it
+     * is replay-safe and leaves goldens (which carry no effects, making this a no-op) byte-identical. Runs on
+     * every [Command.EndTurn], so a `duration` of N covers N turn-boundaries.
+     */
+    private fun tickEffects(state: BattleState): BattleState {
+        var result = state
+        state.units.values.sortedBy { it.id }.forEach { unit ->
+            if (unit.effects.isEmpty()) return@forEach
+            var stats = unit.stats
+            val kept = mutableListOf<ActiveEffect>()
+            unit.effects.forEach { effect ->
+                val remaining = effect.remaining - 1
+                if (remaining <= 0) {
+                    stats = applyStatDelta(stats, effect.stat, -effect.amount) // expire: reverse the change
+                } else {
+                    kept += effect.copy(remaining = remaining)
+                }
+            }
+            result = result.withUnit(unit.copy(stats = stats, effects = kept))
+        }
+        return result
     }
 
     /** Heal the [faction]'s living units standing on healing tiles (capped at max HP); inert with no map. */

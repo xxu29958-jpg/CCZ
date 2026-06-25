@@ -32,11 +32,16 @@ class CastTest {
         Skill("buff", "Buff", DamageKind.PHYSICAL, 0, RangeSpec(0, 1), listOf(SkillEffect.StatDelta(EffectTarget.ALLY, AffectedStat.ATK, 15)))
     private val debuffSkill =
         Skill("debuff", "Debuff", DamageKind.PHYSICAL, 0, RangeSpec(1, 3), listOf(SkillEffect.StatDelta(EffectTarget.ENEMY, AffectedStat.ATK, -15)))
+    private val timedBuffSkill =
+        Skill("tbuff", "Timed Buff", DamageKind.PHYSICAL, 0, RangeSpec(0, 1), listOf(SkillEffect.StatDelta(EffectTarget.ALLY, AffectedStat.ATK, 15, duration = 2)))
+    // A timed debuff whose magnitude EXCEEDS the target's stat, to exercise the floor-at-0 reversal symmetry.
+    private val bigDebuffSkill =
+        Skill("crush", "Crush", DamageKind.PHYSICAL, 0, RangeSpec(1, 3), listOf(SkillEffect.StatDelta(EffectTarget.ENEMY, AffectedStat.ATK, -100, duration = 1)))
     private val ctx = contextOf(
         flat(6, 1),
         skills = mapOf(
-            "heal" to healSkill, "self_heal" to selfHealSkill, "atk" to atkSkill,
-            "pheal" to percentHealSkill, "buff" to buffSkill, "debuff" to debuffSkill,
+            "heal" to healSkill, "self_heal" to selfHealSkill, "atk" to atkSkill, "pheal" to percentHealSkill,
+            "buff" to buffSkill, "debuff" to debuffSkill, "tbuff" to timedBuffSkill, "crush" to bigDebuffSkill,
         ),
     )
 
@@ -146,6 +151,32 @@ class CastTest {
     fun legalCastTargetsForADebuffAreEnemiesInRange() {
         // ENEMY band, range 1-3: only the foe (dist 3); same-side units excluded by band.
         assertEquals(setOf("foe"), Gameplay.legalCastTargets(field(), "medic", "debuff", ctx))
+    }
+
+    @Test
+    fun aTimedBuffIsRecordedAndRevertsAfterItsDuration() {
+        // duration 2: applied now (atk 80→95) + recorded as an ActiveEffect; reverts after 2 EndTurn ticks.
+        val cast = accept(field(), Command.Cast("medic", "medic", "tbuff"))
+        assertEquals(95, cast.state.unit("medic").stats.atk, "buff applied immediately")
+        assertEquals(1, cast.state.unit("medic").effects.size, "the timed effect is recorded for reversal")
+        // tick 1 (player EndTurn): remaining 2→1, still buffed
+        val t1 = accept(cast.state, Command.EndTurn(Faction.PLAYER)).state
+        assertEquals(95, t1.unit("medic").stats.atk, "still buffed after one turn-boundary")
+        // tick 2 (enemy EndTurn, active flipped): remaining 1→0, reverts and drops off
+        val t2 = accept(t1, Command.EndTurn(t1.active)).state
+        assertEquals(80, t2.unit("medic").stats.atk, "reverts after the duration elapses")
+        assertTrue(t2.unit("medic").effects.isEmpty(), "the expired effect is dropped")
+    }
+
+    @Test
+    fun aTimedDebuffThatFloorsAStatRevertsToTheOriginalNotInflated() {
+        // foe atk 80; a -100 debuff floors it to 0 (realized delta -80, not the requested -100). On expiry it
+        // must restore the ORIGINAL 80 — never 0 + 100 — i.e. apply/expiry compose to identity through the floor.
+        val cast = accept(field(), Command.Cast("medic", "foe", "crush"))
+        assertEquals(0, cast.state.unit("foe").stats.atk, "the debuff floors atk at 0")
+        val t1 = accept(cast.state, Command.EndTurn(Faction.PLAYER)).state // duration 1 → expires this tick
+        assertEquals(80, t1.unit("foe").stats.atk, "reverts to the original stat, not the floor + magnitude")
+        assertTrue(t1.unit("foe").effects.isEmpty(), "the expired effect is dropped")
     }
 
     @Test

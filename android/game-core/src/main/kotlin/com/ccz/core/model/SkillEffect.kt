@@ -29,8 +29,25 @@ sealed interface SkillEffect {
      * parameter (contentVersion, like [Skill.powerCoeff]), validated non-zero by `ContentValidator`. The
      * resolver floors the resulting stat at 0 defensively.
      */
-    data class StatDelta(val target: EffectTarget, val stat: AffectedStat, val amount: Int) : SkillEffect
+    data class StatDelta(
+        val target: EffectTarget,
+        val stat: AffectedStat,
+        val amount: Int,
+        // 0 = a permanent/instant change (default, ADR 0008 Phase 2). > 0 = a TIMED change (Phase 3): the
+        // delta is applied now AND reversed after [duration] turn-boundaries elapse (each Command.EndTurn
+        // decrements every active effect; one reaching 0 reverses its stat mod). Persisted via Combatant.effects.
+        val duration: Int = 0,
+    ) : SkillEffect
 }
+
+/**
+ * A timed stat modification currently active on a unit (ADR 0008 Phase 3). When a [SkillEffect.StatDelta]
+ * with `duration > 0` resolves, the unit's [stat] is changed by [amount] (already folded into its panel) and
+ * one of these is recorded with [remaining] = duration; each turn-boundary decrements it, and at 0 the mod is
+ * reversed (the recorded [amount] is subtracted back). Persisted on [com.ccz.core.model.Combatant.effects];
+ * reversal is deterministic (no RNG), so a save = fresh initialState + folded commands reproduces it exactly.
+ */
+data class ActiveEffect(val stat: AffectedStat, val amount: Int, val remaining: Int)
 
 /** How a [SkillEffect.Heal]'s amount is read: a flat HP value, or a percent of the target's max HP. */
 enum class HealMode { FLAT, PERCENT_MAX }

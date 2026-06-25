@@ -192,6 +192,15 @@ class ContentJsonLoaderTest {
     }
 
     @Test
+    fun negativeStatDeltaDurationIsAValidationIssue() {
+        // duration >= 0 (0 = instant, > 0 = timed; ADR 0008 Phase 3); a negative is malformed content.
+        val content = ContentJsonLoader.load(
+            packWithEffect("{ \"type\": \"stat_delta\", \"target\": \"ally\", \"stat\": \"atk\", \"amount\": 15, \"duration\": -1 }"),
+        )
+        assertTrue(ContentValidator.validate(content).any { it.path.contains("duration") && it.message.contains("duration") })
+    }
+
+    @Test
     fun healCannotTargetAnEnemyIsAValidationIssue() {
         // A heal is a friendly effect — targeting an enemy is a coherence error (decodes, then fails validation).
         val content = ContentJsonLoader.load(packWithEffect("{ \"type\": \"heal\", \"target\": \"enemy\", \"amount\": 30 }"))

@@ -2,7 +2,7 @@
     "manifest": {
         "native_format_version": "1",
         "content_id": "ccz_daxingshan",
-        "content_version": "0.6.0",
+        "content_version": "0.7.0",
         "source": {
             "mod": "trssgshz"
         },
@@ -416,7 +416,8 @@
                         "type": "stat_delta",
                         "target": "ally",
                         "stat": "atk",
-                        "amount": 15
+                        "amount": 15,
+                        "duration": 3
                     }
                 ]
             },
@@ -438,7 +439,8 @@
                         "type": "stat_delta",
                         "target": "enemy",
                         "stat": "atk",
-                        "amount": -15
+                        "amount": -15,
+                        "duration": 3
                     }
                 ]
             }

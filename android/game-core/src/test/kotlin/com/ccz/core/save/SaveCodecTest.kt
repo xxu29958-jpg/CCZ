@@ -5,6 +5,8 @@ import com.ccz.core.battle.BattleProgress
 import com.ccz.core.battle.BattleState
 import com.ccz.core.battle.Command
 import com.ccz.core.model.AccuracyRates
+import com.ccz.core.model.ActiveEffect
+import com.ccz.core.model.AffectedStat
 import com.ccz.core.model.BurstRates
 import com.ccz.core.model.CombatIdentity
 import com.ccz.core.model.CombatRates
@@ -61,6 +63,37 @@ class SaveCodecTest {
         )
 
         assertEquals(envelope, SaveCodec.decode(SaveCodec.encode(envelope)))
+    }
+
+    @Test
+    fun roundTripPreservesActiveEffects() {
+        // Per-combatant timed effects (ADR 0008 Phase 3, save schema v4) must survive the codec.
+        val env = SaveEnvelope(
+            versions = SaveVersions(1, 1, "0.1.0", "1", "1.0.0"),
+            initialState = BattleState(
+                units = mapOf("u" to combatant("u", Faction.PLAYER, Pos(0, 0)).copy(effects = listOf(ActiveEffect(AffectedStat.ATK, 15, 2)))),
+                turn = 1, active = Faction.PLAYER, rngState = 0L,
+            ),
+            commands = emptyList(),
+        )
+
+        assertEquals(env, SaveCodec.decode(SaveCodec.encode(env)))
+    }
+
+    @Test
+    fun unknownEffectStatFailsClosed() {
+        val env = SaveEnvelope(
+            versions = SaveVersions(1, 1, "0.1.0", "1", "1.0.0"),
+            initialState = BattleState(
+                units = mapOf("u" to combatant("u", Faction.PLAYER, Pos(0, 0)).copy(effects = listOf(ActiveEffect(AffectedStat.ATK, 15, 2)))),
+                turn = 1, active = Faction.PLAYER, rngState = 0L,
+            ),
+            commands = emptyList(),
+        )
+        val tampered = SaveCodec.encode(env).replace("\"ATK\"", "\"LUCK\"") // the effect's stat enum name
+        assertNotEquals(SaveCodec.encode(env), tampered) // guard: the stat must actually be swapped
+
+        assertFailsWith<SaveDecodeException> { SaveCodec.decode(tampered) }
     }
 
     @Test
