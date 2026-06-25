@@ -11,9 +11,9 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 /**
- * The deterministic aggressive enemy planner: attack the nearest in-range foe, else step toward the
- * nearest foe, else Wait; end the turn when every active-side unit is exhausted. Plans are pure (no RNG)
- * and every planned command is one [Gameplay.submit] accepts.
+ * The deterministic aggressive enemy planner: focus-fire the most wounded in-range foe (tie-broken
+ * nearest then id), else step toward the nearest foe, else Wait; end the turn when every active-side unit
+ * is exhausted. Plans are pure (no RNG) and every planned command is one [Gameplay.submit] accepts.
  */
 class EnemyAiTest {
     private val ctx = contextOf(flat(6, 1)) // default skill "atk" (melee), class move = 5
@@ -78,6 +78,35 @@ class EnemyAiTest {
     fun endsTheTurnWhenEveryUnitIsExhausted() {
         val state = stateOf(combatant("e", Faction.ENEMY, Pos(0, 0)), active = Faction.ENEMY).markActed("e")
         assertEquals(Command.EndTurn(Faction.ENEMY), EnemyAi.nextCommand(state, ctx))
+    }
+
+    @Test
+    fun focusFiresTheMostWoundedFoeOverNearerAndIdTieBreaks() {
+        // A spear (range 1-2) enemy with two foes in range: a healthy one adjacent (dist 1, and the id that
+        // wins the tie-break) and a wounded one at dist 2. The aggressive planner secures the kill — it
+        // strikes the low-HP "zwounded" foe, proving HP priority overrides both nearest and id tie-breaks.
+        val spearCtx = contextOf(flat(6, 1), skills = skillsOf("spear", RangeSpec(1, 2)), loadouts = mapOf("e" to listOf("spear")))
+        val state = stateOf(
+            combatant("e", Faction.ENEMY, Pos(0, 0)),
+            combatant("ahealthy", Faction.PLAYER, Pos(1, 0), hp = 90),
+            combatant("zwounded", Faction.PLAYER, Pos(2, 0), hp = 10),
+            active = Faction.ENEMY,
+        )
+        assertEquals(Command.Attack("e", "zwounded", "spear"), EnemyAi.nextCommand(state, spearCtx))
+    }
+
+    @Test
+    fun amongEquallyWoundedFoesItStrikesTheNearest() {
+        // Two foes at the SAME HP but different distances, both in a spear's 1-2 range: the nearest wins the
+        // second tie-break key (Manhattan), even though the far one's id ("a") would win the id tie-break.
+        val spearCtx = contextOf(flat(6, 1), skills = skillsOf("spear", RangeSpec(1, 2)), loadouts = mapOf("e" to listOf("spear")))
+        val state = stateOf(
+            combatant("e", Faction.ENEMY, Pos(0, 0)),
+            combatant("a", Faction.PLAYER, Pos(2, 0), hp = 40), // farther, but id wins a tie
+            combatant("near", Faction.PLAYER, Pos(1, 0), hp = 40), // equally wounded but adjacent → struck
+            active = Faction.ENEMY,
+        )
+        assertEquals(Command.Attack("e", "near", "spear"), EnemyAi.nextCommand(state, spearCtx))
     }
 
     @Test
