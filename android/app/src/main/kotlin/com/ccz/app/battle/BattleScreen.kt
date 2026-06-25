@@ -25,17 +25,27 @@ import com.ccz.core.event.SScript
 import com.ccz.core.event.WinLoseCondition
 
 /**
+ * Display-name lookups the battle UI needs, each resolving an id to a human name from the campaign's
+ * content tables: [skill] for the skill picker, [terrain] for the tile inspector. Grouped so the
+ * screen takes one labels holder rather than a growing list of lookup params.
+ */
+data class BattleLabels(
+    val skill: (String) -> String,
+    val terrain: (String) -> String,
+)
+
+/**
  * Top-level battle UI. Holds the rendered [BattleUiState] and routes every input through
  * the pure [BattleReducer], which is the only thing that talks to game-core. This layer just
  * draws the latest snapshot and forwards taps / skill picks — it owns no combat authority.
- * [skillLabel] maps a skill id to its display name (read from the context's skill table).
+ * [labels] maps skill / terrain ids to their display names (read from the campaign content).
  */
 @Composable
 fun BattleScreen(
     map: BattleMap,
     reducer: BattleReducer,
     initial: BattleUiState,
-    skillLabel: (String) -> String,
+    labels: BattleLabels,
     script: SScript,
 ) {
     var ui by remember { mutableStateOf(initial) }
@@ -43,11 +53,31 @@ fun BattleScreen(
         OutcomeBanner(outcome = ui.outcome)
         Hud(ui = ui, script = script, onEndTurn = { ui = reducer.endTurn(ui) })
         Spacer(modifier = Modifier.height(12.dp))
-        SkillBar(ui = ui, skillLabel = skillLabel, onSelectSkill = { ui = reducer.selectSkill(ui, it) })
+        SkillBar(ui = ui, skillLabel = labels.skill, onSelectSkill = { ui = reducer.selectSkill(ui, it) })
         WaitButton(ui = ui, onWait = { ui = reducer.wait(ui) })
         BattleBoard(map = map, ui = ui, onTapTile = { pos -> ui = reducer.tapTile(ui, pos) })
+        TerrainPanel(map = map, ui = ui, terrainName = labels.terrain)
         Spacer(modifier = Modifier.height(12.dp))
         EventLog(log = ui.log)
+    }
+}
+
+/**
+ * Shows the last-tapped tile's terrain: its name, move cost, and combat cover (def/avoid/heal — the
+ * same modifiers game-core's formula reads), plus whoever stands on it. A read-only readout of the
+ * map; renders nothing until a tile is tapped. Lets the player see why a defender on cover holds.
+ */
+@Composable
+private fun TerrainPanel(map: BattleMap, ui: BattleUiState, terrainName: (String) -> String) {
+    val pos = ui.inspected ?: return
+    val info = terrainInfoAt(map, terrainName, pos) ?: return
+    val lines = terrainBonusLines(info)
+    val occupant = ui.state.unitAt(pos)?.name
+    Column(modifier = Modifier.padding(top = 12.dp)) {
+        Text(text = "地形: ${info.name} (${pos.x}, ${pos.y})", style = MaterialTheme.typography.bodyMedium)
+        Text(text = "移动消耗 ${info.moveCost}", style = MaterialTheme.typography.bodySmall)
+        if (lines.isNotEmpty()) Text(text = lines.joinToString("  ·  "), style = MaterialTheme.typography.bodySmall)
+        occupant?.let { Text(text = "占据: $it", style = MaterialTheme.typography.bodySmall) }
     }
 }
 

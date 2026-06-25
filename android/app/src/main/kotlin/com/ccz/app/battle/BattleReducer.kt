@@ -58,7 +58,9 @@ data class Selection(
  * and replaced wholesale on every accepted command — never edited here), the current [Selection]
  * (the move/skill/target options game-core reported for the chosen unit, or null when none is
  * selected), the presentation effects from the last accepted command (floating damage/miss/KO
- * badges, a pure translation of the authority's events), and a short human-readable event log.
+ * badges, a pure translation of the authority's events), a short human-readable event log, and
+ * the tile the player last tapped ([inspected], null until the first tap) so the UI can show that
+ * terrain's cover — a read-only readout of the map, never a command.
  */
 data class BattleUiState(
     val state: BattleState,
@@ -66,6 +68,7 @@ data class BattleUiState(
     val effects: List<BattleEffect> = emptyList(),
     val log: List<String> = emptyList(),
     val outcome: BattleOutcome = BattleOutcome.ONGOING,
+    val inspected: Pos? = null,
 )
 
 /**
@@ -117,13 +120,23 @@ class BattleReducer(
     }
 
     /**
+     * Routes a tap to its command (see [routeTap]) and records the tapped tile in [BattleUiState.inspected]
+     * so the UI can show that terrain's cover. Inspection is a pure read-only readout of the map — it
+     * issues no command and is recorded on every tap regardless of what the tap did; a decided battle
+     * is terminal and ignores the tap entirely (no inspection either).
+     */
+    fun tapTile(ui: BattleUiState, pos: Pos): BattleUiState {
+        if (ui.outcome != BattleOutcome.ONGOING) return ui
+        return routeTap(ui, pos).copy(inspected = pos)
+    }
+
+    /**
      * Tap routing, in priority order: while a unit is selected, tapping a tile that holds one of
      * the active skill's targets attacks it; otherwise tapping a unit game-core reports legal moves
      * for selects it (exposing its destinations, loadout, and first skill's targets); tapping a
      * highlighted destination while a unit is selected moves it; anything else clears the selection.
      */
-    fun tapTile(ui: BattleUiState, pos: Pos): BattleUiState {
-        if (ui.outcome != BattleOutcome.ONGOING) return ui
+    private fun routeTap(ui: BattleUiState, pos: Pos): BattleUiState {
         val unitHere = ui.state.unitAt(pos)
         val selection = ui.selection
         if (selection != null && unitHere != null && unitHere.id in selection.targets) {

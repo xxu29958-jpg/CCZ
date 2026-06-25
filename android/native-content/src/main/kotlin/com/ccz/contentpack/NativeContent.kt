@@ -136,7 +136,11 @@ data class TerrainDef(
     val bonuses: TerrainBonuses = TerrainBonuses(),
 )
 
-/** Combat modifiers a tile grants its occupant; content metadata not yet read by game-core. */
+/**
+ * Combat modifiers a tile grants its occupant. The assembler carries these onto
+ * [com.ccz.core.battle.MapTile] (defBonus/avoidBonus/heal), where game-core's damage/heal
+ * resolution reads them — terrain cover is live, not just metadata.
+ */
 data class TerrainBonuses(
     val defBonus: Int = 0,
     val avoidBonus: Int = 0,
