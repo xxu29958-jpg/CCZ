@@ -269,9 +269,10 @@ class BattleReducer(
     private fun enemyLogLine(command: Command, events: List<Event>, state: BattleState): String = when (command) {
         is Command.Move -> describeMoves(events, state)
         is Command.Attack -> describeAttack(events, state)
-        // The enemy AI does not cast in Phase 1 (ADR 0008), so this arm is unreached today; kept for
-        // exhaustiveness so a future casting AI compiles and logs sensibly rather than silently.
-        is Command.Cast -> "${unitName(state, command.caster)} casts ${command.skill}"
+        // The enemy AI now heals (ADR 0008 support-heal), so this arm is live; describeCast gives a friendly
+        // event-driven line ("名 +N") consistent with the player cast path and the Move/Attack arms (with a
+        // non-blank fallback for the degenerate zero-event cast, mirroring submitCast).
+        is Command.Cast -> describeCast(events, state).ifBlank { "${unitName(state, command.caster)} casts" }
         is Command.Wait -> "${unitName(state, command.unit)} waits"
         is Command.EndTurn -> turnBanner(state)
     }
