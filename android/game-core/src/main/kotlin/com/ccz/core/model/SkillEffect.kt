@@ -22,11 +22,12 @@ sealed interface SkillEffect {
     data class Heal(val target: EffectTarget, val amount: Int, val mode: HealMode = HealMode.FLAT) : SkillEffect
 
     /**
-     * Instantly add a flat [amount] to the target's [stat] for the rest of the battle (ADR 0008 Phase 2) —
-     * a stat boost resolved straight into the panel, with NO duration (timed buffs are Phase 3). SELF/ALLY
-     * band. Deterministic, RNG-free; [amount] is a content-authored parameter (contentVersion, like
-     * [Skill.powerCoeff]), validated `>= 1` by `ContentValidator` (a buff adds). The resolver floors the
-     * resulting stat at 0 defensively.
+     * Instantly add a SIGNED [amount] to the target's [stat] for the rest of the battle (ADR 0008 Phase 2) —
+     * a stat change resolved straight into the panel, with NO duration (timed effects are Phase 3). A
+     * positive amount on a [EffectTarget.SELF]/[EffectTarget.ALLY] target is a buff; a negative amount on an
+     * [EffectTarget.ENEMY] target is a debuff. Deterministic, RNG-free; [amount] is a content-authored
+     * parameter (contentVersion, like [Skill.powerCoeff]), validated non-zero by `ContentValidator`. The
+     * resolver floors the resulting stat at 0 defensively.
      */
     data class StatDelta(val target: EffectTarget, val stat: AffectedStat, val amount: Int) : SkillEffect
 }
@@ -38,8 +39,9 @@ enum class HealMode { FLAT, PERCENT_MAX }
 enum class AffectedStat { ATK, DEF, MAT, RES }
 
 /**
- * Who a [SkillEffect] lands on, relative to the caster. Phase 1: the caster itself ([SELF]) or a
- * same-side [ALLY] (which includes the caster). Enemy-targeting effects (debuffs/ailments) are a
- * later ADR-0008 phase, so the enum deliberately omits an ENEMY band for now.
+ * Who a [SkillEffect] lands on, relative to the caster: the caster itself ([SELF]), a same-side [ALLY]
+ * (which includes the caster), or an [ENEMY] (the inverse side — for debuffs). [SELF]/[ALLY] are the
+ * friendly bands (heals/buffs); [ENEMY] is used by debuff [SkillEffect.StatDelta] (a [SkillEffect.Heal]
+ * must stay friendly — `ContentValidator` rejects a heal targeting [ENEMY]).
  */
-enum class EffectTarget { SELF, ALLY }
+enum class EffectTarget { SELF, ALLY, ENEMY }

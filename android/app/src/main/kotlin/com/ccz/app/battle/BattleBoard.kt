@@ -111,7 +111,10 @@ private fun EffectBadge(effect: BattleEffect, modifier: Modifier = Modifier) {
         is BattleEffect.Missed -> "Miss" to Color(0xFF455A64)
         is BattleEffect.Defeated -> "KO" to Color(0xFF7B1FA2)
         is BattleEffect.Healed -> "+${effect.amount}" to Color(0xFF2E7D32)
-        is BattleEffect.Buffed -> "${effect.stat}+${effect.amount}" to Color(0xFF0277BD)
+        // Signed: a buff (positive) shows blue "ATK+15"; a debuff (negative) shows red "ATK-15".
+        is BattleEffect.Buffed ->
+            ("${effect.stat}${if (effect.amount >= 0) "+${effect.amount}" else "${effect.amount}"}") to
+                (if (effect.amount >= 0) Color(0xFF0277BD) else Color(0xFFC62828))
     }
     Text(text = text, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = modifier)
 }

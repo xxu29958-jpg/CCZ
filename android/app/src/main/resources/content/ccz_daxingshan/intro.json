@@ -2,7 +2,7 @@
   "manifest": {
     "native_format_version": "1",
     "content_id": "ccz_daxingshan_intro",
-    "content_version": "0.5.0",
+    "content_version": "0.6.0",
     "source": { "mod": "trssgshz" },
     "entry": "daxingshan_intro"
   },

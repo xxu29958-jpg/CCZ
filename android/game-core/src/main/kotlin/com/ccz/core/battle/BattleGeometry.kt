@@ -57,5 +57,6 @@ internal fun castTargetAllows(effect: SkillEffect, caster: Combatant, target: Co
     return when (band) {
         EffectTarget.SELF -> caster.id == target.id
         EffectTarget.ALLY -> sameSide(caster.faction, target.faction)
+        EffectTarget.ENEMY -> !sameSide(caster.faction, target.faction)
     }
 }

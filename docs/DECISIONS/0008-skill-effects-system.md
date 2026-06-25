@@ -27,7 +27,10 @@ Status: Accepted（Phase 1 已落地）
 > 永不当攻击)使效果双向可见(程远志获 heal)。`SkillEffect.StatDelta`(SELF/ALLY,flat 量瞬时入 `CombatStats`,无
 > 时长;`Event.StatChanged` 上日志/蓝徽章)+ `enum AffectedStat`;`castTargetAllows` 收口两效果 band(单 when),
 > `ContentValidator` amount≥1;零 RNG、不 bump,reducer/board cast 路由通用故零改。张飞「咆哮」(ally atk+15)可玩。
-> `cleanse` 留 Phase 3(需先有 ailment);AI auto-buff 后续(`healCommand` 仅对含 Heal 效果触发)。
+> `cleanse` 留 Phase 3(需先有 ailment);AI auto-buff 后续(`healCommand` 仅对含 Heal 效果触发)。瞬时效果三元组
+> 随后补齐 **debuff**:`EffectTarget` 加 `ENEMY`、`StatDelta.amount` 改有符号(正 buff / 负 debuff),`castTargetAllows`
+> 加 ENEMY 带(`!sameSide`),`ContentValidator` 加 heal-不得-target-enemy 一致性 + `StatDelta` amount≠0;关羽「震慑」
+> (enemy atk-15)可玩,日志/徽章按符号显示。仍零 schema/RULES bump(瞬时、内容授权量级、cast 零 RNG)。
 
 ## Context
 

@@ -30,11 +30,13 @@ class CastTest {
         Skill("pheal", "% Heal", DamageKind.PHYSICAL, 0, RangeSpec(0, 1), listOf(SkillEffect.Heal(EffectTarget.ALLY, 40, HealMode.PERCENT_MAX)))
     private val buffSkill =
         Skill("buff", "Buff", DamageKind.PHYSICAL, 0, RangeSpec(0, 1), listOf(SkillEffect.StatDelta(EffectTarget.ALLY, AffectedStat.ATK, 15)))
+    private val debuffSkill =
+        Skill("debuff", "Debuff", DamageKind.PHYSICAL, 0, RangeSpec(1, 3), listOf(SkillEffect.StatDelta(EffectTarget.ENEMY, AffectedStat.ATK, -15)))
     private val ctx = contextOf(
         flat(6, 1),
         skills = mapOf(
             "heal" to healSkill, "self_heal" to selfHealSkill, "atk" to atkSkill,
-            "pheal" to percentHealSkill, "buff" to buffSkill,
+            "pheal" to percentHealSkill, "buff" to buffSkill, "debuff" to debuffSkill,
         ),
     )
 
@@ -130,6 +132,20 @@ class CastTest {
     fun legalCastTargetsForABuffAreSameSideInRange() {
         // ALLY band, range 0-1: medic (self) + ally; the enemy is excluded by band and range.
         assertEquals(setOf("medic", "ally"), Gameplay.legalCastTargets(field(), "medic", "buff", ctx))
+    }
+
+    @Test
+    fun statDeltaDebuffsAnEnemyStatAndEmitsASignedEvent() {
+        // ENEMY-band negative StatDelta: foe base atk 80 → -15 = 65; the event carries the signed amount.
+        val result = accept(field(), Command.Cast("medic", "foe", "debuff"))
+        assertEquals(65, result.state.unit("foe").stats.atk, "enemy atk reduced by the debuff")
+        assertEquals(-15, result.events.filterIsInstance<Event.StatChanged>().single().amount)
+    }
+
+    @Test
+    fun legalCastTargetsForADebuffAreEnemiesInRange() {
+        // ENEMY band, range 1-3: only the foe (dist 3); same-side units excluded by band.
+        assertEquals(setOf("foe"), Gameplay.legalCastTargets(field(), "medic", "debuff", ctx))
     }
 
     @Test
