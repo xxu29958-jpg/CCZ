@@ -169,6 +169,7 @@ object ContentValidator {
                         effect.duration < 0 -> ValidationIssue("$effPath.duration", "stat delta duration must be >= 0")
                         else -> null
                     }
+                    is SkillEffect.ApplyAilment -> ailmentIssue(effect, effPath)
                 }
                 if (issue != null) issues += issue
             }
@@ -193,6 +194,18 @@ object ContentValidator {
         heal.mode == HealMode.FLAT && heal.amount < 1 -> ValidationIssue("$path.amount", "flat heal amount must be >= 1")
         heal.mode == HealMode.PERCENT_MAX && heal.amount !in 1..100 ->
             ValidationIssue("$path.amount", "percent heal must be in 1..100")
+        else -> null
+    }
+
+    /**
+     * An ailment's coherence (ADR 0008): it is a hostile effect, so it must target an [EffectTarget.ENEMY]
+     * (the mirror of a heal staying friendly), and its [SkillEffect.ApplyAilment.duration] must be >= 1 (a
+     * non-positive duration is meaningless — the resolver would no-op it, masking the data error). [path] is
+     * the effect path.
+     */
+    private fun ailmentIssue(ailment: SkillEffect.ApplyAilment, path: String): ValidationIssue? = when {
+        ailment.target != EffectTarget.ENEMY -> ValidationIssue("$path.target", "ailment must target an enemy")
+        ailment.duration < 1 -> ValidationIssue("$path.duration", "ailment duration must be >= 1")
         else -> null
     }
 

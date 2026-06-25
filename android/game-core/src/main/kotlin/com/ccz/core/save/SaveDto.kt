@@ -54,8 +54,8 @@ internal data class BattleProgressDto(
     val firedTriggers: Set<String> = emptySet(),
 )
 
-// Mirrors Combatant's flat 7-field shape; `effects` is a new top-level field (default empty) for additive
-// save forward-compat, so grouping it isn't an option — suppress the param gate (a wire DTO, not a god-object).
+// Mirrors Combatant's flat 8-field shape; `effects`/`ailments` are new top-level fields (default empty) for
+// additive save forward-compat, so grouping isn't an option — suppress the param gate (a wire DTO, not a god-object).
 @Suppress("LongParameterList")
 @Serializable
 internal data class CombatantDto(
@@ -66,10 +66,14 @@ internal data class CombatantDto(
     val rates: CombatRatesDto = CombatRatesDto(),
     val statuses: Set<String> = emptySet(),
     val effects: List<ActiveEffectDto> = emptyList(),
+    val ailments: List<ActiveAilmentDto> = emptyList(),
 )
 
 @Serializable
 internal data class ActiveEffectDto(val stat: String, val amount: Int, val remaining: Int)
+
+@Serializable
+internal data class ActiveAilmentDto(val kind: String, val remaining: Int)
 
 @Serializable
 internal data class CombatIdentityDto(

@@ -22,18 +22,19 @@ data class SaveVersions(
          * The newest save schema this build can read; a future (higher) value is rejected.
          * v2 added the scenario (cutscene) replay axis ([SaveEnvelope.scenarios]); v3 added the
          * `cast` command variant (ADR 0008 skill effects); v4 added per-combatant timed `effects`
-         * (ADR 0008 Phase 3). Older saves are forward-compatible — they simply lack the new key/command
-         * kind and decode fine. A newer save is also refused by an older build, fail-closed, but note
-         * WHERE the refusal happens: the strict single-pass codec (ignoreUnknownKeys=false) throws
-         * [SaveDecodeException] during decode on the unknown key (`effects`, emitted unconditionally by
-         * encodeDefaults=true) or the unknown `cast` command discriminator — BEFORE [SaveLoader.check]'s
-         * FUTURE_SCHEMA_VERSION gate, which only ever sees an already-decoded envelope. So the version
-         * gate fires only for a newer save that introduces no unknown key/discriminator; a new-field or
-         * new-command save is caught at decode instead. Either way the outcome is a clean refusal, never a
-         * silent mis-load. (Clean FUTURE-version CLASSIFICATION would require peeking the version before
-         * full decode — a deliberate non-goal here, since both refusal paths are already safe.)
+         * (ADR 0008 Phase 3); v5 added per-combatant timed `ailments` (ADR 0008 command-legality ailments).
+         * Older saves are forward-compatible — they simply lack the new key/command kind and decode fine.
+         * A newer save is also refused by an older build, fail-closed, but note WHERE the refusal happens:
+         * the strict single-pass codec (ignoreUnknownKeys=false) throws [SaveDecodeException] during decode
+         * on the unknown key (`effects`/`ailments`, emitted unconditionally by encodeDefaults=true) or the
+         * unknown `cast` command discriminator — BEFORE [SaveLoader.check]'s FUTURE_SCHEMA_VERSION gate, which
+         * only ever sees an already-decoded envelope. So the version gate fires only for a newer save that
+         * introduces no unknown key/discriminator; a new-field or new-command save is caught at decode instead.
+         * Either way the outcome is a clean refusal, never a silent mis-load. (Clean FUTURE-version
+         * CLASSIFICATION would require peeking the version before full decode — a deliberate non-goal here,
+         * since both refusal paths are already safe.)
          */
-        const val SUPPORTED_SAVE_SCHEMA_VERSION = 4
+        const val SUPPORTED_SAVE_SCHEMA_VERSION = 5
     }
 }
 

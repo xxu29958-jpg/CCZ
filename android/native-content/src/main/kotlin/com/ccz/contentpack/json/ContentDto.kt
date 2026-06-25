@@ -150,9 +150,9 @@ internal data class SkillDto(
 
 /**
  * Polymorphic skill-effect op (ADR 0008), discriminated by the loader's `type` field whose value is each
- * subclass's [SerialName] (the effect-string whitelist — an unknown type fails closed). Phase 1 registers
- * a single `heal` variant; later phases extend this sealed set. The `target` string is whitelisted to an
- * [com.ccz.core.model.EffectTarget] at the mapper boundary ([decodeEffectTarget]).
+ * subclass's [SerialName] (the effect-string whitelist — an unknown type fails closed). Registers `heal`,
+ * `stat_delta`, and `apply_ailment`; later phases extend this sealed set. The `target`/`stat`/`ailment`
+ * strings are whitelisted to their game-core enums at the mapper boundary ([decodeEffectTarget] etc.).
  */
 @Serializable
 internal sealed interface SkillEffectDto {
@@ -163,6 +163,10 @@ internal sealed interface SkillEffectDto {
     @Serializable
     @SerialName("stat_delta")
     data class StatDelta(val target: String, val stat: String, val amount: Int, val duration: Int = 0) : SkillEffectDto
+
+    @Serializable
+    @SerialName("apply_ailment")
+    data class ApplyAilment(val target: String, val ailment: String, val duration: Int) : SkillEffectDto
 }
 
 @Serializable

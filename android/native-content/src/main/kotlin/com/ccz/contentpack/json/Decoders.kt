@@ -1,6 +1,7 @@
 package com.ccz.contentpack.json
 
 import com.ccz.core.model.AffectedStat
+import com.ccz.core.model.Ailment
 import com.ccz.core.model.CounterRelation
 import com.ccz.core.model.DamageKind
 import com.ccz.core.model.EffectTarget
@@ -35,3 +36,7 @@ internal fun decodeHealMode(path: String, value: String): HealMode =
 internal fun decodeAffectedStat(path: String, value: String): AffectedStat =
     AffectedStat.entries.firstOrNull { it.name == value.uppercase() }
         ?: throw ContentDecodeException("$path: unknown stat: $value")
+
+internal fun decodeAilment(path: String, value: String): Ailment =
+    Ailment.entries.firstOrNull { it.name == value.uppercase() }
+        ?: throw ContentDecodeException("$path: unknown ailment: $value")

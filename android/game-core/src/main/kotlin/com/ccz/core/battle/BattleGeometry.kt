@@ -53,6 +53,7 @@ internal fun castTargetAllows(effect: SkillEffect, caster: Combatant, target: Co
     val band = when (effect) {
         is SkillEffect.Heal -> effect.target
         is SkillEffect.StatDelta -> effect.target
+        is SkillEffect.ApplyAilment -> effect.target
     }
     return when (band) {
         EffectTarget.SELF -> caster.id == target.id

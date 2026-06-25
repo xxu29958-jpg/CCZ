@@ -107,6 +107,11 @@ private fun toSkillEffect(path: String, dto: SkillEffectDto): SkillEffect = when
         amount = dto.amount,
         duration = dto.duration,
     )
+    is SkillEffectDto.ApplyAilment -> SkillEffect.ApplyAilment(
+        target = decodeEffectTarget("$path.target", dto.target),
+        ailment = decodeAilment("$path.ailment", dto.ailment),
+        duration = dto.duration,
+    )
 }
 
 internal fun toItem(dto: ItemDto): ItemDef =

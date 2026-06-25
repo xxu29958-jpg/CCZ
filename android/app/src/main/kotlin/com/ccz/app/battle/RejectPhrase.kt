@@ -32,4 +32,5 @@ internal fun phraseOf(reason: RejectReason): String = when (reason) {
     RejectReason.SKILL_HAS_NO_EFFECT -> "That skill has no effect to cast"
     RejectReason.CAST_TARGET_INVALID -> "Invalid target for this skill"
     RejectReason.OUT_OF_CAST_RANGE -> "Out of cast range"
+    RejectReason.CASTER_SILENCED -> "Silenced — can't cast"
 }

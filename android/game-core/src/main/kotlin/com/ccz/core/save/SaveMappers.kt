@@ -5,8 +5,10 @@ import com.ccz.core.battle.BattleProgress
 import com.ccz.core.battle.BattleState
 import com.ccz.core.battle.Command
 import com.ccz.core.model.AccuracyRates
+import com.ccz.core.model.ActiveAilment
 import com.ccz.core.model.ActiveEffect
 import com.ccz.core.model.AffectedStat
+import com.ccz.core.model.Ailment
 import com.ccz.core.model.BurstRates
 import com.ccz.core.model.CombatIdentity
 import com.ccz.core.model.CombatRates
@@ -72,6 +74,7 @@ internal object SaveMappers {
         ),
         statuses = c.statuses,
         effects = c.effects.map { ActiveEffectDto(it.stat.name, it.amount, it.remaining) },
+        ailments = c.ailments.map { ActiveAilmentDto(it.kind.name, it.remaining) },
     )
 
     private fun commandDto(c: Command): CommandDto = when (c) {
@@ -127,6 +130,7 @@ internal object SaveMappers {
         ),
         statuses = c.statuses,
         effects = c.effects.map { ActiveEffect(affectedStat("combatant.effects.stat", it.stat), it.amount, it.remaining) },
+        ailments = c.ailments.map { ActiveAilment(ailmentKind("combatant.ailments.kind", it.kind), it.remaining) },
     )
 
     private fun command(c: CommandDto): Command = when (c) {
@@ -148,4 +152,8 @@ internal object SaveMappers {
     private fun affectedStat(path: String, value: String): AffectedStat =
         AffectedStat.entries.firstOrNull { it.name == value }
             ?: throw SaveDecodeException("$path: unknown stat: $value")
+
+    private fun ailmentKind(path: String, value: String): Ailment =
+        Ailment.entries.firstOrNull { it.name == value }
+            ?: throw SaveDecodeException("$path: unknown ailment: $value")
 }
