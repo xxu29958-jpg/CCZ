@@ -34,7 +34,8 @@ internal fun describeCast(events: List<Event>, state: BattleState): String =
     events.joinToString(separator = "; ") { event ->
         when (event) {
             is Event.Healed -> "${unitName(state, event.unit)} +${event.amount}"
-            is Event.StatChanged -> "${unitName(state, event.unit)} ${event.stat.name.lowercase()}+${event.amount}"
+            is Event.StatChanged ->
+                "${unitName(state, event.unit)} ${event.stat.name.lowercase()} ${if (event.amount >= 0) "+${event.amount}" else "${event.amount}"}"
             else -> event::class.simpleName ?: "event"
         }
     }

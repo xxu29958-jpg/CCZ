@@ -172,11 +172,30 @@ class ContentJsonLoaderTest {
     }
 
     @Test
-    fun nonPositiveStatDeltaIsAValidationIssue() {
+    fun zeroStatDeltaIsAValidationIssue() {
         val content = ContentJsonLoader.load(
             packWithEffect("{ \"type\": \"stat_delta\", \"target\": \"ally\", \"stat\": \"atk\", \"amount\": 0 }"),
         )
-        assertTrue(ContentValidator.validate(content).any { it.path.contains("effects") && it.message.contains("stat buff") })
+        assertTrue(ContentValidator.validate(content).any { it.path.contains("effects") && it.message.contains("stat delta") })
+    }
+
+    @Test
+    fun decodesEnemyTargetedDebuff() {
+        // A signed negative StatDelta on an ENEMY band (ADR 0008 Phase 2 debuff) decodes + validates clean.
+        val content = ContentJsonLoader.load(
+            packWithEffect("{ \"type\": \"stat_delta\", \"target\": \"enemy\", \"stat\": \"atk\", \"amount\": -15 }"),
+        )
+        val sd = content.tables.skills.first().effects.single() as com.ccz.core.model.SkillEffect.StatDelta
+        assertEquals(com.ccz.core.model.EffectTarget.ENEMY, sd.target)
+        assertEquals(-15, sd.amount)
+        assertTrue(ContentValidator.validate(content).isEmpty())
+    }
+
+    @Test
+    fun healCannotTargetAnEnemyIsAValidationIssue() {
+        // A heal is a friendly effect — targeting an enemy is a coherence error (decodes, then fails validation).
+        val content = ContentJsonLoader.load(packWithEffect("{ \"type\": \"heal\", \"target\": \"enemy\", \"amount\": 30 }"))
+        assertTrue(ContentValidator.validate(content).any { it.path.contains("effects") && it.message.contains("enemy") })
     }
 
     @Test

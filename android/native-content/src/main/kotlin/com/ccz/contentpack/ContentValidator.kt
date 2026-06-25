@@ -1,5 +1,6 @@
 package com.ccz.contentpack
 
+import com.ccz.core.model.EffectTarget
 import com.ccz.core.model.HealMode
 import com.ccz.core.model.SkillEffect
 
@@ -160,11 +161,11 @@ object ContentValidator {
             // numeric magnitude is checked here. Expression `when` over the sealed type → a future effect
             // variant is a compile error until its bound is decided.
             skill.effects.forEachIndexed { effectIndex, effect ->
-                val path = "skills[$index].effects[$effectIndex].amount"
+                val effPath = "skills[$index].effects[$effectIndex]"
                 val issue = when (effect) {
-                    is SkillEffect.Heal -> healAmountIssue(effect, path)
+                    is SkillEffect.Heal -> healIssue(effect, effPath)
                     is SkillEffect.StatDelta ->
-                        if (effect.amount < 1) ValidationIssue(path, "stat buff amount must be >= 1") else null
+                        if (effect.amount == 0) ValidationIssue("$effPath.amount", "stat delta amount must be non-zero") else null
                 }
                 if (issue != null) issues += issue
             }
@@ -180,10 +181,16 @@ object ContentValidator {
         return issues
     }
 
-    /** Mode-specific bound on a heal's amount (ADR 0008): FLAT >= 1 HP; PERCENT_MAX in 1..100 percent. */
-    private fun healAmountIssue(heal: SkillEffect.Heal, path: String): ValidationIssue? = when (heal.mode) {
-        HealMode.FLAT -> if (heal.amount < 1) ValidationIssue(path, "flat heal amount must be >= 1") else null
-        HealMode.PERCENT_MAX -> if (heal.amount !in 1..100) ValidationIssue(path, "percent heal must be in 1..100") else null
+    /**
+     * A heal's amount bound (FLAT >= 1 HP; PERCENT_MAX in 1..100 percent) and band coherence (ADR 0008): a
+     * heal is a friendly effect, so it must not target an [EffectTarget.ENEMY]. [path] is the effect path.
+     */
+    private fun healIssue(heal: SkillEffect.Heal, path: String): ValidationIssue? = when {
+        heal.target == EffectTarget.ENEMY -> ValidationIssue("$path.target", "heal cannot target an enemy")
+        heal.mode == HealMode.FLAT && heal.amount < 1 -> ValidationIssue("$path.amount", "flat heal amount must be >= 1")
+        heal.mode == HealMode.PERCENT_MAX && heal.amount !in 1..100 ->
+            ValidationIssue("$path.amount", "percent heal must be in 1..100")
+        else -> null
     }
 
     private fun validateMaps(tables: ContentTables, terrainIds: Set<String>): List<ValidationIssue> =
