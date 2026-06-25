@@ -81,10 +81,11 @@ data class CombatVitals(
     val hpMax: Int,
 )
 
-// 7 flat fields: a combat entity (identity/pos/vitals/stats/rates) plus its two condition layers (the inert
-// `statuses` tag set + timed `effects`). Kept FLAT rather than grouped because the save format is additive —
-// `effects` is a new top-level field (default empty) so pre-Phase-3 saves still decode; grouping would move
-// `statuses` under a sub-object and break that forward-compat. Not a god-object, so the param gate is suppressed.
+// 8 flat fields: a combat entity (identity/pos/vitals/stats/rates) plus its three condition layers (the inert
+// `statuses` tag set, timed stat `effects`, and timed `ailments`). Kept FLAT rather than grouped because the
+// save format is additive — each condition layer is a new top-level field (default empty) so older saves still
+// decode; grouping would move them under a sub-object and break that forward-compat. Not a god-object, so the
+// param gate is suppressed.
 @Suppress("LongParameterList")
 data class Combatant(
     val identity: CombatIdentity,
@@ -96,6 +97,9 @@ data class Combatant(
     // Timed stat modifications currently active (ADR 0008 Phase 3); empty for a fresh/instant-only unit.
     // Default empty keeps existing construction and pre-Phase-3 saves byte-identical.
     val effects: List<ActiveEffect> = emptyList(),
+    // Timed command-legality ailments currently active (ADR 0008); empty for an unafflicted unit. Default
+    // empty keeps existing construction and pre-v5 saves byte-identical.
+    val ailments: List<ActiveAilment> = emptyList(),
 ) {
     val id: String get() = identity.id
     val name: String get() = identity.name
@@ -104,6 +108,9 @@ data class Combatant(
     val hp: Int get() = vitals.hp
     val hpMax: Int get() = vitals.hpMax
     val alive: Boolean get() = hp > 0
+
+    /** True while a [Ailment.SILENCE] is active — the unit may not cast (it may still move/attack/wait). */
+    val silenced: Boolean get() = ailments.any { it.kind == Ailment.SILENCE }
 
     fun withHp(hp: Int): Combatant = copy(vitals = vitals.copy(hp = hp))
 }

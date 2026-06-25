@@ -36,4 +36,16 @@ class BattleEffectTest {
         val effects = effectsOf(listOf(Event.Damaged("x", amount = 137, crit = true, combo = true, broke = false)))
         assertEquals(listOf(BattleEffect.Damaged("x", 137, crit = true, combo = true)), effects)
     }
+
+    @Test
+    fun statusAppliedProjectsToAnAfflictedBadgeCarryingTheRawStatus() {
+        val effects = effectsOf(listOf(Event.StatusApplied("foe", "SILENCE")))
+        assertEquals(listOf(BattleEffect.Afflicted("foe", "SILENCE")), effects)
+    }
+
+    @Test
+    fun statusLabelResolvesAilmentsToChineseAndFallsBackToRawForOthers() {
+        assertEquals("沉默", statusLabel("SILENCE")) // an ailment id → its Chinese label
+        assertEquals("blessed", statusLabel("blessed")) // a non-ailment (scenario) status → raw id
+    }
 }

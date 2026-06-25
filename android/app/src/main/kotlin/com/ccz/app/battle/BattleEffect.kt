@@ -19,13 +19,16 @@ sealed interface BattleEffect {
     data class Defeated(override val unit: String) : BattleEffect
     data class Healed(override val unit: String, val amount: Int) : BattleEffect
     data class Buffed(override val unit: String, val stat: String, val amount: Int) : BattleEffect
+
+    /** An ailment landed on [unit] (ADR 0008); [status] is the authority's raw status id, labelled at render. */
+    data class Afflicted(override val unit: String, val status: String) : BattleEffect
 }
 
 /**
  * Maps the authority's [Event] stream into the presentation effects worth surfacing, in order.
  * Only the combat outcomes a player needs to see are translated (a hit's damage, a miss, a
- * death); movement and turn bookkeeping carry no badge. This is a total, side-effect-free
- * projection — it reads event fields and never recomputes them.
+ * death, a heal/stat change, an ailment); movement and turn bookkeeping carry no badge. This is a
+ * total, side-effect-free projection — it reads event fields and never recomputes them.
  */
 internal fun effectsOf(events: List<Event>): List<BattleEffect> = events.mapNotNull { event ->
     when (event) {
@@ -34,6 +37,7 @@ internal fun effectsOf(events: List<Event>): List<BattleEffect> = events.mapNotN
         is Event.Died -> BattleEffect.Defeated(event.unit)
         is Event.Healed -> BattleEffect.Healed(event.unit, event.amount)
         is Event.StatChanged -> BattleEffect.Buffed(event.unit, event.stat.name, event.amount)
+        is Event.StatusApplied -> BattleEffect.Afflicted(event.unit, event.status)
         else -> null
     }
 }

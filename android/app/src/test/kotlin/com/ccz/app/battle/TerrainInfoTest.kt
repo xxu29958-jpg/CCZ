@@ -2,6 +2,8 @@ package com.ccz.app.battle
 
 import com.ccz.core.battle.BattleMap
 import com.ccz.core.battle.MapTile
+import com.ccz.core.model.ActiveAilment
+import com.ccz.core.model.Ailment
 import com.ccz.core.model.CombatIdentity
 import com.ccz.core.model.CombatRates
 import com.ccz.core.model.CombatStats
@@ -79,5 +81,18 @@ class TerrainInfoTest {
             rates = CombatRates(),
         )
         assertEquals("HP 30/100 · ATK 80 · DEF 20 · MAT 30 · RES 10", combatantSummary(unit))
+    }
+
+    @Test
+    fun combatantSummaryAppendsActiveAilmentsWithRemainingTurns() {
+        val unit = Combatant(
+            identity = CombatIdentity("u", "Hero", "cls", Faction.PLAYER),
+            pos = Pos(0, 0),
+            vitals = CombatVitals(hp = 30, hpMax = 100),
+            stats = CombatStats(atk = 80, def = 20, mat = 30, res = 10),
+            rates = CombatRates(),
+            ailments = listOf(ActiveAilment(Ailment.SILENCE, 2)),
+        )
+        assertEquals("HP 30/100 · ATK 80 · DEF 20 · MAT 30 · RES 10 · 沉默 2", combatantSummary(unit))
     }
 }

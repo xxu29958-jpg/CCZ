@@ -283,7 +283,8 @@
                 "loadout": {
                     "skills": [
                         "skill_1",
-                        "skill_4"
+                        "skill_4",
+                        "skill_5"
                     ]
                 }
             },
@@ -441,6 +442,28 @@
                         "stat": "atk",
                         "amount": -15,
                         "duration": 3
+                    }
+                ]
+            },
+            {
+                "id": "skill_5",
+                "name": "沉默",
+                "kind": "PHYSICAL",
+                "power_coeff": 0,
+                "use": {
+                    "range": {
+                        "min": 1,
+                        "max": 2
+                    },
+                    "area": "single",
+                    "targeting": "enemy"
+                },
+                "effects": [
+                    {
+                        "type": "apply_ailment",
+                        "target": "enemy",
+                        "ailment": "silence",
+                        "duration": 2
                     }
                 ]
             }

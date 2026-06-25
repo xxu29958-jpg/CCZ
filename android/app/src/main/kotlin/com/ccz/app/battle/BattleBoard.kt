@@ -115,6 +115,9 @@ private fun EffectBadge(effect: BattleEffect, modifier: Modifier = Modifier) {
         is BattleEffect.Buffed ->
             ("${effect.stat}${if (effect.amount >= 0) "+${effect.amount}" else "${effect.amount}"}") to
                 (if (effect.amount >= 0) Color(0xFF0277BD) else Color(0xFFC62828))
+        // An ailment landing flashes its label (e.g. 沉默) in deep amber — distinct from the red stat
+        // debuff, the green heal, the blue buff, and the purple KO badge it would otherwise resemble.
+        is BattleEffect.Afflicted -> statusLabel(effect.status) to Color(0xFFEF6C00)
     }
     Text(text = text, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = modifier)
 }

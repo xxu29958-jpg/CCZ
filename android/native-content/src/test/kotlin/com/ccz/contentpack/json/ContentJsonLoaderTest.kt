@@ -208,6 +208,44 @@ class ContentJsonLoaderTest {
     }
 
     @Test
+    fun decodesApplyAilmentEffect() {
+        // ADR 0008 command-legality ailment: an enemy-targeted timed silence decodes + validates clean.
+        val content = ContentJsonLoader.load(
+            packWithEffect("{ \"type\": \"apply_ailment\", \"target\": \"enemy\", \"ailment\": \"silence\", \"duration\": 2 }"),
+        )
+        val ail = content.tables.skills.first().effects.single() as com.ccz.core.model.SkillEffect.ApplyAilment
+        assertEquals(com.ccz.core.model.EffectTarget.ENEMY, ail.target)
+        assertEquals(com.ccz.core.model.Ailment.SILENCE, ail.ailment)
+        assertEquals(2, ail.duration)
+        assertTrue(ContentValidator.validate(content).isEmpty())
+    }
+
+    @Test
+    fun unknownAilmentKindFailsClosed() {
+        assertFailsWith<ContentDecodeException> {
+            ContentJsonLoader.load(packWithEffect("{ \"type\": \"apply_ailment\", \"target\": \"enemy\", \"ailment\": \"curse\", \"duration\": 2 }"))
+        }
+    }
+
+    @Test
+    fun ailmentMustTargetAnEnemyIsAValidationIssue() {
+        // An ailment is a hostile effect (the mirror of a heal staying friendly) — targeting an ally is incoherent.
+        val content = ContentJsonLoader.load(
+            packWithEffect("{ \"type\": \"apply_ailment\", \"target\": \"ally\", \"ailment\": \"silence\", \"duration\": 2 }"),
+        )
+        assertTrue(ContentValidator.validate(content).any { it.path.contains("effects") && it.message.contains("ailment") })
+    }
+
+    @Test
+    fun nonPositiveAilmentDurationIsAValidationIssue() {
+        // duration >= 1 (a 0-duration ailment is meaningless — the resolver would no-op it); fail-closed.
+        val content = ContentJsonLoader.load(
+            packWithEffect("{ \"type\": \"apply_ailment\", \"target\": \"enemy\", \"ailment\": \"silence\", \"duration\": 0 }"),
+        )
+        assertTrue(ContentValidator.validate(content).any { it.path.contains("duration") && it.message.contains("ailment") })
+    }
+
+    @Test
     fun unknownFactionFailsClosed() {
         assertFailsWith<ContentDecodeException> { ContentJsonLoader.load(samplePack(faction = "NEUTRAL")) }
     }

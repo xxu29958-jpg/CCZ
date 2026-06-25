@@ -1,5 +1,6 @@
 package com.ccz.core.battle
 
+import com.ccz.core.model.ActiveAilment
 import com.ccz.core.model.ActiveEffect
 import com.ccz.core.model.AffectedStat
 import com.ccz.core.model.CombatStats
@@ -56,6 +57,19 @@ object Resolver {
     private fun applyEffect(target: Combatant, effect: SkillEffect): Pair<Combatant, Event?> = when (effect) {
         is SkillEffect.Heal -> applyHeal(target, effect)
         is SkillEffect.StatDelta -> applyStatDeltaEffect(target, effect)
+        is SkillEffect.ApplyAilment -> applyAilment(target, effect)
+    }
+
+    /**
+     * Inflicts a timed ailment (ADR 0008): records an [ActiveAilment] with `remaining = duration` and emits
+     * [Event.StatusApplied]. No-op (null event) on a non-positive duration or a dead target. Re-casting the
+     * same kind REFRESHES it (the existing one is replaced) rather than stacking, so a unit holds at most one
+     * instance per kind — deterministic and keeps the legality gate a simple membership test ([Combatant.silenced]).
+     */
+    private fun applyAilment(target: Combatant, effect: SkillEffect.ApplyAilment): Pair<Combatant, Event?> {
+        if (effect.duration <= 0 || !target.alive) return target to null
+        val refreshed = target.ailments.filterNot { it.kind == effect.ailment } + ActiveAilment(effect.ailment, effect.duration)
+        return target.copy(ailments = refreshed) to Event.StatusApplied(target.id, effect.ailment.name)
     }
 
     /**
@@ -113,30 +127,34 @@ object Resolver {
         // healing to that side's units as their phase begins (FE/AW fort/village recovery).
         val advanced = state.copy(active = next, turn = state.turn + 1).clearTurnActions()
         val (healed, healEvents) = applyTerrainHeal(advanced, next, ctx)
-        return Resolution(tickEffects(healed), listOf(Event.TurnEnded(command.faction)) + healEvents)
+        return Resolution(tickConditions(healed), listOf(Event.TurnEnded(command.faction)) + healEvents)
     }
 
     /**
-     * Decrements every active timed effect by one turn-boundary (ADR 0008 Phase 3); an effect reaching 0
-     * is reversed (its recorded delta subtracted back) and dropped. Deterministic, id-sorted, NO RNG — so it
-     * is replay-safe and leaves goldens (which carry no effects, making this a no-op) byte-identical. Runs on
-     * every [Command.EndTurn], so a `duration` of N covers N turn-boundaries.
+     * Decrements every active timed condition by one turn-boundary (ADR 0008 Phase 3+): a stat [ActiveEffect]
+     * reaching 0 is REVERSED (its recorded delta subtracted back) and dropped; an [ActiveAilment] reaching 0
+     * is simply dropped (a legality gate needs no reversal). Deterministic, id-sorted, NO RNG — so it is
+     * replay-safe and leaves goldens (which carry neither effects nor ailments, making this a no-op)
+     * byte-identical. Runs on every [Command.EndTurn], so a `duration` of N covers N turn-boundaries.
      */
-    private fun tickEffects(state: BattleState): BattleState {
+    private fun tickConditions(state: BattleState): BattleState {
         var result = state
         state.units.values.sortedBy { it.id }.forEach { unit ->
-            if (unit.effects.isEmpty()) return@forEach
+            if (unit.effects.isEmpty() && unit.ailments.isEmpty()) return@forEach
             var stats = unit.stats
-            val kept = mutableListOf<ActiveEffect>()
+            val keptEffects = mutableListOf<ActiveEffect>()
             unit.effects.forEach { effect ->
                 val remaining = effect.remaining - 1
                 if (remaining <= 0) {
                     stats = applyStatDelta(stats, effect.stat, -effect.amount) // expire: reverse the change
                 } else {
-                    kept += effect.copy(remaining = remaining)
+                    keptEffects += effect.copy(remaining = remaining)
                 }
             }
-            result = result.withUnit(unit.copy(stats = stats, effects = kept))
+            val keptAilments = unit.ailments.mapNotNull { ailment ->
+                (ailment.remaining - 1).takeIf { it > 0 }?.let { ailment.copy(remaining = it) } // expire: just drop
+            }
+            result = result.withUnit(unit.copy(stats = stats, effects = keptEffects, ailments = keptAilments))
         }
         return result
     }

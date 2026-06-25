@@ -1,6 +1,8 @@
 package com.ccz.core.battle
 
+import com.ccz.core.model.ActiveAilment
 import com.ccz.core.model.AffectedStat
+import com.ccz.core.model.Ailment
 import com.ccz.core.model.DamageKind
 import com.ccz.core.model.EffectTarget
 import com.ccz.core.model.Faction
@@ -11,6 +13,7 @@ import com.ccz.core.model.Skill
 import com.ccz.core.model.SkillEffect
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
@@ -37,11 +40,14 @@ class CastTest {
     // A timed debuff whose magnitude EXCEEDS the target's stat, to exercise the floor-at-0 reversal symmetry.
     private val bigDebuffSkill =
         Skill("crush", "Crush", DamageKind.PHYSICAL, 0, RangeSpec(1, 3), listOf(SkillEffect.StatDelta(EffectTarget.ENEMY, AffectedStat.ATK, -100, duration = 1)))
+    private val silenceSkill =
+        Skill("silence", "Silence", DamageKind.PHYSICAL, 0, RangeSpec(1, 3), listOf(SkillEffect.ApplyAilment(EffectTarget.ENEMY, Ailment.SILENCE, 2)))
     private val ctx = contextOf(
         flat(6, 1),
         skills = mapOf(
             "heal" to healSkill, "self_heal" to selfHealSkill, "atk" to atkSkill, "pheal" to percentHealSkill,
             "buff" to buffSkill, "debuff" to debuffSkill, "tbuff" to timedBuffSkill, "crush" to bigDebuffSkill,
+            "silence" to silenceSkill,
         ),
     )
 
@@ -206,5 +212,58 @@ class CastTest {
             assertIs<Gameplay.Outcome.Accepted>(Gameplay.submit(state, Command.Cast("medic", id, "heal"), ctx))
         }
         assertTrue("foe" !in reported, "the enemy is not a cast target")
+    }
+
+    @Test
+    fun castingSilenceAfflictsAnEnemyWithoutDrawingRng() {
+        val state = field()
+        val result = accept(state, Command.Cast("medic", "foe", "silence"))
+        val foe = result.state.unit("foe")
+        assertTrue(foe.silenced, "the enemy is silenced")
+        assertEquals(listOf(ActiveAilment(Ailment.SILENCE, 2)), foe.ailments, "the timed ailment is recorded")
+        assertEquals(state.rngState, result.state.rngState, "an ailment cast draws no RNG — the damage golden is untouched")
+        val applied = result.events.filterIsInstance<Event.StatusApplied>().single()
+        assertEquals("foe", applied.unit)
+        assertEquals("SILENCE", applied.status)
+    }
+
+    @Test
+    fun aSilencedCasterCannotCastAndHasNoCastTargets() {
+        // query⟺submit parity for the legality-gate ailment: the gate (CASTER_SILENCED) and the preview
+        // (empty targets) are single-sourced through Combatant.silenced, so they cannot disagree.
+        val state = field().let { it.withUnit(it.unit("medic").copy(ailments = listOf(ActiveAilment(Ailment.SILENCE, 2)))) }
+        assertEquals(RejectReason.CASTER_SILENCED, reject(state, Command.Cast("medic", "ally", "heal")))
+        assertTrue(Gameplay.legalCastTargets(state, "medic", "heal", ctx).isEmpty(), "a silenced caster has no cast targets")
+    }
+
+    @Test
+    fun aSilencedUnitCanStillAttack() {
+        // Silence forbids casting, NOT attacking — it is checked only on the Cast path, not actorEligibility.
+        val state = stateOf(
+            combatant("medic", Faction.PLAYER, Pos(0, 0)).copy(ailments = listOf(ActiveAilment(Ailment.SILENCE, 2))),
+            combatant("foe", Faction.ENEMY, Pos(1, 0)),
+            active = Faction.PLAYER,
+        )
+        assertIs<Gameplay.Outcome.Accepted>(Gameplay.submit(state, Command.Attack("medic", "foe", "atk"), ctx))
+    }
+
+    @Test
+    fun silenceExpiresAfterItsDuration() {
+        // duration 2: applied now + recorded; lifts after 2 EndTurn turn-boundaries (id-sorted, RNG-free tick).
+        val cast = accept(field(), Command.Cast("medic", "foe", "silence"))
+        assertTrue(cast.state.unit("foe").silenced, "silenced immediately")
+        val t1 = accept(cast.state, Command.EndTurn(Faction.PLAYER)).state // remaining 2→1
+        assertTrue(t1.unit("foe").silenced, "still silenced after one turn-boundary")
+        val t2 = accept(t1, Command.EndTurn(t1.active)).state // remaining 1→0, drops
+        assertFalse(t2.unit("foe").silenced, "silence lifts after the duration elapses")
+        assertTrue(t2.unit("foe").ailments.isEmpty(), "the expired ailment is dropped")
+    }
+
+    @Test
+    fun recastingSilenceRefreshesRatherThanStacks() {
+        // A foe already silenced (remaining 1) re-silenced → a single instance refreshed to the new duration.
+        val state = field().let { it.withUnit(it.unit("foe").copy(ailments = listOf(ActiveAilment(Ailment.SILENCE, 1)))) }
+        val result = accept(state, Command.Cast("medic", "foe", "silence"))
+        assertEquals(listOf(ActiveAilment(Ailment.SILENCE, 2)), result.state.unit("foe").ailments, "refreshed, not stacked")
     }
 }

@@ -25,6 +25,9 @@ enum class RejectReason {
     SKILL_HAS_NO_EFFECT,
     CAST_TARGET_INVALID,
     OUT_OF_CAST_RANGE,
+    // The caster is silenced (ADR 0008 ailment) — a command-legality gate that forbids casting while it lasts
+    // (the unit may still move/attack/wait, so silence is checked only on the Cast path, not actorEligibility).
+    CASTER_SILENCED,
 }
 
 /**
@@ -94,6 +97,9 @@ object CommandValidator {
         actorEligibility(state, command.caster, state.active)?.let { return it }
         if (state.hasActed(command.caster)) return RejectReason.UNIT_ALREADY_ACTED
         val caster = state.units.getValue(command.caster)
+        // Silence forbids casting (the legality-gate ailment). Single-sourced through Combatant.silenced so the
+        // legalCastTargets preview (which returns empty when the caster is silenced) cannot disagree with this gate.
+        if (caster.silenced) return RejectReason.CASTER_SILENCED
         val skill = context.skills[command.skill] ?: return RejectReason.UNKNOWN_SKILL
         if (!context.loadoutAllows(command.caster, command.skill)) return RejectReason.SKILL_NOT_IN_LOADOUT
         if (skill.effects.isEmpty()) return RejectReason.SKILL_HAS_NO_EFFECT

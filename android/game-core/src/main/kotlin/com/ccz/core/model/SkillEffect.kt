@@ -38,6 +38,19 @@ sealed interface SkillEffect {
         // decrements every active effect; one reaching 0 reverses its stat mod). Persisted via Combatant.effects.
         val duration: Int = 0,
     ) : SkillEffect
+
+    /**
+     * Inflicts a timed [ailment] on the cast's target for [duration] turn-boundaries (ADR 0008, the first
+     * COMMAND-LEGALITY ailment): unlike [StatDelta] it changes no panel value — it gates which commands the
+     * afflicted unit may issue (e.g. [Ailment.SILENCE] forbids casting). Resolved with ZERO RNG (a hostile
+     * effect cast on an [EffectTarget.ENEMY], 100% applied — probabilistic procs are a later phase), recorded
+     * as an [ActiveAilment] on the target and ticked down on each `EndTurn` exactly like a timed [StatDelta].
+     * It is a pure legality gate: it never touches the damage formula, RNG draw order, or the replay fold (which
+     * goes through the resolver, not the validator), so it leaves the damage golden byte-identical and does NOT
+     * bump RULES_VERSION. [duration] is a content-authored parameter (contentVersion); `ContentValidator`
+     * requires it `>= 1` and the target band [EffectTarget.ENEMY] (an ailment is hostile, like a heal is friendly).
+     */
+    data class ApplyAilment(val target: EffectTarget, val ailment: Ailment, val duration: Int) : SkillEffect
 }
 
 /**
@@ -49,11 +62,29 @@ sealed interface SkillEffect {
  */
 data class ActiveEffect(val stat: AffectedStat, val amount: Int, val remaining: Int)
 
+/**
+ * A timed ailment currently active on a unit (ADR 0008). When a [SkillEffect.ApplyAilment] resolves, one of
+ * these is recorded with [remaining] = duration; each turn-boundary decrements it, and at 0 it is simply
+ * dropped (an ailment gates commands rather than changing a stat, so expiry needs no reversal — unlike
+ * [ActiveEffect]). Persisted on [com.ccz.core.model.Combatant.ailments]; deterministic (no RNG), so a save =
+ * fresh initialState + folded commands reproduces it exactly.
+ */
+data class ActiveAilment(val kind: Ailment, val remaining: Int)
+
 /** How a [SkillEffect.Heal]'s amount is read: a flat HP value, or a percent of the target's max HP. */
 enum class HealMode { FLAT, PERCENT_MAX }
 
 /** A combat stat a [SkillEffect.StatDelta] can modify (mirrors the four [CombatStats] fields). */
 enum class AffectedStat { ATK, DEF, MAT, RES }
+
+/**
+ * A condition that gates which commands a unit may issue (ADR 0008 ailments). [SILENCE] forbids casting (a
+ * silenced unit may still move/attack/wait). Only this command-legality ailment is modeled now; stat/HP
+ * ailments (poison DoT, which changes combat output → bumps RULES_VERSION; stun, which gates ALL commands;
+ * confuse) are deferred to later phases. The applied/expiry mechanics are shared, so a new ailment kind only
+ * needs to declare which commands it blocks.
+ */
+enum class Ailment { SILENCE }
 
 /**
  * Who a [SkillEffect] lands on, relative to the caster: the caster itself ([SELF]), a same-side [ALLY]

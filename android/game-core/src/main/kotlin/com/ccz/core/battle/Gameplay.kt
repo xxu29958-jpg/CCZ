@@ -82,14 +82,17 @@ object Gameplay {
      * presentation layer can highlight valid cast targets without owning the targeting rule — computed here
      * exactly as [CommandValidator] would accept it (the SELF/ALLY band is single-sourced in
      * [castTargetAllows], so this preview and the submit gate never disagree). Pure: consumes no RNG, never
-     * mutates. Returns empty when the caster cannot act, the skill is unknown / not in loadout / carries no
-     * effects (a damage-only skill is cast via nothing — use [legalTargets] for it), or no living in-range
-     * unit satisfies every effect's band. [submit] stays the sole authority that mutates state.
+     * mutates. Returns empty when the caster cannot act, is silenced (the ADR 0008 legality-gate ailment), the
+     * skill is unknown / not in loadout / carries no effects (a damage-only skill is cast via nothing — use
+     * [legalTargets] for it), or no living in-range unit satisfies every effect's band. [submit] stays the sole
+     * authority that mutates state.
      */
     fun legalCastTargets(state: BattleState, casterId: String, skillId: String, context: BattleContext): Set<String> {
         if (actorEligibility(state, casterId, state.active) != null) return emptySet()
         if (state.hasActed(casterId)) return emptySet()
         val caster = state.units.getValue(casterId)
+        // A silenced caster can cast nothing (single-sourced with checkCast's CASTER_SILENCED via silenced).
+        if (caster.silenced) return emptySet()
         val skill = context.skills[skillId] ?: return emptySet()
         if (!context.loadoutAllows(casterId, skillId) || skill.effects.isEmpty()) return emptySet()
         return state.units.values

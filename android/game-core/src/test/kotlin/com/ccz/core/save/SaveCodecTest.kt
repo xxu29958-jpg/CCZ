@@ -5,8 +5,10 @@ import com.ccz.core.battle.BattleProgress
 import com.ccz.core.battle.BattleState
 import com.ccz.core.battle.Command
 import com.ccz.core.model.AccuracyRates
+import com.ccz.core.model.ActiveAilment
 import com.ccz.core.model.ActiveEffect
 import com.ccz.core.model.AffectedStat
+import com.ccz.core.model.Ailment
 import com.ccz.core.model.BurstRates
 import com.ccz.core.model.CombatIdentity
 import com.ccz.core.model.CombatRates
@@ -92,6 +94,37 @@ class SaveCodecTest {
         )
         val tampered = SaveCodec.encode(env).replace("\"ATK\"", "\"LUCK\"") // the effect's stat enum name
         assertNotEquals(SaveCodec.encode(env), tampered) // guard: the stat must actually be swapped
+
+        assertFailsWith<SaveDecodeException> { SaveCodec.decode(tampered) }
+    }
+
+    @Test
+    fun roundTripPreservesActiveAilments() {
+        // Per-combatant timed ailments (ADR 0008, save schema v5) must survive the codec.
+        val env = SaveEnvelope(
+            versions = SaveVersions(1, 1, "0.1.0", "1", "1.0.0"),
+            initialState = BattleState(
+                units = mapOf("u" to combatant("u", Faction.PLAYER, Pos(0, 0)).copy(ailments = listOf(ActiveAilment(Ailment.SILENCE, 2)))),
+                turn = 1, active = Faction.PLAYER, rngState = 0L,
+            ),
+            commands = emptyList(),
+        )
+
+        assertEquals(env, SaveCodec.decode(SaveCodec.encode(env)))
+    }
+
+    @Test
+    fun unknownAilmentKindFailsClosed() {
+        val env = SaveEnvelope(
+            versions = SaveVersions(1, 1, "0.1.0", "1", "1.0.0"),
+            initialState = BattleState(
+                units = mapOf("u" to combatant("u", Faction.PLAYER, Pos(0, 0)).copy(ailments = listOf(ActiveAilment(Ailment.SILENCE, 2)))),
+                turn = 1, active = Faction.PLAYER, rngState = 0L,
+            ),
+            commands = emptyList(),
+        )
+        val tampered = SaveCodec.encode(env).replace("\"SILENCE\"", "\"CURSE\"") // the ailment's kind enum name
+        assertNotEquals(SaveCodec.encode(env), tampered) // guard: the kind must actually be swapped
 
         assertFailsWith<SaveDecodeException> { SaveCodec.decode(tampered) }
     }

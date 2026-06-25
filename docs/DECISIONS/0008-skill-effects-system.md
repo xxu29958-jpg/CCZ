@@ -40,6 +40,20 @@ Status: Accepted（Phase 1 已落地）
 > (save = fresh initialState〔effects 空〕+ folded commands,cast/tick 确定重现)。时长 tick 语义 = 每 `EndTurn` 递减,
 > duration N 覆盖 N 个回合边界(用户确认)。咆哮/震慑改 duration 3。**剩**:status ailment(毒 DoT/麻痹命令门)→
 > cleanse → 概率/RNG(届时 RULES_VERSION 1→2)→ AoE/召唤/控制/天气/被动 aura。
+>
+> **命令合法性门型 ailment 首切 — 沉默(Silence)已落地**:status ailment 的首个具体项,选**命令合法性门**(非改面板/HP)
+> 作最外科手术、可证零扰动的切入。新 `enum Ailment{SILENCE}` + `data class ActiveAilment(kind, remaining)` 持久态 +
+> `SkillEffect.ApplyAilment(target, ailment, duration)`(对 `EffectTarget.ENEMY`、100% 应用、零 RNG);`Combatant.ailments`
+> **并列字段**(沿用 Phase 3 `effects` 的"加并列字段、不 retype"先例,避免破 v4 档),`val silenced` 派生。`Resolver.applyAilment`
+> 记录/刷新(同 kind 替换不叠)+ 发既有 `Event.StatusApplied`;`tickEffects`→`tickConditions` 一次遍历同时递减 stat 效果(到期反转)
+> 与 ailment(到期仅丢,合法性门无需反转)。**门**:`CommandValidator.checkCast` 加 `CASTER_SILENCED`、`Gameplay.legalCastTargets`
+> 沉默→空,**经 `Combatant.silenced` 单源化** query⟺submit parity(沉默只挡 Cast,仍可移动/攻击/待命,故不进 `actorEligibility`)。
+> **save schema v4→v5**(`CombatantDto.ailments` 默认空向后兼容、`ailmentKind` decode 白名单 fail-closed)。内容管线:
+> `SkillEffectDto.ApplyAilment`(`@SerialName("apply_ailment")`)+ `decodeAilment` 白名单 + `ContentValidator` ailment 须 target
+> ENEMY + duration≥1。大兴山关羽获 `skill_5`「沉默」可对敌方治疗者程远志施放 → 程远志被沉默后 `EnemyAi.healCommand` 取空目标转普攻
+> (AI 正确降级、不死循环)。**双向可见**:检视面板 `combatantSummary` 显「沉默 N」+ `Event.StatusApplied`→紫色徽章 + 日志行。
+> **不 bump RULES_VERSION**:合法性门从不进回放折叠(回放走 `Resolver.apply` 非 `CommandValidator`)、golden 无 ailment 故 tick no-op
+> 逐字节不变。**剩**:毒 DoT(改同场输出→bump)/麻痹(挡全部命令)/混乱 → cleanse → 概率/RNG → AoE/召唤/控制/天气/被动 aura。
 
 ## Context
 
