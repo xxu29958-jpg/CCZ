@@ -74,6 +74,7 @@ internal fun castTargetAllows(effect: SkillEffect, caster: Combatant, target: Co
         is SkillEffect.Heal -> effect.target
         is SkillEffect.StatDelta -> effect.target
         is SkillEffect.ApplyAilment -> effect.target
+        is SkillEffect.Cleanse -> effect.target
     }
     return when (band) {
         EffectTarget.SELF -> caster.id == target.id

@@ -118,6 +118,8 @@ private fun EffectBadge(effect: BattleEffect, modifier: Modifier = Modifier) {
         // An ailment landing flashes its label (e.g. 沉默) in deep amber — distinct from the red stat
         // debuff, the green heal, the blue buff, and the purple KO badge it would otherwise resemble.
         is BattleEffect.Afflicted -> statusLabel(effect.status) to Color(0xFFEF6C00)
+        // A cleanse lifting an ailment flashes 净化 in teal — a positive counterplay readout, distinct from amber.
+        is BattleEffect.Cleansed -> "净化" to Color(0xFF00897B)
     }
     Text(text = text, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = modifier)
 }

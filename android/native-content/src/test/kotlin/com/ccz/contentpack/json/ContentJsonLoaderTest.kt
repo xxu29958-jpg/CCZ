@@ -246,6 +246,22 @@ class ContentJsonLoaderTest {
     }
 
     @Test
+    fun decodesCleanseEffect() {
+        // ADR 0008 cleanse: a friendly (ally-band) effect that lifts ailments; decodes + validates clean.
+        val content = ContentJsonLoader.load(packWithEffect("{ \"type\": \"cleanse\", \"target\": \"ally\" }"))
+        val cleanse = content.tables.skills.first().effects.single() as com.ccz.core.model.SkillEffect.Cleanse
+        assertEquals(com.ccz.core.model.EffectTarget.ALLY, cleanse.target)
+        assertTrue(ContentValidator.validate(content).isEmpty())
+    }
+
+    @Test
+    fun cleanseCannotTargetAnEnemyIsAValidationIssue() {
+        // Cleanse is the counterplay to an ailment — a friendly effect; targeting an enemy is incoherent.
+        val content = ContentJsonLoader.load(packWithEffect("{ \"type\": \"cleanse\", \"target\": \"enemy\" }"))
+        assertTrue(ContentValidator.validate(content).any { it.path.contains("effects") && it.message.contains("cleanse") })
+    }
+
+    @Test
     fun unknownFactionFailsClosed() {
         assertFailsWith<ContentDecodeException> { ContentJsonLoader.load(samplePack(faction = "NEUTRAL")) }
     }

@@ -48,4 +48,9 @@ class BattleEffectTest {
         assertEquals("沉默", statusLabel("SILENCE")) // an ailment id → its Chinese label
         assertEquals("blessed", statusLabel("blessed")) // a non-ailment (scenario) status → raw id
     }
+
+    @Test
+    fun statusClearedProjectsToACleansedBadge() {
+        assertEquals(listOf(BattleEffect.Cleansed("ally")), effectsOf(listOf(Event.StatusCleared("ally"))))
+    }
 }

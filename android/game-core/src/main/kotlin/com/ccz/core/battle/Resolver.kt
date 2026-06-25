@@ -58,6 +58,18 @@ object Resolver {
         is SkillEffect.Heal -> applyHeal(target, effect)
         is SkillEffect.StatDelta -> applyStatDeltaEffect(target, effect)
         is SkillEffect.ApplyAilment -> applyAilment(target, effect)
+        is SkillEffect.Cleanse -> applyCleanse(target)
+    }
+
+    /**
+     * Lifts all active ailments from a friendly target (ADR 0008 cleanse), emitting [Event.StatusCleared].
+     * No-op (null event) on a dead target or one carrying no ailments. Deterministic, RNG-free, no new
+     * persistent state — it only empties the already-serialized [Combatant.ailments]; timed stat-debuffs
+     * ([Combatant.effects]) are intentionally left to self-expire (cleanse removes the disabling AILMENTS).
+     */
+    private fun applyCleanse(target: Combatant): Pair<Combatant, Event?> {
+        if (!target.alive || target.ailments.isEmpty()) return target to null
+        return target.copy(ailments = emptyList()) to Event.StatusCleared(target.id)
     }
 
     /**

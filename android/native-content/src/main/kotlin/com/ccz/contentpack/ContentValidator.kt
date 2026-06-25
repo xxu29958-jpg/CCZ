@@ -164,12 +164,9 @@ object ContentValidator {
                 val effPath = "skills[$index].effects[$effectIndex]"
                 val issue = when (effect) {
                     is SkillEffect.Heal -> healIssue(effect, effPath)
-                    is SkillEffect.StatDelta -> when {
-                        effect.amount == 0 -> ValidationIssue("$effPath.amount", "stat delta amount must be non-zero")
-                        effect.duration < 0 -> ValidationIssue("$effPath.duration", "stat delta duration must be >= 0")
-                        else -> null
-                    }
+                    is SkillEffect.StatDelta -> statDeltaIssue(effect, effPath)
                     is SkillEffect.ApplyAilment -> ailmentIssue(effect, effPath)
+                    is SkillEffect.Cleanse -> cleanseIssue(effect, effPath)
                 }
                 if (issue != null) issues += issue
             }
@@ -208,6 +205,17 @@ object ContentValidator {
         ailment.duration < 1 -> ValidationIssue("$path.duration", "ailment duration must be >= 1")
         else -> null
     }
+
+    /** A stat delta's magnitude/duration bounds (ADR 0008): a non-zero amount and a non-negative duration. */
+    private fun statDeltaIssue(delta: SkillEffect.StatDelta, path: String): ValidationIssue? = when {
+        delta.amount == 0 -> ValidationIssue("$path.amount", "stat delta amount must be non-zero")
+        delta.duration < 0 -> ValidationIssue("$path.duration", "stat delta duration must be >= 0")
+        else -> null
+    }
+
+    /** A cleanse is a friendly effect (the counterplay to an ailment) — it must not target an enemy (ADR 0008). */
+    private fun cleanseIssue(cleanse: SkillEffect.Cleanse, path: String): ValidationIssue? =
+        if (cleanse.target == EffectTarget.ENEMY) ValidationIssue("$path.target", "cleanse cannot target an enemy") else null
 
     private fun validateMaps(tables: ContentTables, terrainIds: Set<String>): List<ValidationIssue> =
         tables.maps.flatMapIndexed { index, map -> validateMap(index, map, terrainIds) }

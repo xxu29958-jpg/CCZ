@@ -44,6 +44,8 @@ sealed interface Event {
     data class HpSet(val unit: String, val hp: Int) : Event
     data class HpSetRejected(val unit: String, val reason: PlacementReject) : Event
     data class StatusApplied(val unit: String, val status: String) : Event
+    /** All active ailments were lifted from [unit] by a [SkillEffect.Cleanse] cast (ADR 0008). */
+    data class StatusCleared(val unit: String) : Event
     data class ItemGranted(val unit: String, val item: String) : Event
     data class VarSet(val name: String, val value: Int) : Event
     data class Scenario(val op: ScenarioOp) : Event

@@ -97,14 +97,14 @@ object EnemyAi {
     private fun isEnemyDisable(effect: SkillEffect): Boolean = when (effect) {
         is SkillEffect.ApplyAilment -> effect.target == EffectTarget.ENEMY
         is SkillEffect.StatDelta -> effect.target == EffectTarget.ENEMY && effect.amount < 0 && effect.duration > 0
-        is SkillEffect.Heal -> false
+        is SkillEffect.Heal, is SkillEffect.Cleanse -> false // friendly effects — never auto-cast on a foe
     }
 
     /** Whether [foe] already carries [effect] — the same ailment kind, or any mod on the same stat — so re-casting wastes the turn. */
     private fun alreadyAffected(foe: Combatant, effect: SkillEffect): Boolean = when (effect) {
         is SkillEffect.ApplyAilment -> foe.ailments.any { it.kind == effect.ailment }
         is SkillEffect.StatDelta -> foe.effects.any { it.stat == effect.stat }
-        is SkillEffect.Heal -> false
+        is SkillEffect.Heal, is SkillEffect.Cleanse -> false // not enemy-disables; never reach here via isEnemyDisable
     }
 
     /**
