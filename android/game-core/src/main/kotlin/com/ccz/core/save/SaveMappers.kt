@@ -5,6 +5,8 @@ import com.ccz.core.battle.BattleProgress
 import com.ccz.core.battle.BattleState
 import com.ccz.core.battle.Command
 import com.ccz.core.model.AccuracyRates
+import com.ccz.core.model.ActiveEffect
+import com.ccz.core.model.AffectedStat
 import com.ccz.core.model.BurstRates
 import com.ccz.core.model.CombatIdentity
 import com.ccz.core.model.CombatRates
@@ -69,6 +71,7 @@ internal object SaveMappers {
             BurstRatesDto(c.rates.burst.crit, c.rates.burst.critResist, c.rates.burst.combo, c.rates.burst.comboResist),
         ),
         statuses = c.statuses,
+        effects = c.effects.map { ActiveEffectDto(it.stat.name, it.amount, it.remaining) },
     )
 
     private fun commandDto(c: Command): CommandDto = when (c) {
@@ -123,6 +126,7 @@ internal object SaveMappers {
             BurstRates(c.rates.burst.crit, c.rates.burst.critResist, c.rates.burst.combo, c.rates.burst.comboResist),
         ),
         statuses = c.statuses,
+        effects = c.effects.map { ActiveEffect(affectedStat("combatant.effects.stat", it.stat), it.amount, it.remaining) },
     )
 
     private fun command(c: CommandDto): Command = when (c) {
@@ -140,4 +144,8 @@ internal object SaveMappers {
     private fun outcome(path: String, value: String): BattleOutcome =
         BattleOutcome.entries.firstOrNull { it.name == value }
             ?: throw SaveDecodeException("$path: unknown outcome: $value")
+
+    private fun affectedStat(path: String, value: String): AffectedStat =
+        AffectedStat.entries.firstOrNull { it.name == value }
+            ?: throw SaveDecodeException("$path: unknown stat: $value")
 }

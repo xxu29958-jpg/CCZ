@@ -105,6 +105,7 @@ private fun toSkillEffect(path: String, dto: SkillEffectDto): SkillEffect = when
         target = decodeEffectTarget("$path.target", dto.target),
         stat = decodeAffectedStat("$path.stat", dto.stat),
         amount = dto.amount,
+        duration = dto.duration,
     )
 }
 
