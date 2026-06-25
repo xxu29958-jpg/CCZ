@@ -20,10 +20,22 @@ sealed interface SkillEffect {
      * computed amount > 0.
      */
     data class Heal(val target: EffectTarget, val amount: Int, val mode: HealMode = HealMode.FLAT) : SkillEffect
+
+    /**
+     * Instantly add a flat [amount] to the target's [stat] for the rest of the battle (ADR 0008 Phase 2) —
+     * a stat boost resolved straight into the panel, with NO duration (timed buffs are Phase 3). SELF/ALLY
+     * band. Deterministic, RNG-free; [amount] is a content-authored parameter (contentVersion, like
+     * [Skill.powerCoeff]), validated `>= 1` by `ContentValidator` (a buff adds). The resolver floors the
+     * resulting stat at 0 defensively.
+     */
+    data class StatDelta(val target: EffectTarget, val stat: AffectedStat, val amount: Int) : SkillEffect
 }
 
 /** How a [SkillEffect.Heal]'s amount is read: a flat HP value, or a percent of the target's max HP. */
 enum class HealMode { FLAT, PERCENT_MAX }
+
+/** A combat stat a [SkillEffect.StatDelta] can modify (mirrors the four [CombatStats] fields). */
+enum class AffectedStat { ATK, DEF, MAT, RES }
 
 /**
  * Who a [SkillEffect] lands on, relative to the caster. Phase 1: the caster itself ([SELF]) or a

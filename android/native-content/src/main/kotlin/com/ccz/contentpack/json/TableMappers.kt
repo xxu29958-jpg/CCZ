@@ -101,6 +101,11 @@ private fun toSkillEffect(path: String, dto: SkillEffectDto): SkillEffect = when
         amount = dto.amount,
         mode = decodeHealMode("$path.mode", dto.mode),
     )
+    is SkillEffectDto.StatDelta -> SkillEffect.StatDelta(
+        target = decodeEffectTarget("$path.target", dto.target),
+        stat = decodeAffectedStat("$path.stat", dto.stat),
+        amount = dto.amount,
+    )
 }
 
 internal fun toItem(dto: ItemDto): ItemDef =

@@ -1,6 +1,7 @@
 package com.ccz.core.battle
 
 import com.ccz.core.event.ScenarioOp
+import com.ccz.core.model.AffectedStat
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
 import com.ccz.core.model.Combatant
@@ -32,6 +33,7 @@ sealed interface Event {
 
     data class Died(val unit: String) : Event
     data class Healed(val unit: String, val amount: Int) : Event
+    data class StatChanged(val unit: String, val stat: AffectedStat, val amount: Int) : Event
     data class Waited(val unit: String) : Event
     data class TurnEnded(val faction: Faction) : Event
     data class BattleEnded(val outcome: BattleOutcome) : Event

@@ -1,5 +1,6 @@
 package com.ccz.core.battle
 
+import com.ccz.core.model.AffectedStat
 import com.ccz.core.model.DamageKind
 import com.ccz.core.model.EffectTarget
 import com.ccz.core.model.Faction
@@ -27,9 +28,14 @@ class CastTest {
     private val atkSkill = Skill("atk", "Attack", DamageKind.PHYSICAL, 100)
     private val percentHealSkill =
         Skill("pheal", "% Heal", DamageKind.PHYSICAL, 0, RangeSpec(0, 1), listOf(SkillEffect.Heal(EffectTarget.ALLY, 40, HealMode.PERCENT_MAX)))
+    private val buffSkill =
+        Skill("buff", "Buff", DamageKind.PHYSICAL, 0, RangeSpec(0, 1), listOf(SkillEffect.StatDelta(EffectTarget.ALLY, AffectedStat.ATK, 15)))
     private val ctx = contextOf(
         flat(6, 1),
-        skills = mapOf("heal" to healSkill, "self_heal" to selfHealSkill, "atk" to atkSkill, "pheal" to percentHealSkill),
+        skills = mapOf(
+            "heal" to healSkill, "self_heal" to selfHealSkill, "atk" to atkSkill,
+            "pheal" to percentHealSkill, "buff" to buffSkill,
+        ),
     )
 
     private fun field(casterHp: Int = 100, allyHp: Int = 50): BattleState = stateOf(
@@ -108,6 +114,22 @@ class CastTest {
             active = Faction.PLAYER,
         )
         assertEquals(RejectReason.OUT_OF_CAST_RANGE, reject(state, Command.Cast("medic", "ally", "heal")))
+    }
+
+    @Test
+    fun statDeltaBuffsTheTargetStatAndEmitsAnEvent() {
+        // ally base atk = 80 (fixture); a +15 ALLY buff → 95, with a StatChanged event the UI can surface.
+        val result = accept(field(), Command.Cast("medic", "ally", "buff"))
+        assertEquals(95, result.state.unit("ally").stats.atk, "ally atk buffed by the flat amount")
+        val event = result.events.filterIsInstance<Event.StatChanged>().single()
+        assertEquals(AffectedStat.ATK, event.stat)
+        assertEquals(15, event.amount)
+    }
+
+    @Test
+    fun legalCastTargetsForABuffAreSameSideInRange() {
+        // ALLY band, range 0-1: medic (self) + ally; the enemy is excluded by band and range.
+        assertEquals(setOf("medic", "ally"), Gameplay.legalCastTargets(field(), "medic", "buff", ctx))
     }
 
     @Test

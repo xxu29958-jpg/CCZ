@@ -1,5 +1,6 @@
 package com.ccz.core.battle
 
+import com.ccz.core.model.AffectedStat
 import com.ccz.core.model.ClassTerrain
 import com.ccz.core.model.DamageKind
 import com.ccz.core.model.EffectTarget
@@ -53,6 +54,21 @@ class EnemyAiTest {
             active = Faction.ENEMY,
         )
         assertEquals(Command.Attack("medic", "foe", "atk"), EnemyAi.nextCommand(state, medicCtx(listOf("atk", "heal"))))
+    }
+
+    @Test
+    fun doesNotCastABuffSkillAsAHeal() {
+        // A unit with ONLY a buff (non-heal effect) skill and a wounded ally must NOT cast — healCommand
+        // fires only for heal-bearing skills (the AI does not auto-buff in Phase 2).
+        val buff =
+            Skill("buff", "Buff", DamageKind.PHYSICAL, 0, RangeSpec(0, 1), listOf(SkillEffect.StatDelta(EffectTarget.ALLY, AffectedStat.ATK, 15)))
+        val ctx2 = contextOf(flat(6, 1), skills = mapOf("buff" to buff), loadouts = mapOf("medic" to listOf("buff")))
+        val state = stateOf(
+            combatant("medic", Faction.ENEMY, Pos(0, 0)),
+            combatant("wounded", Faction.ENEMY, Pos(1, 0), hp = 30),
+            active = Faction.ENEMY,
+        )
+        assertTrue(EnemyAi.nextCommand(state, ctx2) !is Command.Cast, "a non-heal effect skill is not auto-cast")
     }
 
     @Test
