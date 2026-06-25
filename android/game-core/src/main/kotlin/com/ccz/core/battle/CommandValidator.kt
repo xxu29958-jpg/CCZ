@@ -1,9 +1,5 @@
 package com.ccz.core.battle
 
-import com.ccz.core.model.Combatant
-import com.ccz.core.model.EffectTarget
-import com.ccz.core.model.SkillEffect
-
 /** Why a command is illegal. `null` from [CommandValidator.check] means legal. */
 enum class RejectReason {
     NOT_ACTIVE_FACTION,
@@ -103,19 +99,10 @@ object CommandValidator {
         if (skill.effects.isEmpty()) return RejectReason.SKILL_HAS_NO_EFFECT
         val target = state.units[command.target] ?: return RejectReason.TARGET_NOT_FOUND
         if (!target.alive) return RejectReason.TARGET_DEAD
-        skill.effects.forEach { effect -> castTargetReject(effect, caster, target)?.let { return it } }
+        // Every effect's SELF/ALLY band must accept this target (single-sourced in castTargetAllows so the
+        // legalCastTargets preview can never disagree about who is a valid cast target).
+        if (skill.effects.any { !castTargetAllows(it, caster, target) }) return RejectReason.CAST_TARGET_INVALID
         return if (skill.range.covers(manhattan(caster.pos, target.pos))) null else RejectReason.OUT_OF_CAST_RANGE
-    }
-
-    /** The reason [target] does not match [effect]'s target band relative to [caster], or null if it does. */
-    private fun castTargetReject(effect: SkillEffect, caster: Combatant, target: Combatant): RejectReason? =
-        when (effect) {
-            is SkillEffect.Heal -> bandReject(effect.target, caster, target)
-        }
-
-    private fun bandReject(band: EffectTarget, caster: Combatant, target: Combatant): RejectReason? = when (band) {
-        EffectTarget.SELF -> if (caster.id == target.id) null else RejectReason.CAST_TARGET_INVALID
-        EffectTarget.ALLY -> if (sameSide(caster.faction, target.faction)) null else RejectReason.CAST_TARGET_INVALID
     }
 
     /** Wait stands the unit down for the turn; legal for an eligible unit that has not yet acted. */

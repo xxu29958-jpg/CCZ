@@ -78,6 +78,31 @@ object Gameplay {
     }
 
     /**
+     * Read-only query: the ids of units [casterId] may legally [Command.Cast] [skillId] on, so the
+     * presentation layer can highlight valid cast targets without owning the targeting rule — computed here
+     * exactly as [CommandValidator] would accept it (the SELF/ALLY band is single-sourced in
+     * [castTargetAllows], so this preview and the submit gate never disagree). Pure: consumes no RNG, never
+     * mutates. Returns empty when the caster cannot act, the skill is unknown / not in loadout / carries no
+     * effects (a damage-only skill is cast via nothing — use [legalTargets] for it), or no living in-range
+     * unit satisfies every effect's band. [submit] stays the sole authority that mutates state.
+     */
+    fun legalCastTargets(state: BattleState, casterId: String, skillId: String, context: BattleContext): Set<String> {
+        if (actorEligibility(state, casterId, state.active) != null) return emptySet()
+        if (state.hasActed(casterId)) return emptySet()
+        val caster = state.units.getValue(casterId)
+        val skill = context.skills[skillId] ?: return emptySet()
+        if (!context.loadoutAllows(casterId, skillId) || skill.effects.isEmpty()) return emptySet()
+        return state.units.values
+            .filter { target ->
+                target.alive &&
+                    skill.range.covers(manhattan(caster.pos, target.pos)) &&
+                    skill.effects.all { castTargetAllows(it, caster, target) }
+            }
+            .map { it.id }
+            .toSet()
+    }
+
+    /**
      * Read-only query: the attack skills [attackerId] may choose from this turn, in a stable order,
      * so the presentation layer can offer a skill picker without owning the loadout rule. A unit
      * with a loadout configured gets that loadout, filtered to the skills the context actually

@@ -29,4 +29,13 @@ internal fun describeAttack(events: List<Event>, state: BattleState): String =
         }
     }
 
+/** One log line describing the effect events of an accepted cast (ADR 0008), against the resulting state. */
+internal fun describeCast(events: List<Event>, state: BattleState): String =
+    events.joinToString(separator = "; ") { event ->
+        when (event) {
+            is Event.Healed -> "${unitName(state, event.unit)} +${event.amount}"
+            else -> event::class.simpleName ?: "event"
+        }
+    }
+
 internal fun appendLog(log: List<String>, line: String): List<String> = (log + line).takeLast(MAX_LOG_LINES)

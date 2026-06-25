@@ -1,7 +1,10 @@
 package com.ccz.core.battle
 
+import com.ccz.core.model.Combatant
+import com.ccz.core.model.EffectTarget
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
+import com.ccz.core.model.SkillEffect
 import kotlin.math.abs
 
 /** Manhattan (4-direction) tile distance, the metric used for range checks. */
@@ -34,4 +37,19 @@ internal fun actorEligibility(state: BattleState, unitId: String, active: Factio
     if (!unit.alive) return RejectReason.UNIT_DEAD
     if (!sameSide(unit.faction, active)) return RejectReason.NOT_ACTIVE_FACTION
     return null
+}
+
+/**
+ * Whether [target] satisfies a cast effect's [EffectTarget] band relative to [caster] (ADR 0008): SELF
+ * requires the target to BE the caster; ALLY requires a same-side target (which includes the caster).
+ * Single-sourced here so [CommandValidator.check]'s cast gate (which rejects with CAST_TARGET_INVALID)
+ * and the [Gameplay.legalCastTargets] preview (which filters to the allowed set) agree BY CONSTRUCTION —
+ * the same query⟺submit parity guarantee [actorEligibility] gives the actor gate. Exhaustive `when` over
+ * the sealed effect type: a new effect variant must declare its band here or fail to compile.
+ */
+internal fun castTargetAllows(effect: SkillEffect, caster: Combatant, target: Combatant): Boolean = when (effect) {
+    is SkillEffect.Heal -> when (effect.target) {
+        EffectTarget.SELF -> caster.id == target.id
+        EffectTarget.ALLY -> sameSide(caster.faction, target.faction)
+    }
 }
