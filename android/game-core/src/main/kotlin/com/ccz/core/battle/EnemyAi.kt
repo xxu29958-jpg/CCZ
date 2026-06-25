@@ -17,12 +17,14 @@ import com.ccz.core.model.Skill
  * to terminate: every active-side unit acts at most once (Move then Attack/Wait), so the driving loop is
  * bounded; when all are exhausted it returns [Command.EndTurn].
  *
- * Policy (aggressive, v1): for the next un-exhausted active-side unit (in id order — a stable tie-break;
- * own-unit action ORDER like the source game's low-HP-first / cavalry-first is a later refinement that
- * needs a class speed model), focus-fire the most wounded in-range foe (lowest HP, tie-broken nearest
- * then id) with the first skill that can reach it — concentrating fire on the weakest; else reposition — prefer a reachable
- * tile it could ATTACK a foe from, nearest by Manhattan (so a ranged unit takes its range band, even
- * backing away from a too-close foe, and a melee unit closes to striking distance), falling back to
+ * Policy (aggressive + support, v1): for the next un-exhausted active-side unit (in id order — a stable
+ * tie-break; own-unit action ORDER like the source game's low-HP-first / cavalry-first is a later refinement
+ * that needs a class speed model): SUPPORT-FIRST — if it has a heal (effect) skill and a same-side ally is
+ * meaningfully wounded (below half max HP) within cast range, heal the most wounded one (securing survival);
+ * else focus-fire the most wounded in-range foe (lowest HP, tie-broken nearest then id) with the first
+ * DAMAGE skill that can reach it (a cast/effect skill is never used as an attack); else reposition — prefer
+ * a reachable tile it could ATTACK a foe from, nearest by Manhattan (so a ranged unit takes its range band,
+ * even backing away from a too-close foe, and a melee unit closes to striking distance), falling back to
  * simply closing on the nearest foe; if it can do neither, Wait.
  */
 object EnemyAi {
@@ -32,12 +34,32 @@ object EnemyAi {
             .minByOrNull { it.id }
             ?: return Command.EndTurn(state.active)
 
+        healCommand(state, context, actor)?.let { return it }
         attackCommand(state, context, actor)?.let { return it }
 
         if (!state.hasMoved(actor.id)) {
             stepTowardNearestFoe(state, context, actor)?.let { return Command.Move(actor.id, it) }
         }
         return Command.Wait(actor.id)
+    }
+
+    /**
+     * A heal cast on the most wounded same-side ally a cast (effect) skill can reach, or null if the actor
+     * has no heal skill or no ally is meaningfully wounded (below half max HP) in range. Support-first: a
+     * healer secures an ally's survival before attacking. Deterministic, RNG-free — it chooses only among
+     * what [Gameplay.legalCastTargets] reports and the cast itself draws no RNG. "Meaningfully wounded"
+     * (hp*2 < hpMax) keeps the AI from wasting a turn topping off a barely-scratched ally.
+     */
+    private fun healCommand(state: BattleState, context: BattleContext, actor: Combatant): Command? {
+        for (skill in Gameplay.legalSkills(state, actor.id, context)) {
+            if (context.skills[skill]?.effects.isNullOrEmpty()) continue
+            val target = Gameplay.legalCastTargets(state, actor.id, skill, context)
+                .mapNotNull { state.units[it] }
+                .filter { it.hp * 2 < it.hpMax }
+                .minWithOrNull(compareBy({ it.hp }, { it.id }))
+            if (target != null) return Command.Cast(actor.id, target.id, skill)
+        }
+        return null
     }
 
     /**
@@ -49,9 +71,10 @@ object EnemyAi {
      * stable min keeps the first skill in [Gameplay.legalSkills] order.
      */
     private fun attackCommand(state: BattleState, context: BattleContext, actor: Combatant): Command? {
-        val reachable = Gameplay.legalSkills(state, actor.id, context).flatMap { skill ->
-            Gameplay.legalTargets(state, actor.id, skill, context).map { id -> id to skill }
-        }
+        // Only DAMAGE skills attack — a cast/effect skill (e.g. a heal) is never used as a chip attack.
+        val reachable = Gameplay.legalSkills(state, actor.id, context)
+            .filter { context.skills[it]?.effects.isNullOrEmpty() }
+            .flatMap { skill -> Gameplay.legalTargets(state, actor.id, skill, context).map { id -> id to skill } }
         val best = reachable
             .mapNotNull { (id, skill) -> state.units[id]?.let { foe -> Triple(foe, id, skill) } }
             .minWithOrNull(compareBy({ it.first.hp }, { manhattan(it.first.pos, actor.pos) }, { it.second }))
@@ -65,7 +88,7 @@ object EnemyAi {
         val foes = foesOf(state, actor)
         val destinations = Gameplay.legalDestinations(state, actor.id, context)
         if (foes.isEmpty() || destinations.isEmpty()) return null
-        val skills = Gameplay.legalSkills(state, actor.id, context).mapNotNull { context.skills[it] }
+        val skills = Gameplay.legalSkills(state, actor.id, context).mapNotNull { context.skills[it] }.filter { it.effects.isEmpty() }
         // Prefer a reachable tile the unit could attack a foe from, nearest by Manhattan (a cheap proxy
         // for least movement — exact on uniform terrain) — so ranged units take their range band (even
         // backing up) and melee units close to striking distance. The current tile is never one (the

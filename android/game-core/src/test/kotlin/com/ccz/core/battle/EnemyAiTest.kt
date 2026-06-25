@@ -1,9 +1,13 @@
 package com.ccz.core.battle
 
 import com.ccz.core.model.ClassTerrain
+import com.ccz.core.model.DamageKind
+import com.ccz.core.model.EffectTarget
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
 import com.ccz.core.model.RangeSpec
+import com.ccz.core.model.Skill
+import com.ccz.core.model.SkillEffect
 import com.ccz.core.model.UnitClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -17,6 +21,53 @@ import kotlin.test.assertTrue
  */
 class EnemyAiTest {
     private val ctx = contextOf(flat(6, 1)) // default skill "atk" (melee), class move = 5
+
+    // A support context (ADR 0008): an attack skill + a heal (cast/effect) skill, for the heal-AI tests.
+    private val atk = Skill("atk", "Attack", DamageKind.PHYSICAL, 100)
+    private val healSkill =
+        Skill("heal", "Heal", DamageKind.PHYSICAL, 0, RangeSpec(0, 1), listOf(SkillEffect.Heal(EffectTarget.ALLY, 50)))
+    private fun medicCtx(skills: List<String>) =
+        contextOf(flat(6, 1), skills = mapOf("atk" to atk, "heal" to healSkill), loadouts = mapOf("medic" to skills))
+
+    @Test
+    fun healsTheMostWoundedAllyWhenItCan() {
+        // "medic" (full) is the lowest-id actor; ally "wounded" (30/100, below half) is adjacent; foe far.
+        // Support-first: heal the wounded ally. (Ids chosen so the healer, not the wounded unit, is the actor.)
+        val state = stateOf(
+            combatant("medic", Faction.ENEMY, Pos(0, 0)),
+            combatant("wounded", Faction.ENEMY, Pos(1, 0), hp = 30),
+            combatant("foe", Faction.PLAYER, Pos(5, 0)),
+            active = Faction.ENEMY,
+        )
+        assertEquals(Command.Cast("medic", "wounded", "heal"), EnemyAi.nextCommand(state, medicCtx(listOf("atk", "heal"))))
+    }
+
+    @Test
+    fun doesNotHealAHealthyAllyAndAttacksInstead() {
+        // ally "zally" is full HP (not meaningfully wounded) and a foe is adjacent to the actor → attack with
+        // the DAMAGE skill, not heal. ("medic" < "zally" so the healer is the actor.)
+        val state = stateOf(
+            combatant("medic", Faction.ENEMY, Pos(0, 0)),
+            combatant("zally", Faction.ENEMY, Pos(0, 1)),
+            combatant("foe", Faction.PLAYER, Pos(1, 0)),
+            active = Faction.ENEMY,
+        )
+        assertEquals(Command.Attack("medic", "foe", "atk"), EnemyAi.nextCommand(state, medicCtx(listOf("atk", "heal"))))
+    }
+
+    @Test
+    fun neverAttacksWithAHealSkill() {
+        // A pure healer (only a heal skill) adjacent to a foe, with no wounded ally, must NOT attack with the
+        // heal and must NOT cast — a cast/effect skill is never a chip attack; it waits/repositions instead.
+        val state = stateOf(
+            combatant("medic", Faction.ENEMY, Pos(0, 0)),
+            combatant("p", Faction.PLAYER, Pos(1, 0)),
+            active = Faction.ENEMY,
+        )
+        val command = EnemyAi.nextCommand(state, medicCtx(listOf("heal")))
+        assertTrue(command !is Command.Attack, "a heal skill is never used as an attack")
+        assertTrue(command !is Command.Cast, "no wounded ally → no heal cast")
+    }
 
     @Test
     fun repositionsOntoFavorableCombatTerrainAmongFiringTiles() {
