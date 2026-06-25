@@ -1,7 +1,9 @@
 package com.ccz.core.battle
 
+import com.ccz.core.model.ActiveEffect
 import com.ccz.core.model.AffectedStat
 import com.ccz.core.model.ClassTerrain
+import com.ccz.core.model.Combatant
 import com.ccz.core.model.DamageKind
 import com.ccz.core.model.EffectTarget
 import com.ccz.core.model.Faction
@@ -29,6 +31,13 @@ class EnemyAiTest {
         Skill("heal", "Heal", DamageKind.PHYSICAL, 0, RangeSpec(0, 1), listOf(SkillEffect.Heal(EffectTarget.ALLY, 50)))
     private fun medicCtx(skills: List<String>) =
         contextOf(flat(6, 1), skills = mapOf("atk" to atk, "heal" to healSkill), loadouts = mapOf("medic" to skills))
+
+    // A disabler context (ADR 0008 enemy auto-debuff): an enemy-targeting DEF debuff alongside atk + heal.
+    private val debuffSkill =
+        Skill("debuff", "Debuff", DamageKind.PHYSICAL, 0, RangeSpec(1, 1), listOf(SkillEffect.StatDelta(EffectTarget.ENEMY, AffectedStat.DEF, -20, duration = 2)))
+    private fun debufferCtx(skills: List<String>) =
+        contextOf(flat(6, 1), skills = mapOf("atk" to atk, "heal" to healSkill, "debuff" to debuffSkill), loadouts = mapOf("e" to skills))
+    private fun withAtk(c: Combatant, atk: Int): Combatant = c.copy(stats = c.stats.copy(atk = atk))
 
     @Test
     fun healsTheMostWoundedAllyWhenItCan() {
@@ -201,6 +210,72 @@ class EnemyAiTest {
         val move = assertIs<Command.Move>(EnemyAi.nextCommand(state, bowCtx), "the archer repositions instead of idling")
         val moved = assertIs<Gameplay.Outcome.Accepted>(Gameplay.submit(state, move, bowCtx)).resolution.state
         assertTrue("p" in Gameplay.legalTargets(moved, "e", "bow", bowCtx), "after repositioning it can fire on the foe")
+    }
+
+    @Test
+    fun castsAStatDebuffOnTheStrongestInRangeFoe() {
+        // Two foes adjacent (both in range 1): a strong attacker (atk 90) and a weak one (atk 50). The disabler
+        // softens the biggest threat — debuffs the high-ATK foe — and the planned cast is one submit accepts.
+        val ctx2 = debufferCtx(listOf("atk", "debuff"))
+        val state = stateOf(
+            combatant("e", Faction.ENEMY, Pos(1, 0)),
+            withAtk(combatant("astrong", Faction.PLAYER, Pos(0, 0)), 90),
+            withAtk(combatant("zweak", Faction.PLAYER, Pos(2, 0)), 50),
+            active = Faction.ENEMY,
+        )
+        val command = EnemyAi.nextCommand(state, ctx2)
+        assertEquals(Command.Cast("e", "astrong", "debuff"), command)
+        assertIs<Gameplay.Outcome.Accepted>(Gameplay.submit(state, command, ctx2))
+    }
+
+    @Test
+    fun doesNotReDebuffAFoeAlreadyAffectedOnThatStatAndAttacksInstead() {
+        // The only in-range foe already carries a DEF mod (a prior debuff) → the AI does not waste the debuff
+        // re-casting; it falls through to attacking. This is what keeps a disabler from being pacifist.
+        val already = combatant("p", Faction.PLAYER, Pos(0, 0)).copy(effects = listOf(ActiveEffect(AffectedStat.DEF, -20, 2)))
+        val state = stateOf(combatant("e", Faction.ENEMY, Pos(1, 0)), already, active = Faction.ENEMY)
+        assertEquals(Command.Attack("e", "p", "atk"), EnemyAi.nextCommand(state, debufferCtx(listOf("atk", "debuff"))))
+    }
+
+    @Test
+    fun disablesBeforeAttackingWhenNoAllyNeedsHealing() {
+        // A unit with heal+debuff+atk and no wounded ally: heal is inapplicable, so DISABLE (debuff) takes
+        // priority over the plain attack — softening the foe before trading blows. ("e" < "zally" so the
+        // disabler, not the full-HP ally, is the min-id actor.)
+        val state = stateOf(
+            combatant("e", Faction.ENEMY, Pos(1, 0)),
+            combatant("zally", Faction.ENEMY, Pos(1, 1)), // full HP — no heal needed
+            combatant("p", Faction.PLAYER, Pos(0, 0)),
+            active = Faction.ENEMY,
+        )
+        assertEquals(Command.Cast("e", "p", "debuff"), EnemyAi.nextCommand(state, debufferCtx(listOf("atk", "debuff", "heal"))))
+    }
+
+    @Test
+    fun aUnitWithoutADebuffSkillStillAttacksNormally() {
+        // Regression: the debuff arm is inert for a plain attacker — it attacks exactly as before.
+        val state = stateOf(
+            combatant("e", Faction.ENEMY, Pos(1, 0)),
+            combatant("p", Faction.PLAYER, Pos(0, 0)),
+            active = Faction.ENEMY,
+        )
+        assertEquals(Command.Attack("e", "p", "atk"), EnemyAi.nextCommand(state, ctx))
+    }
+
+    @Test
+    fun doesNotAutoCastAnInstantEnemyStatDeltaAndAttacksInstead() {
+        // Defense-in-depth: the auto-debuff arm fires only for a NEGATIVE, TIMED enemy StatDelta. A duration-0
+        // (instant, unrecorded → the dedup filter could never exclude it → re-cast forever) one is skipped, so
+        // the unit attacks instead. Guards against a future content footgun (a positive amount is likewise skipped).
+        val instant =
+            Skill("instant", "Instant", DamageKind.PHYSICAL, 0, RangeSpec(1, 1), listOf(SkillEffect.StatDelta(EffectTarget.ENEMY, AffectedStat.DEF, -20, duration = 0)))
+        val ctx2 = contextOf(flat(6, 1), skills = mapOf("atk" to atk, "instant" to instant), loadouts = mapOf("e" to listOf("atk", "instant")))
+        val state = stateOf(
+            combatant("e", Faction.ENEMY, Pos(1, 0)),
+            combatant("p", Faction.PLAYER, Pos(0, 0)),
+            active = Faction.ENEMY,
+        )
+        assertEquals(Command.Attack("e", "p", "atk"), EnemyAi.nextCommand(state, ctx2))
     }
 
     @Test

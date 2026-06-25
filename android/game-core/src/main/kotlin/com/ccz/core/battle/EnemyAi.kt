@@ -1,6 +1,7 @@
 package com.ccz.core.battle
 
 import com.ccz.core.model.Combatant
+import com.ccz.core.model.EffectTarget
 import com.ccz.core.model.Pos
 import com.ccz.core.model.Skill
 import com.ccz.core.model.SkillEffect
@@ -22,11 +23,12 @@ import com.ccz.core.model.SkillEffect
  * tie-break; own-unit action ORDER like the source game's low-HP-first / cavalry-first is a later refinement
  * that needs a class speed model): SUPPORT-FIRST — if it has a heal (effect) skill and a same-side ally is
  * meaningfully wounded (below half max HP) within cast range, heal the most wounded one (securing survival);
- * else focus-fire the most wounded in-range foe (lowest HP, tie-broken nearest then id) with the first
- * DAMAGE skill that can reach it (a cast/effect skill is never used as an attack); else reposition — prefer
- * a reachable tile it could ATTACK a foe from, nearest by Manhattan (so a ranged unit takes its range band,
- * even backing away from a too-close foe, and a melee unit closes to striking distance), falling back to
- * simply closing on the nearest foe; if it can do neither, Wait.
+ * else DISABLE — if it has an enemy-targeting stat-debuff (cast) skill and a not-yet-debuffed foe in range,
+ * soften the most threatening one (highest ATK); else focus-fire the most wounded in-range foe (lowest HP,
+ * tie-broken nearest then id) with the first DAMAGE skill that can reach it (a cast/effect skill is never used
+ * as an attack); else reposition — prefer a reachable tile it could ATTACK a foe from, nearest by Manhattan
+ * (so a ranged unit takes its range band, even backing away from a too-close foe, and a melee unit closes to
+ * striking distance), falling back to simply closing on the nearest foe; if it can do neither, Wait.
  */
 object EnemyAi {
     fun nextCommand(state: BattleState, context: BattleContext): Command {
@@ -36,6 +38,7 @@ object EnemyAi {
             ?: return Command.EndTurn(state.active)
 
         healCommand(state, context, actor)?.let { return it }
+        debuffCommand(state, context, actor)?.let { return it }
         attackCommand(state, context, actor)?.let { return it }
 
         if (!state.hasMoved(actor.id)) {
@@ -60,6 +63,32 @@ object EnemyAi {
                 .mapNotNull { state.units[it] }
                 .filter { it.hp * 2 < it.hpMax }
                 .minWithOrNull(compareBy({ it.hp }, { it.id }))
+            if (target != null) return Command.Cast(actor.id, target.id, skill)
+        }
+        return null
+    }
+
+    /**
+     * A stat-debuff cast on the most threatening (highest-ATK) in-range foe a NEGATIVE, TIMED enemy-targeting
+     * [SkillEffect.StatDelta] (cast) skill can reach, or null if the actor has no such skill or every reachable foe
+     * already carries a mod on the debuffed stat. Slotted AFTER support-heal but BEFORE attack so a disabler softens
+     * the enemy's strongest unit before trading blows; the "not already affected on that stat" filter keeps it from
+     * re-casting the same debuff (so it falls through to attacking once its targets are debuffed — never pacifist).
+     * Deterministic and RNG-free: it chooses only among what [Gameplay.legalCastTargets] reports and the cast draws
+     * no RNG. Only a DEBUFF (enemy band) triggers this — a heal/buff (friendly) effect is not auto-cast here. The
+     * `amount < 0 && duration > 0` filter is defense-in-depth: a positive amount would BUFF the foe, and a
+     * duration-0 (instant, unrecorded) delta would defeat the dedup filter and re-cast forever (a stall loop).
+     */
+    private fun debuffCommand(state: BattleState, context: BattleContext, actor: Combatant): Command? {
+        for (skill in Gameplay.legalSkills(state, actor.id, context)) {
+            val debuff = context.skills[skill]?.effects
+                ?.filterIsInstance<SkillEffect.StatDelta>()
+                ?.firstOrNull { it.target == EffectTarget.ENEMY && it.amount < 0 && it.duration > 0 }
+                ?: continue
+            val target = Gameplay.legalCastTargets(state, actor.id, skill, context)
+                .mapNotNull { state.units[it] }
+                .filter { foe -> foe.effects.none { it.stat == debuff.stat } }
+                .minWithOrNull(compareByDescending<Combatant> { it.stats.atk }.thenBy { it.id })
             if (target != null) return Command.Cast(actor.id, target.id, skill)
         }
         return null
