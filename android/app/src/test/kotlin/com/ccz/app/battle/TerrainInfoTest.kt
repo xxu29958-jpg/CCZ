@@ -14,6 +14,7 @@ import com.ccz.core.model.Combatant
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -111,6 +112,40 @@ class TerrainInfoTest {
             effects = listOf(ActiveEffect(AffectedStat.ATK, 15, 2), ActiveEffect(AffectedStat.DEF, -20, 1)),
         )
         assertEquals("HP 30/100 · ATK 95 · DEF 0 · MAT 30 · RES 10 · ATK +15 (2) · DEF -20 (1)", combatantSummary(unit))
+    }
+
+    private fun unitWith(
+        ailments: List<ActiveAilment> = emptyList(),
+        effects: List<ActiveEffect> = emptyList(),
+    ): Combatant = Combatant(
+        identity = CombatIdentity("u", "Hero", "cls", Faction.PLAYER),
+        pos = Pos(0, 0),
+        vitals = CombatVitals(hp = 100, hpMax = 100),
+        stats = CombatStats(atk = 80, def = 20, mat = 30, res = 10),
+        rates = CombatRates(),
+        effects = effects,
+        ailments = ailments,
+    )
+
+    @Test
+    fun statusChipsCondenseConditionsAndFlagHostileState() {
+        // Silence + a buff + a debuff → "沉" + "↑" + "↓"; any ailment/debuff makes it a hostile (orange) state.
+        val afflicted = unitWith(
+            ailments = listOf(ActiveAilment(Ailment.SILENCE, 2)),
+            effects = listOf(ActiveEffect(AffectedStat.ATK, 15, 2), ActiveEffect(AffectedStat.DEF, -20, 1)),
+        )
+        assertEquals("沉↑↓", statusChips(afflicted))
+        assertTrue(hasHostileStatus(afflicted))
+        // A buff-only unit shows just "↑" and is NOT hostile (blue chip).
+        val buffed = unitWith(effects = listOf(ActiveEffect(AffectedStat.ATK, 15, 2)))
+        assertEquals("↑", statusChips(buffed))
+        assertFalse(hasHostileStatus(buffed))
+    }
+
+    @Test
+    fun statusChipsAreEmptyForACleanUnit() {
+        assertEquals("", statusChips(unitWith()))
+        assertFalse(hasHostileStatus(unitWith()))
     }
 
     @Test

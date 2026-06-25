@@ -89,6 +89,17 @@ private fun UnitMarker(unit: Combatant) {
         Text(text = unit.name.take(2), color = factionColor(unit.faction), fontWeight = FontWeight.Bold)
         // hp/hpMax with a health-tier color so the player can read how hurt a unit is, not just its raw hp.
         Text(text = "${unit.hp}/${unit.hpMax}", fontSize = 9.sp, color = hpColor(unit.hp, unit.hpMax))
+        // A glanceable condensed ailment/effect row (沉/麻 + ↑/↓) so the board shows who is afflicted/buffed
+        // without tapping; orange when any hostile status (ailment/debuff) is present, else blue (buff-only).
+        val chips = statusChips(unit)
+        if (chips.isNotEmpty()) {
+            Text(
+                text = chips,
+                fontSize = 8.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (hasHostileStatus(unit)) Color(0xFFEF6C00) else Color(0xFF0277BD),
+            )
+        }
     }
 }
 
