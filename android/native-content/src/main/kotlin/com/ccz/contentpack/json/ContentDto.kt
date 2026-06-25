@@ -158,7 +158,7 @@ internal data class SkillDto(
 internal sealed interface SkillEffectDto {
     @Serializable
     @SerialName("heal")
-    data class Heal(val target: String, val amount: Int) : SkillEffectDto
+    data class Heal(val target: String, val amount: Int, val mode: String = "flat") : SkillEffectDto
 }
 
 @Serializable

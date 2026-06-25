@@ -94,9 +94,13 @@ internal fun toSkill(index: Int, dto: SkillDto): SkillDef =
     )
 
 private fun toSkillEffect(path: String, dto: SkillEffectDto): SkillEffect = when (dto) {
-    // amount is carried as-is (a bound, not an enum), validated >= 1 by ContentValidator; only the
-    // target band is whitelisted fail-closed here, mirroring how kind decodes through decodeDamageKind.
-    is SkillEffectDto.Heal -> SkillEffect.Heal(decodeEffectTarget("$path.target", dto.target), dto.amount)
+    // amount is carried as-is (a bound, not an enum), validated by ContentValidator per mode; the target
+    // band and heal mode are whitelisted fail-closed here, mirroring how kind decodes via decodeDamageKind.
+    is SkillEffectDto.Heal -> SkillEffect.Heal(
+        target = decodeEffectTarget("$path.target", dto.target),
+        amount = dto.amount,
+        mode = decodeHealMode("$path.mode", dto.mode),
+    )
 }
 
 internal fun toItem(dto: ItemDto): ItemDef =

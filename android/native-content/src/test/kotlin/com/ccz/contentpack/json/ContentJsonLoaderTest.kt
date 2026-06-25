@@ -130,6 +130,31 @@ class ContentJsonLoaderTest {
     }
 
     @Test
+    fun decodesPercentMaxHealMode() {
+        val content = ContentJsonLoader.load(
+            packWithEffect("{ \"type\": \"heal\", \"target\": \"ally\", \"amount\": 30, \"mode\": \"percent_max\" }"),
+        )
+        val heal = content.tables.skills.first().effects.single() as com.ccz.core.model.SkillEffect.Heal
+        assertEquals(com.ccz.core.model.HealMode.PERCENT_MAX, heal.mode)
+        assertEquals(30, heal.amount)
+    }
+
+    @Test
+    fun unknownHealModeFailsClosed() {
+        assertFailsWith<ContentDecodeException> {
+            ContentJsonLoader.load(packWithEffect("{ \"type\": \"heal\", \"target\": \"ally\", \"amount\": 30, \"mode\": \"divine\" }"))
+        }
+    }
+
+    @Test
+    fun outOfRangePercentHealIsAValidationIssue() {
+        val content = ContentJsonLoader.load(
+            packWithEffect("{ \"type\": \"heal\", \"target\": \"ally\", \"amount\": 150, \"mode\": \"percent_max\" }"),
+        )
+        assertTrue(ContentValidator.validate(content).any { it.path.contains("effects") && it.message.contains("percent heal") })
+    }
+
+    @Test
     fun unknownFactionFailsClosed() {
         assertFailsWith<ContentDecodeException> { ContentJsonLoader.load(samplePack(faction = "NEUTRAL")) }
     }

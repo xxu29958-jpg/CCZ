@@ -4,6 +4,7 @@ import com.ccz.core.model.CounterRelation
 import com.ccz.core.model.DamageKind
 import com.ccz.core.model.EffectTarget
 import com.ccz.core.model.Faction
+import com.ccz.core.model.HealMode
 
 /**
  * Enum decode boundary: JSON strings are matched (case-insensitively) against the
@@ -25,3 +26,7 @@ internal fun decodeCounterRelation(path: String, value: String): CounterRelation
 internal fun decodeEffectTarget(path: String, value: String): EffectTarget =
     EffectTarget.entries.firstOrNull { it.name == value.uppercase() }
         ?: throw ContentDecodeException("$path: unknown effect target: $value")
+
+internal fun decodeHealMode(path: String, value: String): HealMode =
+    HealMode.entries.firstOrNull { it.name == value.uppercase() }
+        ?: throw ContentDecodeException("$path: unknown heal mode: $value")

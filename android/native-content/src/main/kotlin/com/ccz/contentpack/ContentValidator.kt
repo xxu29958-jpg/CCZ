@@ -1,5 +1,6 @@
 package com.ccz.contentpack
 
+import com.ccz.core.model.HealMode
 import com.ccz.core.model.SkillEffect
 
 data class ValidationIssue(
@@ -160,11 +161,7 @@ object ContentValidator {
             // variant is a compile error until its bound is decided.
             skill.effects.forEachIndexed { effectIndex, effect ->
                 val issue = when (effect) {
-                    is SkillEffect.Heal -> if (effect.amount < 1) {
-                        ValidationIssue("skills[$index].effects[$effectIndex].amount", "heal amount must be >= 1")
-                    } else {
-                        null
-                    }
+                    is SkillEffect.Heal -> healAmountIssue(effect, "skills[$index].effects[$effectIndex].amount")
                 }
                 if (issue != null) issues += issue
             }
@@ -178,6 +175,12 @@ object ContentValidator {
             }
         }
         return issues
+    }
+
+    /** Mode-specific bound on a heal's amount (ADR 0008): FLAT >= 1 HP; PERCENT_MAX in 1..100 percent. */
+    private fun healAmountIssue(heal: SkillEffect.Heal, path: String): ValidationIssue? = when (heal.mode) {
+        HealMode.FLAT -> if (heal.amount < 1) ValidationIssue(path, "flat heal amount must be >= 1") else null
+        HealMode.PERCENT_MAX -> if (heal.amount !in 1..100) ValidationIssue(path, "percent heal must be in 1..100") else null
     }
 
     private fun validateMaps(tables: ContentTables, terrainIds: Set<String>): List<ValidationIssue> =

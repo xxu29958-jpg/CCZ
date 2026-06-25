@@ -3,6 +3,7 @@ package com.ccz.core.battle
 import com.ccz.core.model.DamageKind
 import com.ccz.core.model.EffectTarget
 import com.ccz.core.model.Faction
+import com.ccz.core.model.HealMode
 import com.ccz.core.model.Pos
 import com.ccz.core.model.RangeSpec
 import com.ccz.core.model.Skill
@@ -24,7 +25,12 @@ class CastTest {
     private val selfHealSkill =
         Skill("self_heal", "Self Heal", DamageKind.PHYSICAL, 0, RangeSpec(0, 0), listOf(SkillEffect.Heal(EffectTarget.SELF, 30)))
     private val atkSkill = Skill("atk", "Attack", DamageKind.PHYSICAL, 100)
-    private val ctx = contextOf(flat(6, 1), skills = mapOf("heal" to healSkill, "self_heal" to selfHealSkill, "atk" to atkSkill))
+    private val percentHealSkill =
+        Skill("pheal", "% Heal", DamageKind.PHYSICAL, 0, RangeSpec(0, 1), listOf(SkillEffect.Heal(EffectTarget.ALLY, 40, HealMode.PERCENT_MAX)))
+    private val ctx = contextOf(
+        flat(6, 1),
+        skills = mapOf("heal" to healSkill, "self_heal" to selfHealSkill, "atk" to atkSkill, "pheal" to percentHealSkill),
+    )
 
     private fun field(casterHp: Int = 100, allyHp: Int = 50): BattleState = stateOf(
         combatant("medic", Faction.PLAYER, Pos(0, 0), hp = casterHp),
@@ -49,6 +55,13 @@ class CastTest {
         val healed = result.events.filterIsInstance<Event.Healed>().single()
         assertEquals("ally", healed.unit)
         assertEquals(30, healed.amount)
+    }
+
+    @Test
+    fun percentHealRestoresAPercentOfMaxHp() {
+        // ally 50/100, heal 40% of max HP = 40 → 90 (integer-truncating hpMax * amount / 100, no float).
+        val result = accept(field(allyHp = 50), Command.Cast("medic", "ally", "pheal"))
+        assertEquals(90, result.state.unit("ally").hp, "percent heal restores hpMax * pct / 100")
     }
 
     @Test
