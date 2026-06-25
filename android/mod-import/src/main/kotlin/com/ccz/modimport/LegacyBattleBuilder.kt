@@ -100,32 +100,11 @@ object LegacyBattleBuilder {
     fun buildBattle(meta: PackMeta, sources: LegacyTableSources, spec: BattleSpec): PackContent {
         require(spec.width > 0 && spec.height > 0) { "map size must be positive: ${spec.width}x${spec.height}" }
         require(spec.placements.isNotEmpty()) { "battle needs at least one placement" }
+        val size = PackSize(spec.width, spec.height)
         val row = List(spec.width) { spec.terrainId }
-        val map = PackMap(
-            id = mapId(spec.battleId),
-            size = PackSize(spec.width, spec.height),
-            tileset = "legacy",
-            tiles = List(spec.height) { row },
-        )
-        val battle = PackBattle(
-            id = spec.battleId,
-            win = listOf(PackCondition(ANNIHILATE)),
-            lose = listOf(PackCondition(PROTECT, unit = spec.protect)),
-            pre = spec.placements.map { p ->
-                require(p.x in 0 until spec.width && p.y in 0 until spec.height) {
-                    "placement of '${p.unit}' at (${p.x}, ${p.y}) is off the ${spec.width}x${spec.height} map"
-                }
-                PackSpawn(type = SPAWN, unit = p.unit, at = PackPos(p.x, p.y), faction = if (p.enemy) ENEMY else null)
-            },
-        )
-        val base = LegacyContentImporter.buildPack(meta.copy(entry = spec.battleId), sources)
-        return base.copy(
-            tables = base.tables.copy(
-                units = rosterWithDeployLevels(base.tables.units, spec.placements),
-                maps = listOf(map),
-            ),
-            events = PackEvents(sScripts = listOf(battle)),
-        )
+        val map = PackMap(id = mapId(spec.battleId), size = size, tileset = "legacy", tiles = List(spec.height) { row })
+        val battle = battleScript(spec.battleId, spec.protect, spec.placements, size, mapLabel = "")
+        return assemble(meta, sources, battle, map, spec.placements)
     }
 
     /** Serialize a built battle pack as native content-pack JSON. */
@@ -149,34 +128,63 @@ object LegacyBattleBuilder {
     ): PackContent {
         require(spec.placements.isNotEmpty()) { "battle needs at least one placement" }
         val map = LegacyMapMapper.mapMap(terrainMapJson, spec.mapId)
-        val width = map.size.width
-        val height = map.size.height
-        val battle = PackBattle(
-            id = spec.battleId,
-            win = listOf(PackCondition(ANNIHILATE)),
-            lose = listOf(PackCondition(PROTECT, unit = spec.protect)),
-            pre = spec.placements.map { p ->
-                require(p.x in 0 until width && p.y in 0 until height) {
-                    "placement of '${p.unit}' at (${p.x}, ${p.y}) is off the ${width}x$height map '${spec.mapId}'"
-                }
-                PackSpawn(type = SPAWN, unit = p.unit, at = PackPos(p.x, p.y), faction = if (p.enemy) ENEMY else null)
-            },
-        )
-        val base = LegacyContentImporter.buildPack(meta.copy(entry = spec.battleId), sources)
-        val terrain = base.tables.terrain + missingTerrain(base.tables.terrain, map)
-        return base.copy(
-            tables = base.tables.copy(
-                units = rosterWithDeployLevels(base.tables.units, spec.placements),
-                maps = listOf(map),
-                terrain = terrain,
-            ),
-            events = PackEvents(sScripts = listOf(battle)),
-        )
+        val battle = battleScript(spec.battleId, spec.protect, spec.placements, map.size, mapLabel = " '${spec.mapId}'")
+        val pack = assemble(meta, sources, battle, map, spec.placements)
+        // A real ported map can reference terrain ids absent from the imported catalog (edge/void ids);
+        // auto-fill them as default passable terrain so coverage validation passes (synth maps need none).
+        return pack.copy(tables = pack.tables.copy(terrain = pack.tables.terrain + missingTerrain(pack.tables.terrain, map)))
     }
 
     /** Build the real-map battle pack and load it through the engine's content loader. */
     fun loadOnMap(meta: PackMeta, sources: LegacyTableSources, terrainMapJson: String, spec: MapBattleSpec): NativeContent =
         ContentJsonLoader.load(toJson(buildBattleOnMap(meta, sources, terrainMapJson, spec)))
+
+    /**
+     * The deploy-and-fight battle script: annihilate-enemies to win, protect [protect] to avoid loss, and a
+     * `pre` spawn per placement (faction-overridden for enemies). Single-sources the spawn mapping AND the
+     * off-map bounds check for both builders — [size] is the bounding map and [mapLabel] names it in the
+     * error message ("" for a synthesized field, " 'id'" for a real ported map).
+     */
+    private fun battleScript(
+        battleId: String,
+        protect: String,
+        placements: List<Placement>,
+        size: PackSize,
+        mapLabel: String,
+    ): PackBattle =
+        PackBattle(
+            id = battleId,
+            win = listOf(PackCondition(ANNIHILATE)),
+            lose = listOf(PackCondition(PROTECT, unit = protect)),
+            pre = placements.map { p ->
+                require(p.x in 0 until size.width && p.y in 0 until size.height) {
+                    "placement of '${p.unit}' at (${p.x}, ${p.y}) is off the ${size.width}x${size.height} map$mapLabel"
+                }
+                PackSpawn(type = SPAWN, unit = p.unit, at = PackPos(p.x, p.y), faction = if (p.enemy) ENEMY else null)
+            },
+        )
+
+    /**
+     * Assemble the imported base pack with the [map], the roster stamped with each placement's deploy level,
+     * and the single [battle] script. Single-sources the base-pack assembly for both builders; the real-map
+     * builder layers its terrain coverage-fill on top of the returned pack.
+     */
+    private fun assemble(
+        meta: PackMeta,
+        sources: LegacyTableSources,
+        battle: PackBattle,
+        map: PackMap,
+        placements: List<Placement>,
+    ): PackContent {
+        val base = LegacyContentImporter.buildPack(meta.copy(entry = battle.id), sources)
+        return base.copy(
+            tables = base.tables.copy(
+                units = rosterWithDeployLevels(base.tables.units, placements),
+                maps = listOf(map),
+            ),
+            events = PackEvents(sScripts = listOf(battle)),
+        )
+    }
 
     /**
      * Stamp each placement's deploy level onto its unit in the roster (units not placed keep their
