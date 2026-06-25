@@ -54,8 +54,9 @@ object Gameplay {
      * presentation layer can highlight valid targets without owning the targeting rule — the answer
      * is computed here, in the authority, exactly as [CommandValidator] would accept it. Pure:
      * consumes no RNG and never mutates state. Returns an empty set when the attacker is unknown,
-     * dead, not on the active side, or [skillId] is unknown — i.e. when no [Command.Attack] for it
-     * could be accepted right now. Only living enemy-side units within the skill's range are
+     * dead, not on the active side, [skillId] is unknown, or [skillId] is an effect (cast) skill (which
+     * is cast-only, not an attack) — i.e. when no [Command.Attack] for it could be accepted right now.
+     * Only living enemy-side units within the skill's range are
      * reported; the attacker itself and same-side units are never targets. [submit] remains the
      * sole authority that mutates state; this only previews which targets it would allow.
      */
@@ -66,6 +67,9 @@ object Gameplay {
         val attacker = state.units.getValue(attackerId)
         val skill = context.skills[skillId] ?: return emptySet()
         if (!context.loadoutAllows(attackerId, skillId)) return emptySet()
+        // An effect (cast) skill is cast-only — never an attack (single-sourced with checkAttack's
+        // SKILL_IS_CAST_ONLY gate, the inverse of legalCastTargets excluding a damage-only skill).
+        if (skill.effects.isNotEmpty()) return emptySet()
         return state.units.values
             .filter { target ->
                 target.alive &&
