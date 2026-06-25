@@ -221,8 +221,22 @@ class BattleReducer(
     private fun previewThreat(ui: BattleUiState, unitId: String): BattleUiState =
         clearSelection(ui).copy(threat = Gameplay.threatenedTiles(ui.state, unitId, context))
 
-    fun endTurn(ui: BattleUiState): BattleUiState {
-        if (ui.outcome != BattleOutcome.ONGOING) return ui
+    /** The settled UI state after an EndTurn drives the full enemy turn — the last [endTurnFrames] frame. */
+    fun endTurn(ui: BattleUiState): BattleUiState = endTurnFrames(ui).last()
+
+    /**
+     * The ordered UI frames an EndTurn produces, for ANIMATED playback: the player's turn-end frame, then one
+     * frame per accepted enemy command (so each blow renders in sequence instead of the whole enemy turn
+     * collapsing to a single frame where only the last badge survives), ending with the final settled state.
+     * The non-animated [endTurn] is exactly this list's last frame, so the authoritative state / outcome / log
+     * are unchanged for every existing caller (only the transient `effects` badges differ — the collapsed final
+     * frame now carries the LAST command's effects, which is empty for the turn-ending EndTurn, since the badges
+     * are meant to be seen during playback). Pure: each frame is a [BattleUiState] the authority already produced
+     * (commands submitted through [Gameplay], ticked through [TriggerRunner]); the presentation layer plays the
+     * frames on a timer and owns no combat truth. Never empty — a decided/own-turn state yields a single frame.
+     */
+    fun endTurnFrames(ui: BattleUiState): List<BattleUiState> {
+        if (ui.outcome != BattleOutcome.ONGOING) return listOf(ui)
         val afterPlayer = when (val result = Gameplay.submit(ui.state, Command.EndTurn(ui.state.active), context)) {
             // tick after the turn flip fires the new turn's start-triggers and settles win/lose (advancing
             // the turn can satisfy a SurviveTurns condition; the verdict comes from the settled state).
@@ -232,49 +246,54 @@ class BattleReducer(
             }
             // Defensive: EndTurn(state.active) is always legal, so this branch is unreachable by
             // construction today; kept fail-safe in case the active-side seam ever changes.
-            is Gameplay.Outcome.Rejected -> return ui.copy(log = appendLog(ui.log, "End turn rejected: ${phraseOf(result.reason)}"))
+            is Gameplay.Outcome.Rejected -> return listOf(ui.copy(log = appendLog(ui.log, "End turn rejected: ${phraseOf(result.reason)}")))
         }
-        return runEnemyTurn(afterPlayer)
+        return listOf(afterPlayer) + enemyTurnFrames(afterPlayer)
     }
 
     /**
-     * Drives the enemy side automatically once the player's turn ends: each [EnemyAi] command is
-     * submitted through the same [Gameplay] gate a player uses (the reducer owns no AI authority — the
-     * plan is game-core's), until the turn flips back to the player or the battle is decided. The action
-     * economy bounds the loop (each unit acts at most once); [ENEMY_TURN_STEP_CAP] is a fail-safe against
-     * an unexpected non-terminating plan. Intermediate damage badges are kept (an attack's effects carry
-     * forward) so the player sees the last blow; per-blow animation is a later (event-timed) slice.
+     * Drives the enemy side automatically once the player's turn ends, returning the UI frame after EACH
+     * accepted [EnemyAi] command (in order) so the screen can play them back one blow at a time. Each command is
+     * submitted through the same [Gameplay] gate a player uses (the reducer owns no AI authority — the plan is
+     * game-core's), until the turn flips back to the player or the battle is decided. The action economy bounds
+     * the loop (each unit acts at most once); [ENEMY_TURN_STEP_CAP] is a fail-safe against an unexpected
+     * non-terminating plan. The final frame carries control back to the player; the collapsed [endTurn] is that
+     * last frame.
      */
-    private fun runEnemyTurn(start: BattleUiState): BattleUiState {
+    private fun enemyTurnFrames(start: BattleUiState): List<BattleUiState> {
+        val frames = mutableListOf<BattleUiState>()
         var ui = start
         var steps = 0
         while (ui.outcome == BattleOutcome.ONGOING && ui.state.active == Faction.ENEMY && steps < ENEMY_TURN_STEP_CAP) {
             steps++
             val command = EnemyAi.nextCommand(ui.state, context)
-            ui = when (val result = Gameplay.submit(ui.state, command, context)) {
-                is Gameplay.Outcome.Accepted -> applyEnemyCommand(ui, command, tickAfter(result.resolution))
+            when (val result = Gameplay.submit(ui.state, command, context)) {
+                is Gameplay.Outcome.Accepted -> {
+                    ui = applyEnemyCommand(ui, command, tickAfter(result.resolution))
+                    frames += ui
+                }
                 // The AI only issues commands its own legality queries reported, so a rejection is a
                 // should-never bug; hand control back to the player rather than spin or strand them.
-                is Gameplay.Outcome.Rejected -> return handBackToPlayer(ui, "Enemy command rejected: ${phraseOf(result.reason)}")
+                is Gameplay.Outcome.Rejected -> return frames + handBackToPlayer(ui, "Enemy command rejected: ${phraseOf(result.reason)}")
             }
         }
         // Fail-safe: if the loop bailed on the step cap with the enemy still active, return control to
         // the player rather than leave them able to command enemy units (the cap can't trip on a real
         // roster — the action economy bounds the turn — so this is defense-in-depth).
         return if (ui.outcome == BattleOutcome.ONGOING && ui.state.active == Faction.ENEMY) {
-            handBackToPlayer(ui, "Enemy turn exceeded its step budget")
+            frames + handBackToPlayer(ui, "Enemy turn exceeded its step budget")
         } else {
-            ui
+            frames
         }
     }
 
-    /** Applies one accepted enemy command: carry the last blow's badges forward, log it, refresh verdict. */
+    /** Applies one accepted enemy command as its own playback frame: THIS command's badges (a move frame
+     *  carries none — no stale carry-forward, since each frame is shown in sequence), logged, verdict refreshed. */
     private fun applyEnemyCommand(ui: BattleUiState, command: Command, resolution: Resolution): BattleUiState {
-        val effects = effectsOf(resolution.events).ifEmpty { ui.effects }
         // threat = empty as defense-in-depth: endTurn already clears it before the enemy loop, but these
         // helpers don't go through clearSelection, so clear it locally to keep the no-stale-overlay invariant
         // robust to any future entry into the enemy turn.
-        return ui.copy(selection = null, effects = effects, threat = emptySet())
+        return ui.copy(selection = null, effects = effectsOf(resolution.events), threat = emptySet())
             .withVerdict(resolution.state, appendLog(ui.log, enemyLogLine(command, resolution.events, resolution.state)))
     }
 
