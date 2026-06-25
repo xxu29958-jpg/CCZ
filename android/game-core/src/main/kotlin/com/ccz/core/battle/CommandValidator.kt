@@ -25,6 +25,10 @@ enum class RejectReason {
     SKILL_HAS_NO_EFFECT,
     CAST_TARGET_INVALID,
     OUT_OF_CAST_RANGE,
+    // The inverse of SKILL_HAS_NO_EFFECT (ADR 0008): an effect (cast) skill cannot be used as an Attack — it
+    // must go through Command.Cast. Without this the damage pipeline (and its RNG) would run for a skill whose
+    // effects land on no one. (Revisit when damage+rider composite skills land — see Resolver.cast / ADR 0008.)
+    SKILL_IS_CAST_ONLY,
     // The caster is silenced (ADR 0008 ailment) — a command-legality gate that forbids casting while it lasts
     // (the unit may still move/attack/wait, so silence is checked only on the Cast path, not actorEligibility).
     CASTER_SILENCED,
@@ -78,6 +82,10 @@ object CommandValidator {
         val attacker = state.units.getValue(command.attacker)
         val skill = context.skills[command.skill] ?: return RejectReason.UNKNOWN_SKILL
         if (!context.loadoutAllows(command.attacker, command.skill)) return RejectReason.SKILL_NOT_IN_LOADOUT
+        // An effect (cast) skill is not an attack — it must go through Command.Cast, never the damage path
+        // (the inverse of checkCast's SKILL_HAS_NO_EFFECT). Single-sourced with legalTargets, which likewise
+        // reports no attack targets for an effect skill, so the preview and this gate cannot disagree.
+        if (skill.effects.isNotEmpty()) return RejectReason.SKILL_IS_CAST_ONLY
         if (command.attacker == command.target) return RejectReason.SELF_TARGET
         val target = state.units[command.target] ?: return RejectReason.TARGET_NOT_FOUND
         if (!target.alive) return RejectReason.TARGET_DEAD

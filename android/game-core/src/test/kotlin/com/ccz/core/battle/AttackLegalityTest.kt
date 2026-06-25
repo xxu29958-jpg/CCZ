@@ -1,8 +1,12 @@
 package com.ccz.core.battle
 
+import com.ccz.core.model.DamageKind
+import com.ccz.core.model.EffectTarget
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
 import com.ccz.core.model.RangeSpec
+import com.ccz.core.model.Skill
+import com.ccz.core.model.SkillEffect
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -82,6 +86,25 @@ class AttackLegalityTest {
             combatant("e", Faction.ENEMY, Pos(2, 0)),
         )
         assertEquals(RejectReason.OUT_OF_ATTACK_RANGE, CommandValidator.check(state, Command.Attack("a", "e", "atk"), contextOf(map)))
+    }
+
+    @Test
+    fun attackingWithACastOnlyEffectSkillIsRejected() {
+        // An effect skill (non-empty effects) is cast-only — using it as Attack must be rejected BEFORE it
+        // reaches the RNG-consuming damage pipeline (the inverse of checkCast's SKILL_HAS_NO_EFFECT). The
+        // guard fires on the skill regardless of target validity (here an in-range enemy).
+        val state = stateOf(
+            combatant("a", Faction.PLAYER, Pos(0, 0)),
+            combatant("e", Faction.ENEMY, Pos(1, 0)),
+        )
+        val ctx = contextOf(
+            map,
+            skills = mapOf(
+                "atk" to Skill("atk", "Attack", DamageKind.PHYSICAL, 100),
+                "heal" to Skill("heal", "Heal", DamageKind.PHYSICAL, 0, RangeSpec(0, 1), listOf(SkillEffect.Heal(EffectTarget.ALLY, 30))),
+            ),
+        )
+        assertEquals(RejectReason.SKILL_IS_CAST_ONLY, CommandValidator.check(state, Command.Attack("a", "e", "heal"), ctx))
     }
 
     @Test

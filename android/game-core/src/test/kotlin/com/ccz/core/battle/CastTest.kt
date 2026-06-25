@@ -266,4 +266,13 @@ class CastTest {
         val result = accept(state, Command.Cast("medic", "foe", "silence"))
         assertEquals(listOf(ActiveAilment(Ailment.SILENCE, 2)), result.state.unit("foe").ailments, "refreshed, not stacked")
     }
+
+    @Test
+    fun legalTargetsIsEmptyForACastOnlyEffectSkill() {
+        // query⟺submit parity: an effect skill is cast-only, so legalTargets (the ATTACK preview) reports no
+        // targets for it — mirroring checkAttack's SKILL_IS_CAST_ONLY gate. The debuff would otherwise reach
+        // the in-range foe (range 1-3, dist 3) as an attack target.
+        assertTrue(Gameplay.legalTargets(field(), "medic", "debuff", ctx).isEmpty(), "an effect skill has no attack targets")
+        assertEquals(RejectReason.SKILL_IS_CAST_ONLY, reject(field(), Command.Attack("medic", "foe", "debuff")))
+    }
 }
