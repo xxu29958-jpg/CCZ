@@ -79,12 +79,13 @@ enum class AffectedStat { ATK, DEF, MAT, RES }
 
 /**
  * A condition that gates which commands a unit may issue (ADR 0008 ailments). [SILENCE] forbids casting (a
- * silenced unit may still move/attack/wait). Only this command-legality ailment is modeled now; stat/HP
- * ailments (poison DoT, which changes combat output → bumps RULES_VERSION; stun, which gates ALL commands;
- * confuse) are deferred to later phases. The applied/expiry mechanics are shared, so a new ailment kind only
- * needs to declare which commands it blocks.
+ * silenced unit may still move/attack/wait); [STUN] forbids every action except waiting (it is skipped for the
+ * duration). Both are command-legality ailments — they gate the validator, never the damage formula or RNG, so
+ * neither bumps RULES_VERSION. The applied/expiry mechanics are shared (persistence, refresh, tick-drop, decode
+ * whitelist), so a new kind only declares which commands it blocks. Stat/HP ailments (poison DoT, which changes
+ * combat output → bumps RULES_VERSION; confuse) are deferred to later phases.
  */
-enum class Ailment { SILENCE }
+enum class Ailment { SILENCE, STUN }
 
 /**
  * Who a [SkillEffect] lands on, relative to the caster: the caster itself ([SELF]), a same-side [ALLY]

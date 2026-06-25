@@ -95,4 +95,17 @@ class TerrainInfoTest {
         )
         assertEquals("HP 30/100 · ATK 80 · DEF 20 · MAT 30 · RES 10 · 沉默 2", combatantSummary(unit))
     }
+
+    @Test
+    fun combatantSummaryLabelsAStunAilment() {
+        val unit = Combatant(
+            identity = CombatIdentity("u", "Hero", "cls", Faction.PLAYER),
+            pos = Pos(0, 0),
+            vitals = CombatVitals(hp = 30, hpMax = 100),
+            stats = CombatStats(atk = 80, def = 20, mat = 30, res = 10),
+            rates = CombatRates(),
+            ailments = listOf(ActiveAilment(Ailment.STUN, 1)),
+        )
+        assertEquals("HP 30/100 · ATK 80 · DEF 20 · MAT 30 · RES 10 · 麻痹 1", combatantSummary(unit))
+    }
 }
