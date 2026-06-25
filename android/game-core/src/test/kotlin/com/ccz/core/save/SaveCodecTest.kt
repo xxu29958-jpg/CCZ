@@ -51,6 +51,19 @@ class SaveCodecTest {
     }
 
     @Test
+    fun roundTripPreservesCastCommand() {
+        // The Cast command (ADR 0008 skill effects) must survive the on-disk codec via its
+        // @SerialName("cast") discriminator, like Move/Attack/Wait/EndTurn.
+        val envelope = SaveEnvelope(
+            versions = SaveVersions(1, 1, "0.1.0", "1", "1.0.0"),
+            initialState = BattleState(units = emptyMap(), turn = 1, active = Faction.PLAYER, rngState = 0L),
+            commands = listOf(Command.Cast("medic", "ally", "heal")),
+        )
+
+        assertEquals(envelope, SaveCodec.decode(SaveCodec.encode(envelope)))
+    }
+
+    @Test
     fun encodeIsDeterministic() {
         val envelope = sampleEnvelope()
 

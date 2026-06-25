@@ -1,5 +1,7 @@
 package com.ccz.contentpack
 
+import com.ccz.core.model.SkillEffect
+
 data class ValidationIssue(
     val path: String,
     val message: String,
@@ -150,6 +152,21 @@ object ContentValidator {
             val range = skill.use.range
             if (range.min < 0 || range.min > range.max) {
                 issues += ValidationIssue("skills[$index].range", "min must be in 0..max")
+            }
+            // Effect magnitudes mirror their game-core domain bound (ADR 0008): a heal amount must be
+            // >= 1 — a non-positive heal is meaningless and the resolver would no-op it (masking the data
+            // error). The target band is already whitelisted at decode (decodeEffectTarget), so only the
+            // numeric magnitude is checked here. Expression `when` over the sealed type → a future effect
+            // variant is a compile error until its bound is decided.
+            skill.effects.forEachIndexed { effectIndex, effect ->
+                val issue = when (effect) {
+                    is SkillEffect.Heal -> if (effect.amount < 1) {
+                        ValidationIssue("skills[$index].effects[$effectIndex].amount", "heal amount must be >= 1")
+                    } else {
+                        null
+                    }
+                }
+                if (issue != null) issues += issue
             }
         }
         tables.units.forEachIndexed { index, unit ->

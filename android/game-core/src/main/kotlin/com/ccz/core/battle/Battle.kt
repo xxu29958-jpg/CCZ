@@ -8,6 +8,12 @@ import com.ccz.core.model.Combatant
 sealed interface Command {
     data class Move(val unit: String, val to: Pos) : Command
     data class Attack(val attacker: String, val target: String, val skill: String) : Command
+    /**
+     * Uses an effect skill (ADR 0008): applies [skill]'s effects to [target] (a SELF/ALLY band),
+     * exhausting [caster] this turn. Distinct from [Attack] so the damage path (and its RNG) stays
+     * untouched — a cast draws no RNG. Phase 1 covers a single-target heal.
+     */
+    data class Cast(val caster: String, val target: String, val skill: String) : Command
     /** Ends a unit's turn without attacking (the Fire-Emblem "wait"/stand), exhausting it this turn. */
     data class Wait(val unit: String) : Command
     data class EndTurn(val faction: Faction) : Command

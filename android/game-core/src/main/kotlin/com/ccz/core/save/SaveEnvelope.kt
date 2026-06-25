@@ -20,10 +20,20 @@ data class SaveVersions(
     companion object {
         /**
          * The newest save schema this build can read; a future (higher) value is rejected.
-         * v2 added the scenario (cutscene) replay axis ([SaveEnvelope.scenarios]); a v1 save
-         * simply omits the field and decodes with an empty list (forward-compatible).
+         * v2 added the scenario (cutscene) replay axis ([SaveEnvelope.scenarios]); v3 added the
+         * `cast` command variant (ADR 0008 skill effects). Older saves are forward-compatible — they
+         * simply lack the new key/command kind and decode fine. A newer save is also refused by an
+         * older build, fail-closed, but note WHERE the refusal happens: a v3 save that actually carries
+         * a `cast` command throws [SaveDecodeException] during the strict single-pass decode (the older
+         * build's [com.ccz.core.battle.Command] / CommandDto sealed set has no `cast` subtype, so the
+         * discriminator is unknown) — this is BEFORE [SaveLoader.check]'s FUTURE_SCHEMA_VERSION gate,
+         * which only ever sees an already-decoded envelope. So the version gate fires only for a newer
+         * save that introduces no unknown discriminator; a new-command save is caught at decode instead.
+         * Either way the outcome is a clean refusal, never a silent mis-load. (Clean FUTURE-version
+         * CLASSIFICATION for new-command saves would require peeking the version before full decode — a
+         * deliberate non-goal here, since both refusal paths are already safe.)
          */
-        const val SUPPORTED_SAVE_SCHEMA_VERSION = 2
+        const val SUPPORTED_SAVE_SCHEMA_VERSION = 3
     }
 }
 

@@ -7,6 +7,7 @@ import com.ccz.core.model.CombatStats
 import com.ccz.core.model.DamageKind
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
+import com.ccz.core.model.SkillEffect
 
 data class NativeContent(
     val manifest: ContentManifest,
@@ -153,6 +154,10 @@ data class SkillDef(
     val kind: DamageKind,
     val powerCoeff: Int,
     val use: SkillUse,
+    // Engine effects beyond damage (ADR 0008), reusing the game-core SkillEffect type directly (as `kind`
+    // reuses DamageKind). Default empty = a pure damage skill. The assembler carries these onto the core
+    // Skill so the resolver can apply them via Command.Cast.
+    val effects: List<SkillEffect> = emptyList(),
 )
 
 data class SkillUse(

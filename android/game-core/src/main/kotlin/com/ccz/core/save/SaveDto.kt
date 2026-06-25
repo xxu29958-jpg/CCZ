@@ -114,6 +114,10 @@ internal sealed interface CommandDto {
     data class Attack(val attacker: String, val target: String, val skill: String) : CommandDto
 
     @Serializable
+    @SerialName("cast")
+    data class Cast(val caster: String, val target: String, val skill: String) : CommandDto
+
+    @Serializable
     @SerialName("wait")
     data class Wait(val unit: String) : CommandDto
 

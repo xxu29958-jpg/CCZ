@@ -254,6 +254,9 @@ class BattleReducer(
     private fun enemyLogLine(command: Command, events: List<Event>, state: BattleState): String = when (command) {
         is Command.Move -> describeMoves(events, state)
         is Command.Attack -> describeAttack(events, state)
+        // The enemy AI does not cast in Phase 1 (ADR 0008), so this arm is unreached today; kept for
+        // exhaustiveness so a future casting AI compiles and logs sensibly rather than silently.
+        is Command.Cast -> "${unitName(state, command.caster)} casts ${command.skill}"
         is Command.Wait -> "${unitName(state, command.unit)} waits"
         is Command.EndTurn -> turnBanner(state)
     }

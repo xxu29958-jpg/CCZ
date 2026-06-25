@@ -120,6 +120,15 @@ class SaveLoaderTest {
     }
 
     @Test
+    fun rejectsCastReferencingAbsentUnitGracefully() {
+        // The Cast integrity branch (ADR 0008) mirrors Attack: a caster/target/skill ref absent from the
+        // initial roster or skill table is corrupt and rejected cleanly before the replay fold.
+        val env = envelope().copy(commands = listOf(Command.Cast("ghost", "e", "atk")))
+        val outcome = SaveLoader.load(env, resolve)
+        assertEquals(SaveRejection.CORRUPT_COMMAND, assertIs<SaveLoader.Outcome.Rejected>(outcome).reason)
+    }
+
+    @Test
     fun rejectsWaitReferencingAbsentUnitGracefully() {
         // The Wait integrity branch mirrors Move: a unit ref absent from the initial roster is corrupt.
         val env = envelope().copy(commands = listOf(Command.Wait("ghost")))

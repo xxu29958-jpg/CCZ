@@ -1,5 +1,6 @@
 package com.ccz.contentpack.json
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -141,7 +142,24 @@ internal data class SkillDto(
     val kind: String,
     val powerCoeff: Int,
     val use: UseDto,
+    // Engine effects beyond damage (ADR 0008). Default empty so v1 packs without the field still decode
+    // (ignoreUnknownKeys=false). Polymorphic by the loader's "type" discriminator — an unknown effect
+    // type has no registered subclass and fails closed (ContentDecodeException).
+    val effects: List<SkillEffectDto> = emptyList(),
 )
+
+/**
+ * Polymorphic skill-effect op (ADR 0008), discriminated by the loader's `type` field whose value is each
+ * subclass's [SerialName] (the effect-string whitelist — an unknown type fails closed). Phase 1 registers
+ * a single `heal` variant; later phases extend this sealed set. The `target` string is whitelisted to an
+ * [com.ccz.core.model.EffectTarget] at the mapper boundary ([decodeEffectTarget]).
+ */
+@Serializable
+internal sealed interface SkillEffectDto {
+    @Serializable
+    @SerialName("heal")
+    data class Heal(val target: String, val amount: Int) : SkillEffectDto
+}
 
 @Serializable
 internal data class UseDto(val range: RangeDto, val area: String, val targeting: String, val mpCost: Int = 0)
