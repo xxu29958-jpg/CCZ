@@ -66,3 +66,18 @@ fun combatantSummary(unit: Combatant): String {
     val ailments = unit.ailments.joinToString("") { " · ${ailmentLabel(it.kind)} ${it.remaining}" }
     return panel + effects + ailments
 }
+
+/**
+ * A glanceable, condensed status string for a unit's board marker (ADR 0008): each active ailment as its
+ * label's first glyph (沉默 → 沉, 麻痹 → 麻) and each timed stat effect as an arrow (↑ buff / ↓ debuff), so a
+ * player scanning the board sees WHO is afflicted/buffed without tapping each tile (the inspect panel
+ * [combatantSummary] gives the full detail). Empty for a clean unit. Pure read; kept tiny so it fits the cell.
+ */
+fun statusChips(unit: Combatant): String {
+    val ailments = unit.ailments.joinToString("") { ailmentLabel(it.kind).take(1) }
+    val effects = unit.effects.joinToString("") { if (it.amount >= 0) "↑" else "↓" }
+    return ailments + effects
+}
+
+/** True if [unit] carries any ailment or stat-debuff — used to tint its [statusChips] as a hostile state. */
+fun hasHostileStatus(unit: Combatant): Boolean = unit.ailments.isNotEmpty() || unit.effects.any { it.amount < 0 }
