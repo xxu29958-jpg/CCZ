@@ -28,7 +28,7 @@ import com.ccz.core.model.Pos
 private val CELL_SIZE = 44.dp
 
 /** The mutually-exclusive highlight a tile can carry, derived from the snapshot. */
-private enum class CellMark { NONE, MOVE, SELECTED, TARGET }
+private enum class CellMark { NONE, MOVE, SELECTED, TARGET, CAST_TARGET }
 
 /** Everything needed to draw one grid cell, derived from the current snapshot. */
 private data class CellModel(
@@ -110,6 +110,7 @@ private fun EffectBadge(effect: BattleEffect, modifier: Modifier = Modifier) {
             ("−${effect.amount}" + (if (effect.crit) "!" else "") + (if (effect.combo) "+" else "")) to Color(0xFFB71C1C)
         is BattleEffect.Missed -> "Miss" to Color(0xFF455A64)
         is BattleEffect.Defeated -> "KO" to Color(0xFF7B1FA2)
+        is BattleEffect.Healed -> "+${effect.amount}" to Color(0xFF2E7D32)
     }
     Text(text = text, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = modifier)
 }
@@ -122,9 +123,13 @@ private fun cellAt(
     pos: Pos,
 ): CellModel {
     val unit = unitsByPos[pos]
+    val targetMark = if (selection?.castSkill == true) CellMark.CAST_TARGET else CellMark.TARGET
     val mark = when {
+        // Target takes precedence over SELECTED so a SELF cast target (the caster's own tile, which is both
+        // selected AND a legal heal target) shows the green cast affordance rather than the plain selection ring.
+        // For an attack the caster is never its own target, so it still renders SELECTED.
+        unit != null && unit.id in (selection?.targets ?: emptySet()) -> targetMark
         unit != null && unit.id == selection?.unit -> CellMark.SELECTED
-        unit != null && unit.id in (selection?.targets ?: emptySet()) -> CellMark.TARGET
         pos in (selection?.destinations ?: emptySet()) -> CellMark.MOVE
         else -> CellMark.NONE
     }
@@ -136,6 +141,7 @@ private fun cellAt(
 private fun tileColor(cell: CellModel): Color = when {
     !cell.tile.passable -> Color(0xFF37474F)
     cell.mark == CellMark.TARGET -> Color(0xFFEF9A9A)
+    cell.mark == CellMark.CAST_TARGET -> Color(0xFFA5D6A7) // green-tint for a SELF/ALLY cast target
     cell.mark == CellMark.MOVE || cell.mark == CellMark.SELECTED -> Color(0xFF9CCC65)
     cell.tile.moveCost > 1 -> Color(0xFF558B2F)
     else -> Color(0xFFCFD8DC)
@@ -143,13 +149,14 @@ private fun tileColor(cell: CellModel): Color = when {
 
 private fun borderWidth(cell: CellModel) = when (cell.mark) {
     CellMark.SELECTED -> 3.dp
-    CellMark.TARGET -> 2.dp
+    CellMark.TARGET, CellMark.CAST_TARGET -> 2.dp
     else -> 1.dp
 }
 
 private fun borderColor(cell: CellModel): Color = when (cell.mark) {
     CellMark.SELECTED -> Color(0xFFFFC107)
     CellMark.TARGET -> Color(0xFFD32F2F)
+    CellMark.CAST_TARGET -> Color(0xFF2E7D32)
     else -> Color(0xFF90A4AE)
 }
 

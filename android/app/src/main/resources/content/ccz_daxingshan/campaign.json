@@ -2,7 +2,7 @@
     "manifest": {
         "native_format_version": "1",
         "content_id": "ccz_daxingshan",
-        "content_version": "0.1.0",
+        "content_version": "0.2.0",
         "source": {
             "mod": "trssgshz"
         },
@@ -257,7 +257,8 @@
                 },
                 "loadout": {
                     "skills": [
-                        "skill_1"
+                        "skill_1",
+                        "skill_2"
                     ]
                 }
             },
@@ -371,6 +372,27 @@
                     "area": "single",
                     "targeting": "enemy"
                 }
+            },
+            {
+                "id": "skill_2",
+                "name": "疗伤",
+                "kind": "PHYSICAL",
+                "power_coeff": 0,
+                "use": {
+                    "range": {
+                        "min": 0,
+                        "max": 1
+                    },
+                    "area": "single",
+                    "targeting": "ally"
+                },
+                "effects": [
+                    {
+                        "type": "heal",
+                        "target": "ally",
+                        "amount": 60
+                    }
+                ]
             }
         ],
         "terrain": [

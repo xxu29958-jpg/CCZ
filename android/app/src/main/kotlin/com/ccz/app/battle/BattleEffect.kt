@@ -17,6 +17,7 @@ sealed interface BattleEffect {
     data class Damaged(override val unit: String, val amount: Int, val crit: Boolean, val combo: Boolean) : BattleEffect
     data class Missed(override val unit: String) : BattleEffect
     data class Defeated(override val unit: String) : BattleEffect
+    data class Healed(override val unit: String, val amount: Int) : BattleEffect
 }
 
 /**
@@ -30,6 +31,7 @@ internal fun effectsOf(events: List<Event>): List<BattleEffect> = events.mapNotN
         is Event.Damaged -> BattleEffect.Damaged(event.target, event.amount, event.crit, event.combo)
         is Event.Missed -> BattleEffect.Missed(event.target)
         is Event.Died -> BattleEffect.Defeated(event.unit)
+        is Event.Healed -> BattleEffect.Healed(event.unit, event.amount)
         else -> null
     }
 }

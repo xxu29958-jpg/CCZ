@@ -32,6 +32,7 @@
 | 敌方 AI 侵略式 + 焦点火力 | 远程 kiting（#58，趋向可攻位）+ **目标低血优先**（focus-fire 最残血可及敌，tie 最近→id）已落地；但**本方单位行动序**仍按 unit id（源游戏：低血单位先动、骑兵先于步兵——需兵种类别/速度模型），且无「防守区域 / 仇恨」模式。 | 行动序启发式后续片（需 class 速度/类别建模；联网核实的源游戏行为记于 `EnemyAi` KDoc）。 |
 | 中途存档会丢行动经济 | `BattleProgress.moved`/`acted` 刻意不持久化（save 只存全新开局态，replay 重导出）。若未来加「中途存档」捕获非全新态，会静默丢失（已耗尽单位重载后可再动）。 | 「中途存档」功能落地时：持久化 `moved`/`acted`（schema bump）或在 encode 处断言开局态。守卫注已在 `SaveMappers.stateDto`。 |
 | `:gameplay` 模块未拆 | `EnemyAi`/`Gameplay`/`WinLose`/`TriggerRunner`（battle loop / AI / trigger runner）暂居 `game-core`；架构计划是 P2/P3 落地后拆独立 `:gameplay` 模块。 | 当 game-core 因这些件膨胀 / 需独立测试边界时（`CCZ_ENGINE_RULES` §Runtime Direction）。 |
+| 大兴山 `skill_2`（刘备 疗伤）是**手添进生成内容** | ADR 0008 Phase 1 wiring 给刘备的治疗战法是手工加进 `ccz_daxingshan/campaign.json`（生成自 `LegacyPackGenerator`，非门 gradle 任务）；`LegacySkillMapper` 当前**只搬伤害**（`hurt_num→power_coeff`，丢 object/seid），故一次手动 regen 会**抹掉** skill_2。现 app 实跑该committed 内容,playable。 | 后续 importer 片：扩 `LegacySkillMapper` 把 object1/type19 等 heal `seid` 映成 `SkillEffect.Heal`,让真实 heal 战法从转换器流出(届时删此手补)。 |
 
 ## `:app` 未来门（`[aspirational]`，见 `CCZ_ENGINE_RULES.md` §Android App Gates）
 

@@ -51,6 +51,9 @@ data class Selection(
     val skills: List<String> = emptyList(),
     val selectedSkill: String? = null,
     val targets: Set<String> = emptySet(),
+    // Whether [selectedSkill] is an effect (cast) skill: if true, [targets] are SELF/ALLY cast targets
+    // and a tap on one submits Command.Cast; if false they are enemy attack targets (Command.Attack).
+    val castSkill: Boolean = false,
 )
 
 /**
@@ -140,11 +143,25 @@ class BattleReducer(
         val unitHere = ui.state.unitAt(pos)
         val selection = ui.selection
         if (selection != null && unitHere != null && unitHere.id in selection.targets) {
-            return submitAttack(ui, selection, unitHere.id)
+            return if (selection.castSkill) submitCast(ui, selection, unitHere.id) else submitAttack(ui, selection, unitHere.id)
         }
         if (unitHere != null) return selectUnit(ui, unitHere.id)
         return if (selection != null && pos in selection.destinations) submitMove(ui, selection.unit, pos)
         else clearSelection(ui)
+    }
+
+    /** Whether [skillId] is an effect (cast) skill — routed through [Command.Cast] rather than [Command.Attack]. */
+    private fun isCastSkill(skillId: String): Boolean = context.skills[skillId]?.effects?.isNotEmpty() == true
+
+    /** The targets game-core reports for [unitId] using [skillId], plus whether it is a cast skill. */
+    private fun targetsOf(state: BattleState, unitId: String, skillId: String): Pair<Set<String>, Boolean> {
+        val cast = isCastSkill(skillId)
+        val targets = if (cast) {
+            Gameplay.legalCastTargets(state, unitId, skillId, context)
+        } else {
+            Gameplay.legalTargets(state, unitId, skillId, context)
+        }
+        return targets to cast
     }
 
     /**
@@ -156,12 +173,8 @@ class BattleReducer(
         if (ui.outcome != BattleOutcome.ONGOING) return ui
         val selection = ui.selection ?: return ui
         if (skillId !in selection.skills) return ui
-        return ui.copy(
-            selection = selection.copy(
-                selectedSkill = skillId,
-                targets = Gameplay.legalTargets(ui.state, selection.unit, skillId, context),
-            ),
-        )
+        val (targets, cast) = targetsOf(ui.state, selection.unit, skillId)
+        return ui.copy(selection = selection.copy(selectedSkill = skillId, targets = targets, castSkill = cast))
     }
 
     private fun selectUnit(ui: BattleUiState, unitId: String): BattleUiState {
@@ -172,13 +185,15 @@ class BattleReducer(
         // and can Wait; a fully-acted (or off-side / dead) unit has neither, so it cannot be selected.
         if (destinations.isEmpty() && skills.isEmpty()) return clearSelection(ui)
         val skill = skills.firstOrNull()
+        val (targets, cast) = skill?.let { targetsOf(ui.state, unitId, it) } ?: (emptySet<String>() to false)
         return ui.copy(
             selection = Selection(
                 unit = unitId,
                 destinations = destinations,
                 skills = skills,
                 selectedSkill = skill,
-                targets = skill?.let { Gameplay.legalTargets(ui.state, unitId, it, context) } ?: emptySet(),
+                targets = targets,
+                castSkill = cast,
             ),
             effects = emptyList(),
         )
@@ -289,6 +304,29 @@ class BattleReducer(
                 clearSelection(ui).withVerdict(tickAfter(result.resolution).state, appendLog(ui.log, "${unitName(ui.state, selection.unit)} waits"))
             is Gameplay.Outcome.Rejected ->
                 clearSelection(ui).copy(log = appendLog(ui.log, "Wait rejected: ${phraseOf(result.reason)}"))
+        }
+    }
+
+    /**
+     * Casts the selected effect skill on a SELF/ALLY [targetId] (ADR 0008): submits [Command.Cast]
+     * through the authority, projects its events (e.g. a heal badge) and logs the cast. Mirrors
+     * [submitAttack] for the friendly-targeting path; stale targets → submit rejects → fail-closed.
+     */
+    private fun submitCast(ui: BattleUiState, selection: Selection, targetId: String): BattleUiState {
+        val skill = selection.selectedSkill ?: return clearSelection(ui)
+        return when (val result = Gameplay.submit(ui.state, Command.Cast(selection.unit, targetId, skill), context)) {
+            is Gameplay.Outcome.Accepted -> {
+                val resolution = tickAfter(result.resolution)
+                // A cast can be accepted yet produce no events (e.g. healing a full-HP target) — it still spent
+                // the action, so log a non-blank line rather than an empty one so the turn isn't silently lost.
+                val line = describeCast(resolution.events, resolution.state)
+                    .ifBlank { "${unitName(resolution.state, targetId)} already at full HP" }
+                clearSelection(ui)
+                    .copy(effects = effectsOf(resolution.events))
+                    .withVerdict(resolution.state, appendLog(ui.log, line))
+            }
+            is Gameplay.Outcome.Rejected ->
+                clearSelection(ui).copy(log = appendLog(ui.log, "Cast rejected: ${phraseOf(result.reason)}"))
         }
     }
 

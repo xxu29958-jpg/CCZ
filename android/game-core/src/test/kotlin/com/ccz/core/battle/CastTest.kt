@@ -96,4 +96,33 @@ class CastTest {
         )
         assertEquals(RejectReason.OUT_OF_CAST_RANGE, reject(state, Command.Cast("medic", "ally", "heal")))
     }
+
+    @Test
+    fun legalCastTargetsReportsSameSideUnitsInRangeForAnAllyHeal() {
+        // heal range 0-1, ALLY band: medic (self, dist 0) + ally (dist 1); the enemy at dist 3 is excluded
+        // both by band and range.
+        assertEquals(setOf("medic", "ally"), Gameplay.legalCastTargets(field(), "medic", "heal", ctx))
+    }
+
+    @Test
+    fun legalCastTargetsForASelfHealIsOnlyTheCaster() {
+        assertEquals(setOf("medic"), Gameplay.legalCastTargets(field(), "medic", "self_heal", ctx))
+    }
+
+    @Test
+    fun legalCastTargetsIsEmptyForADamageOnlySkill() {
+        assertTrue(Gameplay.legalCastTargets(field(), "medic", "atk", ctx).isEmpty(), "a damage skill has no cast targets")
+    }
+
+    @Test
+    fun legalCastTargetsMatchesWhatSubmitAccepts() {
+        // query⟺submit parity: every reported target is a Cast submit accepts; a non-reported unit (the
+        // enemy) is rejected. (The band rule is single-sourced in castTargetAllows, so they cannot diverge.)
+        val state = field()
+        val reported = Gameplay.legalCastTargets(state, "medic", "heal", ctx)
+        reported.forEach { id ->
+            assertIs<Gameplay.Outcome.Accepted>(Gameplay.submit(state, Command.Cast("medic", id, "heal"), ctx))
+        }
+        assertTrue("foe" !in reported, "the enemy is not a cast target")
+    }
 }
