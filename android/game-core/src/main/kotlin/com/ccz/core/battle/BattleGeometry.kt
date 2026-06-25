@@ -4,11 +4,31 @@ import com.ccz.core.model.Combatant
 import com.ccz.core.model.EffectTarget
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
+import com.ccz.core.model.RangeSpec
 import com.ccz.core.model.SkillEffect
 import kotlin.math.abs
 
 /** Manhattan (4-direction) tile distance, the metric used for range checks. */
 internal fun manhattan(a: Pos, b: Pos): Int = abs(a.x - b.x) + abs(a.y - b.y)
+
+/**
+ * Every in-bounds tile whose Manhattan distance from [center] falls in [range]'s inclusive band — the set a
+ * unit standing on [center] could strike with a skill of that range. Generated from the band (not by scanning
+ * the whole map) so it stays cheap for the threat-range preview. Off-map offsets are dropped.
+ */
+internal fun tilesInRange(center: Pos, range: RangeSpec, map: BattleMap): Set<Pos> {
+    val tiles = mutableSetOf<Pos>()
+    for (dx in -range.max..range.max) {
+        val rem = range.max - abs(dx)
+        for (dy in -rem..rem) {
+            if (abs(dx) + abs(dy) in range.min..range.max) {
+                val p = Pos(center.x + dx, center.y + dy)
+                if (map.inBounds(p)) tiles += p
+            }
+        }
+    }
+    return tiles
+}
 
 /**
  * PLAYER and ALLY form one side; ENEMY is the other. Governs both targeting

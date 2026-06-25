@@ -132,6 +132,37 @@ class BattleReducerTest {
     }
 
     @Test
+    fun tappingEnemyUnitPreviewsItsThreatZone() {
+        val ui = start()
+        val enemy = enemyUnit(ui.state)
+        val after = reducer.tapTile(ui, enemy.pos)
+        assertNull("the enemy is still not selected", after.selection)
+        assertTrue("the enemy's danger zone is previewed instead of clearing the board", after.threat.isNotEmpty())
+        // The overlay is exactly the authority's query — the reducer owns no spatial rule.
+        assertEquals(Gameplay.threatenedTiles(ui.state, enemy.id, context), after.threat)
+    }
+
+    @Test
+    fun selectingAPlayerUnitClearsTheThreatOverlay() {
+        val ui = start()
+        val previewed = reducer.tapTile(ui, enemyUnit(ui.state).pos)
+        assertTrue("precondition: the enemy threat overlay is shown", previewed.threat.isNotEmpty())
+        val player = playerUnit(previewed.state)
+        val selected = reducer.tapTile(previewed, player.pos)
+        assertEquals("selecting the player's own unit takes over", player.id, selected.selection?.unit)
+        assertTrue("the enemy threat overlay is cleared (it is mutually exclusive with a selection)", selected.threat.isEmpty())
+    }
+
+    @Test
+    fun tappingAnEmptyTileClearsTheThreatOverlay() {
+        val previewed = reducer.tapTile(start(), enemyUnit(start().state).pos)
+        assertTrue("precondition: the threat overlay is shown", previewed.threat.isNotEmpty())
+        val empty = Pos(DemoBattle.WIDTH - 1, DemoBattle.HEIGHT - 1)
+        val after = reducer.tapTile(previewed, empty)
+        assertTrue("an empty-tile tap clears the threat overlay", after.threat.isEmpty())
+    }
+
+    @Test
     fun endTurnRunsTheEnemyTurnAndReturnsControlToThePlayer() {
         val ui = start()
         val after = reducer.endTurn(ui)

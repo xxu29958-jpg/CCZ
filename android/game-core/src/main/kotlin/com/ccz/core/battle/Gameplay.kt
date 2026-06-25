@@ -128,6 +128,41 @@ object Gameplay {
     }
 
     /**
+     * Read-only query: every tile [unitId] could strike THIS turn if it were its side's turn — the union, over
+     * each tile it can reach (its move) and its current tile, of every tile within one of its damage skills'
+     * range. This is the "danger zone" overlay the presentation layer paints so the player can plan moves
+     * around an enemy's reach (today an enemy tap returns nothing and the unit is unselectable). Pure: consumes
+     * no RNG, never mutates.
+     *
+     * Unlike [legalDestinations] / [legalTargets] this is deliberately NOT gated by [BattleState.active] or the
+     * action economy — it is a planning preview, so it answers for ANY living unit (typically an enemy on the
+     * player's turn) regardless of whose turn it is or whether the unit has acted. It uses the same
+     * [MoveReachability] (so terrain/occupancy bound the reach, with the unit itself excluded so it may also
+     * stand still) and the same [RangeSpec] band the resolver uses, so the painted zone matches real reach.
+     * Effect (cast) skills are excluded — threat is the reach of ATTACKS. Empty for an unknown/dead unit, an
+     * unknown class, or a unit with no damage skill. These tiles are never submittable, so there is no
+     * query⟺submit parity to maintain — it is purely informational.
+     */
+    fun threatenedTiles(state: BattleState, unitId: String, context: BattleContext): Set<Pos> {
+        val unit = state.units[unitId] ?: return emptySet()
+        if (!unit.alive) return emptySet()
+        val unitClass = context.classes[unit.classId] ?: return emptySet()
+        val attackSkills = (context.loadouts[unitId] ?: context.skills.keys.toList())
+            .mapNotNull { context.skills[it] }
+            .filter { it.effects.isEmpty() }
+        if (attackSkills.isEmpty()) return emptySet()
+        // Exclude the unit itself from occupancy so its origin counts as a reachable firing position (it may
+        // attack without moving); allies block stops but can be fired over, enemies block transit (MoveReachability).
+        val occupancy = occupancyOf(state, exclude = unitId)
+        val stops = MoveReachability.reachableStops(
+            unit.pos, context.map, occupancy, Mover(unitClass.move, unit.faction, unitClass.terrain.moveCost),
+        )
+        return stops.flatMapTo(mutableSetOf()) { stop ->
+            attackSkills.flatMap { skill -> tilesInRange(stop, skill.range, context.map) }
+        }
+    }
+
+    /**
      * Read-only query: the [BattleOutcome] the S-script's win/lose lists decide for the current state,
      * so the presentation layer can show a victory/defeat banner and stop accepting commands without
      * owning the win/lose rule — the verdict is computed here, in the authority, by [WinLose] (lose wins
