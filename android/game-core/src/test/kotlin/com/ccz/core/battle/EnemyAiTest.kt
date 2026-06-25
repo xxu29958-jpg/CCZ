@@ -1,7 +1,9 @@
 package com.ccz.core.battle
 
+import com.ccz.core.model.ActiveAilment
 import com.ccz.core.model.ActiveEffect
 import com.ccz.core.model.AffectedStat
+import com.ccz.core.model.Ailment
 import com.ccz.core.model.ClassTerrain
 import com.ccz.core.model.Combatant
 import com.ccz.core.model.DamageKind
@@ -35,8 +37,12 @@ class EnemyAiTest {
     // A disabler context (ADR 0008 enemy auto-debuff): an enemy-targeting DEF debuff alongside atk + heal.
     private val debuffSkill =
         Skill("debuff", "Debuff", DamageKind.PHYSICAL, 0, RangeSpec(1, 1), listOf(SkillEffect.StatDelta(EffectTarget.ENEMY, AffectedStat.DEF, -20, duration = 2)))
+    private val silenceSkill =
+        Skill("silence", "Silence", DamageKind.PHYSICAL, 0, RangeSpec(1, 1), listOf(SkillEffect.ApplyAilment(EffectTarget.ENEMY, Ailment.SILENCE, 1)))
     private fun debufferCtx(skills: List<String>) =
         contextOf(flat(6, 1), skills = mapOf("atk" to atk, "heal" to healSkill, "debuff" to debuffSkill), loadouts = mapOf("e" to skills))
+    private fun silencerCtx(skills: List<String>) =
+        contextOf(flat(6, 1), skills = mapOf("atk" to atk, "silence" to silenceSkill), loadouts = mapOf("e" to skills))
     private fun withAtk(c: Combatant, atk: Int): Combatant = c.copy(stats = c.stats.copy(atk = atk))
 
     @Test
@@ -260,6 +266,31 @@ class EnemyAiTest {
             active = Faction.ENEMY,
         )
         assertEquals(Command.Attack("e", "p", "atk"), EnemyAi.nextCommand(state, ctx))
+    }
+
+    @Test
+    fun castsAnEnemyAilmentOnTheStrongestInRangeFoe() {
+        // The disable arm is generalized over ailments too (ADR 0008): a silencer shuts down the biggest
+        // threat — silences the high-ATK foe — and the planned cast is one submit accepts.
+        val ctx2 = silencerCtx(listOf("atk", "silence"))
+        val state = stateOf(
+            combatant("e", Faction.ENEMY, Pos(1, 0)),
+            withAtk(combatant("astrong", Faction.PLAYER, Pos(0, 0)), 90),
+            withAtk(combatant("zweak", Faction.PLAYER, Pos(2, 0)), 50),
+            active = Faction.ENEMY,
+        )
+        val command = EnemyAi.nextCommand(state, ctx2)
+        assertEquals(Command.Cast("e", "astrong", "silence"), command)
+        assertIs<Gameplay.Outcome.Accepted>(Gameplay.submit(state, command, ctx2))
+    }
+
+    @Test
+    fun doesNotReApplyAnAilmentAFoeAlreadyCarriesAndAttacksInstead() {
+        // The only in-range foe is already silenced → the disable arm skips it (dedup by ailment kind) and the
+        // unit attacks instead — the ailment analogue of the stat-debuff dedup, keeping a disabler from stalling.
+        val already = combatant("p", Faction.PLAYER, Pos(0, 0)).copy(ailments = listOf(ActiveAilment(Ailment.SILENCE, 1)))
+        val state = stateOf(combatant("e", Faction.ENEMY, Pos(1, 0)), already, active = Faction.ENEMY)
+        assertEquals(Command.Attack("e", "p", "atk"), EnemyAi.nextCommand(state, silencerCtx(listOf("atk", "silence"))))
     }
 
     @Test

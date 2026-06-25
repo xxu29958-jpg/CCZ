@@ -359,7 +359,8 @@
                 },
                 "loadout": {
                     "skills": [
-                        "skill_1"
+                        "skill_1",
+                        "skill_5"
                     ]
                 }
             }
