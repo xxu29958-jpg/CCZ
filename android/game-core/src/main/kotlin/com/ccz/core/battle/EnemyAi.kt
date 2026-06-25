@@ -18,11 +18,12 @@ import com.ccz.core.model.Skill
  * bounded; when all are exhausted it returns [Command.EndTurn].
  *
  * Policy (aggressive, v1): for the next un-exhausted active-side unit (in id order — a stable tie-break;
- * HP / unit-class priority like the source game is a later refinement), attack the nearest in-range foe
- * with the first skill that can reach one; else reposition — prefer a reachable tile it could ATTACK a
- * foe from, nearest by Manhattan (so a ranged unit takes its range band, even backing away from a
- * too-close foe, and a melee unit closes to striking distance), falling back to simply closing on the
- * nearest foe; if it can do neither, Wait.
+ * own-unit action ORDER like the source game's low-HP-first / cavalry-first is a later refinement that
+ * needs a class speed model), focus-fire the most wounded in-range foe (lowest HP, tie-broken nearest
+ * then id) with the first skill that can reach it — concentrating fire on the weakest; else reposition — prefer a reachable
+ * tile it could ATTACK a foe from, nearest by Manhattan (so a ranged unit takes its range band, even
+ * backing away from a too-close foe, and a melee unit closes to striking distance), falling back to
+ * simply closing on the nearest foe; if it can do neither, Wait.
  */
 object EnemyAi {
     fun nextCommand(state: BattleState, context: BattleContext): Command {
@@ -39,13 +40,23 @@ object EnemyAi {
         return Command.Wait(actor.id)
     }
 
-    /** An attack on the nearest foe in range of the actor's first reaching skill, or null if none. */
+    /**
+     * The actor's best attack this turn, or null if no foe is in range. Among every foe reachable by a
+     * legal skill, focus-fire the most wounded (lowest current HP) — tie-broken by nearest then id, and
+     * struck with the first legal skill that reaches it. Lowest-HP is a cheap proxy for finishing a weak
+     * foe; it is NOT a predicted kill — the plan reads HP and positions but never computes the attack's
+     * damage (the [Resolver] owns that). A target reachable by several skills ties on every key, so the
+     * stable min keeps the first skill in [Gameplay.legalSkills] order.
+     */
     private fun attackCommand(state: BattleState, context: BattleContext, actor: Combatant): Command? {
-        for (skill in Gameplay.legalSkills(state, actor.id, context)) {
-            val target = nearestUnit(state, actor.pos, Gameplay.legalTargets(state, actor.id, skill, context))
-            if (target != null) return Command.Attack(actor.id, target.id, skill)
+        val reachable = Gameplay.legalSkills(state, actor.id, context).flatMap { skill ->
+            Gameplay.legalTargets(state, actor.id, skill, context).map { id -> id to skill }
         }
-        return null
+        val best = reachable
+            .mapNotNull { (id, skill) -> state.units[id]?.let { foe -> Triple(foe, id, skill) } }
+            .minWithOrNull(compareBy({ it.first.hp }, { manhattan(it.first.pos, actor.pos) }, { it.second }))
+            ?: return null
+        return Command.Attack(actor.id, best.second, best.third)
     }
 
     /** The tile to reposition to: a firing position if any is reachable, else strictly closer to the

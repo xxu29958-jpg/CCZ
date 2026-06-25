@@ -29,7 +29,7 @@
 |---|---|---|
 | 敌方回合无逐击动画 | 敌方回合在单次 `endTurn()` 内原子结算；只有最后一击的伤害徽章留存，中间各击仅进日志（不飘字）。 | 内聚触发器 ⑤「effects 逐事件时序」：需 reducer 暴露逐帧 ui 序列供 UI 按时序播放（改 UI 驱动模型）。 |
 | mid-trigger 结构事件未上表现层 | `TriggerRunner.tick`（PR4）已接进 `:app`，但触发器的**结构事件**（`UnitSpawned`/`UnitRemoved` 及 fail-closed 的 `SpawnRejected`/`MoveRejected`/`HpSetRejected`）只改 state、未投影成徽章/专属日志行——故失败的 mid-spawn 在 UI 当前**静默**（state 仍 fail-closed 正确，仅表现层不可见）。demo `mid` 为空故现 dormant。 | 同内聚触发器 ⑤「effects 逐事件时序」：in-battle 触发器内容落地时，把结构事件（尤其落点拒）上徽章/日志。`tickAfter` KDoc 诚实标注。 |
-| 敌方 AI 仅 v1 侵略式 | 远程 kiting 已落地（#58，趋向可攻位）；但**行动优先级**仍按 unit id（源游戏：低血先动、骑兵先于步兵），且无「防守区域 / 仇恨」模式。 | AI 启发式后续片（联网核实的源游戏行为已记于 `EnemyAi` KDoc）。 |
+| 敌方 AI 侵略式 + 焦点火力 | 远程 kiting（#58，趋向可攻位）+ **目标低血优先**（focus-fire 最残血可及敌，tie 最近→id）已落地；但**本方单位行动序**仍按 unit id（源游戏：低血单位先动、骑兵先于步兵——需兵种类别/速度模型），且无「防守区域 / 仇恨」模式。 | 行动序启发式后续片（需 class 速度/类别建模；联网核实的源游戏行为记于 `EnemyAi` KDoc）。 |
 | 中途存档会丢行动经济 | `BattleProgress.moved`/`acted` 刻意不持久化（save 只存全新开局态，replay 重导出）。若未来加「中途存档」捕获非全新态，会静默丢失（已耗尽单位重载后可再动）。 | 「中途存档」功能落地时：持久化 `moved`/`acted`（schema bump）或在 encode 处断言开局态。守卫注已在 `SaveMappers.stateDto`。 |
 | `:gameplay` 模块未拆 | `EnemyAi`/`Gameplay`/`WinLose`/`TriggerRunner`（battle loop / AI / trigger runner）暂居 `game-core`；架构计划是 P2/P3 落地后拆独立 `:gameplay` 模块。 | 当 game-core 因这些件膨胀 / 需独立测试边界时（`CCZ_ENGINE_RULES` §Runtime Direction）。 |
 
