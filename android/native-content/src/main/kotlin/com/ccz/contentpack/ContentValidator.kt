@@ -160,8 +160,11 @@ object ContentValidator {
             // numeric magnitude is checked here. Expression `when` over the sealed type → a future effect
             // variant is a compile error until its bound is decided.
             skill.effects.forEachIndexed { effectIndex, effect ->
+                val path = "skills[$index].effects[$effectIndex].amount"
                 val issue = when (effect) {
-                    is SkillEffect.Heal -> healAmountIssue(effect, "skills[$index].effects[$effectIndex].amount")
+                    is SkillEffect.Heal -> healAmountIssue(effect, path)
+                    is SkillEffect.StatDelta ->
+                        if (effect.amount < 1) ValidationIssue(path, "stat buff amount must be >= 1") else null
                 }
                 if (issue != null) issues += issue
             }

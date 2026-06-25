@@ -155,6 +155,31 @@ class ContentJsonLoaderTest {
     }
 
     @Test
+    fun decodesStatDeltaEffect() {
+        val content = ContentJsonLoader.load(
+            packWithEffect("{ \"type\": \"stat_delta\", \"target\": \"ally\", \"stat\": \"atk\", \"amount\": 15 }"),
+        )
+        val sd = content.tables.skills.first().effects.single() as com.ccz.core.model.SkillEffect.StatDelta
+        assertEquals(com.ccz.core.model.AffectedStat.ATK, sd.stat)
+        assertEquals(15, sd.amount)
+    }
+
+    @Test
+    fun unknownStatFailsClosed() {
+        assertFailsWith<ContentDecodeException> {
+            ContentJsonLoader.load(packWithEffect("{ \"type\": \"stat_delta\", \"target\": \"ally\", \"stat\": \"luck\", \"amount\": 15 }"))
+        }
+    }
+
+    @Test
+    fun nonPositiveStatDeltaIsAValidationIssue() {
+        val content = ContentJsonLoader.load(
+            packWithEffect("{ \"type\": \"stat_delta\", \"target\": \"ally\", \"stat\": \"atk\", \"amount\": 0 }"),
+        )
+        assertTrue(ContentValidator.validate(content).any { it.path.contains("effects") && it.message.contains("stat buff") })
+    }
+
+    @Test
     fun unknownFactionFailsClosed() {
         assertFailsWith<ContentDecodeException> { ContentJsonLoader.load(samplePack(faction = "NEUTRAL")) }
     }

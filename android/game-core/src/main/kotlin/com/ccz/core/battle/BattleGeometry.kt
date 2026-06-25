@@ -47,8 +47,14 @@ internal fun actorEligibility(state: BattleState, unitId: String, active: Factio
  * the same query⟺submit parity guarantee [actorEligibility] gives the actor gate. Exhaustive `when` over
  * the sealed effect type: a new effect variant must declare its band here or fail to compile.
  */
-internal fun castTargetAllows(effect: SkillEffect, caster: Combatant, target: Combatant): Boolean = when (effect) {
-    is SkillEffect.Heal -> when (effect.target) {
+internal fun castTargetAllows(effect: SkillEffect, caster: Combatant, target: Combatant): Boolean {
+    // Each effect declares its target band (exhaustive when → a new effect must declare one here); the band
+    // rule itself is shared so every SELF/ALLY effect resolves legality identically.
+    val band = when (effect) {
+        is SkillEffect.Heal -> effect.target
+        is SkillEffect.StatDelta -> effect.target
+    }
+    return when (band) {
         EffectTarget.SELF -> caster.id == target.id
         EffectTarget.ALLY -> sameSide(caster.faction, target.faction)
     }

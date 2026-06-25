@@ -3,6 +3,7 @@ package com.ccz.core.battle
 import com.ccz.core.model.Combatant
 import com.ccz.core.model.Pos
 import com.ccz.core.model.Skill
+import com.ccz.core.model.SkillEffect
 
 /**
  * Deterministic, aggressive enemy-turn planner. [nextCommand] yields the NEXT single [Command] for the
@@ -52,7 +53,9 @@ object EnemyAi {
      */
     private fun healCommand(state: BattleState, context: BattleContext, actor: Combatant): Command? {
         for (skill in Gameplay.legalSkills(state, actor.id, context)) {
-            if (context.skills[skill]?.effects.isNullOrEmpty()) continue
+            // Only skills that actually HEAL trigger support-healing — a non-heal effect skill (e.g. a
+            // StatDelta buff, ADR 0008 Phase 2) is not cast here (the AI does not auto-buff yet).
+            if (context.skills[skill]?.effects?.any { it is SkillEffect.Heal } != true) continue
             val target = Gameplay.legalCastTargets(state, actor.id, skill, context)
                 .mapNotNull { state.units[it] }
                 .filter { it.hp * 2 < it.hpMax }

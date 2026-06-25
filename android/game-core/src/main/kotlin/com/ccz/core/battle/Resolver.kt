@@ -1,5 +1,7 @@
 package com.ccz.core.battle
 
+import com.ccz.core.model.AffectedStat
+import com.ccz.core.model.CombatStats
 import com.ccz.core.model.DamageKind
 import com.ccz.core.model.Faction
 import com.ccz.core.model.HealMode
@@ -57,9 +59,24 @@ object Resolver {
                         events += Event.Healed(target.id, gained)
                     }
                 }
+                is SkillEffect.StatDelta -> {
+                    // Instant flat stat buff into the panel (ContentValidator enforces amount >= 1; the
+                    // floor-at-0 is defense-in-depth). No RNG.
+                    if (effect.amount != 0 && target.alive) {
+                        target = target.copy(stats = applyStatDelta(target.stats, effect.stat, effect.amount))
+                        events += Event.StatChanged(target.id, effect.stat, effect.amount)
+                    }
+                }
             }
         }
         return Resolution(state.withUnit(target).markActed(command.caster), events)
+    }
+
+    private fun applyStatDelta(stats: CombatStats, stat: AffectedStat, amount: Int): CombatStats = when (stat) {
+        AffectedStat.ATK -> stats.copy(atk = (stats.atk + amount).coerceAtLeast(0))
+        AffectedStat.DEF -> stats.copy(def = (stats.def + amount).coerceAtLeast(0))
+        AffectedStat.MAT -> stats.copy(mat = (stats.mat + amount).coerceAtLeast(0))
+        AffectedStat.RES -> stats.copy(res = (stats.res + amount).coerceAtLeast(0))
     }
 
     private fun endTurn(state: BattleState, command: Command.EndTurn, ctx: ResolveContext): Resolution {

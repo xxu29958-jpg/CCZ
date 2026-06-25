@@ -22,6 +22,12 @@ Status: Accepted（Phase 1 已落地）
 > 在结构化 `special_effe` 不可定(seid60/62 同 `"999&10"` 但 `Info` 的 % 后缀 30%/20% 异),且旧作中文文本在当前
 > 抽取里是 mojibake、字节已丢不可读 —— 照搬量级即猜(违 Evidence Rule);引擎 `PERCENT_MAX` 已备,待抽取编码修复 +
 > 量级来源厘清再接 `LegacySkillMapper`(见 `docs/KNOWN_ISSUES.md`)。
+>
+> **敌方 AI 支援治疗 + Phase 2 瞬时 stat-delta 已落地**:`EnemyAi` support-first heal(半血以下友军→治最残;cast 技
+> 永不当攻击)使效果双向可见(程远志获 heal)。`SkillEffect.StatDelta`(SELF/ALLY,flat 量瞬时入 `CombatStats`,无
+> 时长;`Event.StatChanged` 上日志/蓝徽章)+ `enum AffectedStat`;`castTargetAllows` 收口两效果 band(单 when),
+> `ContentValidator` amount≥1;零 RNG、不 bump,reducer/board cast 路由通用故零改。张飞「咆哮」(ally atk+15)可玩。
+> `cleanse` 留 Phase 3(需先有 ailment);AI auto-buff 后续(`healCommand` 仅对含 Heal 效果触发)。
 
 ## Context
 
