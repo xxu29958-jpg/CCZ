@@ -3,6 +3,8 @@ package com.ccz.app.battle
 import com.ccz.core.battle.BattleMap
 import com.ccz.core.battle.MapTile
 import com.ccz.core.model.ActiveAilment
+import com.ccz.core.model.ActiveEffect
+import com.ccz.core.model.AffectedStat
 import com.ccz.core.model.Ailment
 import com.ccz.core.model.CombatIdentity
 import com.ccz.core.model.CombatRates
@@ -94,6 +96,21 @@ class TerrainInfoTest {
             ailments = listOf(ActiveAilment(Ailment.SILENCE, 2)),
         )
         assertEquals("HP 30/100 · ATK 80 · DEF 20 · MAT 30 · RES 10 · 沉默 2", combatantSummary(unit))
+    }
+
+    @Test
+    fun combatantSummaryAppendsActiveTimedStatEffectsWithSignAndRemaining() {
+        // ADR 0008 buff/debuff legibility: a +15 ATK buff and a -20 DEF debuff show their signed delta and
+        // remaining turns, so the stat number alone no longer hides that it is temporary.
+        val unit = Combatant(
+            identity = CombatIdentity("u", "Hero", "cls", Faction.PLAYER),
+            pos = Pos(0, 0),
+            vitals = CombatVitals(hp = 30, hpMax = 100),
+            stats = CombatStats(atk = 95, def = 0, mat = 30, res = 10),
+            rates = CombatRates(),
+            effects = listOf(ActiveEffect(AffectedStat.ATK, 15, 2), ActiveEffect(AffectedStat.DEF, -20, 1)),
+        )
+        assertEquals("HP 30/100 · ATK 95 · DEF 0 · MAT 30 · RES 10 · ATK +15 (2) · DEF -20 (1)", combatantSummary(unit))
     }
 
     @Test

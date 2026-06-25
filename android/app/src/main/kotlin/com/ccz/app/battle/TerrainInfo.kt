@@ -51,13 +51,18 @@ fun terrainBonusLines(info: TerrainInfo): List<String> = buildList {
 }
 
 /**
- * One-line readout of a unit's CURRENT combat panel — HP plus the four stats, then any active ailment with
- * its remaining turns (e.g. "· 沉默 2") — so the player can see the live effect of a heal / buff / debuff /
- * ailment on the inspect panel (ADR 0008 effects otherwise only flash a one-shot badge). A pure read of
- * authoritative [Combatant] state; it computes nothing.
+ * One-line readout of a unit's CURRENT combat panel — HP plus the four stats, then any active TIMED stat
+ * effect (the signed delta + remaining turns, e.g. "· ATK +15 (2)") and any active ailment with its remaining
+ * turns (e.g. "· 沉默 2") — so the player can see the live effect of a heal / buff / debuff / ailment on the
+ * inspect panel (ADR 0008 effects otherwise only flash a one-shot badge). Without the timed-effect clause the
+ * stat number alone gives no signal a buff/debuff is temporary or for how long. A pure read of authoritative
+ * [Combatant] state; it computes nothing.
  */
 fun combatantSummary(unit: Combatant): String {
     val panel = "HP ${unit.hp}/${unit.hpMax} · ATK ${unit.stats.atk} · DEF ${unit.stats.def} · MAT ${unit.stats.mat} · RES ${unit.stats.res}"
+    val effects = unit.effects.joinToString("") {
+        " · ${it.stat.name} ${if (it.amount >= 0) "+${it.amount}" else "${it.amount}"} (${it.remaining})"
+    }
     val ailments = unit.ailments.joinToString("") { " · ${ailmentLabel(it.kind)} ${it.remaining}" }
-    return panel + ailments
+    return panel + effects + ailments
 }
