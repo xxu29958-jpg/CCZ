@@ -32,6 +32,9 @@ enum class RejectReason {
     // The caster is silenced (ADR 0008 ailment) — a command-legality gate that forbids casting while it lasts
     // (the unit may still move/attack/wait, so silence is checked only on the Cast path, not actorEligibility).
     CASTER_SILENCED,
+    // The actor is stunned (ADR 0008 ailment) — forbids Move/Attack/Cast while it lasts. Wait stays legal (so a
+    // turn can still advance past the unit), so stun is gated on each acting path, NOT in actorEligibility/checkWait.
+    ACTOR_STUNNED,
 }
 
 /**
@@ -64,6 +67,7 @@ object CommandValidator {
         if (state.hasActed(command.unit)) return RejectReason.UNIT_ALREADY_ACTED
         if (state.hasMoved(command.unit)) return RejectReason.UNIT_ALREADY_MOVED
         val unit = state.units.getValue(command.unit)
+        if (unit.stunned) return RejectReason.ACTOR_STUNNED
         val unitClass = context.classes[unit.classId] ?: return RejectReason.UNKNOWN_CLASS
         if (!context.map.inBounds(command.to)) return RejectReason.DESTINATION_OUT_OF_BOUNDS
         if (!context.map.tileAt(command.to).passable) return RejectReason.DESTINATION_IMPASSABLE
@@ -80,6 +84,7 @@ object CommandValidator {
         // Action economy: one action per unit per turn (moving first is allowed; acting twice is not).
         if (state.hasActed(command.attacker)) return RejectReason.UNIT_ALREADY_ACTED
         val attacker = state.units.getValue(command.attacker)
+        if (attacker.stunned) return RejectReason.ACTOR_STUNNED
         val skill = context.skills[command.skill] ?: return RejectReason.UNKNOWN_SKILL
         if (!context.loadoutAllows(command.attacker, command.skill)) return RejectReason.SKILL_NOT_IN_LOADOUT
         // An effect (cast) skill is not an attack — it must go through Command.Cast, never the damage path
@@ -105,8 +110,10 @@ object CommandValidator {
         actorEligibility(state, command.caster, state.active)?.let { return it }
         if (state.hasActed(command.caster)) return RejectReason.UNIT_ALREADY_ACTED
         val caster = state.units.getValue(command.caster)
-        // Silence forbids casting (the legality-gate ailment). Single-sourced through Combatant.silenced so the
-        // legalCastTargets preview (which returns empty when the caster is silenced) cannot disagree with this gate.
+        // Stun (forbids all actions) is checked before silence (forbids only casting) so a stunned caster reports
+        // the more fundamental reason. Both are single-sourced through Combatant.stunned/silenced so the
+        // legalCastTargets preview (which returns empty for either) cannot disagree with this gate.
+        if (caster.stunned) return RejectReason.ACTOR_STUNNED
         if (caster.silenced) return RejectReason.CASTER_SILENCED
         val skill = context.skills[command.skill] ?: return RejectReason.UNKNOWN_SKILL
         if (!context.loadoutAllows(command.caster, command.skill)) return RejectReason.SKILL_NOT_IN_LOADOUT

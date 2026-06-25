@@ -42,6 +42,7 @@ object Gameplay {
         // Action economy: a unit that already moved or acted this turn has no legal destinations.
         if (state.hasMoved(unitId) || state.hasActed(unitId)) return emptySet()
         val unit = state.units.getValue(unitId)
+        if (unit.stunned) return emptySet() // a stunned unit may take no action (single-sourced with checkMove)
         val unitClass = context.classes[unit.classId] ?: return emptySet()
         val occupancy = occupancyOf(state, exclude = unit.id)
         return MoveReachability.reachableStops(
@@ -65,6 +66,7 @@ object Gameplay {
         // Action economy: an exhausted unit (already acted this turn) can attack no one.
         if (state.hasActed(attackerId)) return emptySet()
         val attacker = state.units.getValue(attackerId)
+        if (attacker.stunned) return emptySet() // a stunned unit may take no action (single-sourced with checkAttack)
         val skill = context.skills[skillId] ?: return emptySet()
         if (!context.loadoutAllows(attackerId, skillId)) return emptySet()
         // An effect (cast) skill is cast-only — never an attack (single-sourced with checkAttack's
@@ -86,17 +88,18 @@ object Gameplay {
      * presentation layer can highlight valid cast targets without owning the targeting rule — computed here
      * exactly as [CommandValidator] would accept it (the SELF/ALLY band is single-sourced in
      * [castTargetAllows], so this preview and the submit gate never disagree). Pure: consumes no RNG, never
-     * mutates. Returns empty when the caster cannot act, is silenced (the ADR 0008 legality-gate ailment), the
-     * skill is unknown / not in loadout / carries no effects (a damage-only skill is cast via nothing — use
-     * [legalTargets] for it), or no living in-range unit satisfies every effect's band. [submit] stays the sole
-     * authority that mutates state.
+     * mutates. Returns empty when the caster cannot act, is stunned or silenced (the ADR 0008 legality-gate
+     * ailments), the skill is unknown / not in loadout / carries no effects (a damage-only skill is cast via
+     * nothing — use [legalTargets] for it), or no living in-range unit satisfies every effect's band. [submit]
+     * stays the sole authority that mutates state.
      */
     fun legalCastTargets(state: BattleState, casterId: String, skillId: String, context: BattleContext): Set<String> {
         if (actorEligibility(state, casterId, state.active) != null) return emptySet()
         if (state.hasActed(casterId)) return emptySet()
         val caster = state.units.getValue(casterId)
-        // A silenced caster can cast nothing (single-sourced with checkCast's CASTER_SILENCED via silenced).
-        if (caster.silenced) return emptySet()
+        // A stunned or silenced caster can cast nothing (single-sourced with checkCast's ACTOR_STUNNED /
+        // CASTER_SILENCED via the same stunned/silenced properties).
+        if (caster.stunned || caster.silenced) return emptySet()
         val skill = context.skills[skillId] ?: return emptySet()
         if (!context.loadoutAllows(casterId, skillId) || skill.effects.isEmpty()) return emptySet()
         return state.units.values
@@ -123,6 +126,7 @@ object Gameplay {
         if (actorEligibility(state, attackerId, state.active) != null) return emptyList()
         // Action economy: an exhausted unit has no attack skills available this turn.
         if (state.hasActed(attackerId)) return emptyList()
+        if (state.units.getValue(attackerId).stunned) return emptyList() // stunned → no usable skills this turn
         val loadout = context.loadouts[attackerId] ?: context.skills.keys.toList()
         return loadout.filter { it in context.skills }
     }

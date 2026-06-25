@@ -34,4 +34,5 @@ internal fun phraseOf(reason: RejectReason): String = when (reason) {
     RejectReason.OUT_OF_CAST_RANGE -> "Out of cast range"
     RejectReason.CASTER_SILENCED -> "Silenced — can't cast"
     RejectReason.SKILL_IS_CAST_ONLY -> "Cast skill — can't attack with it"
+    RejectReason.ACTOR_STUNNED -> "Stunned — can't act"
 }

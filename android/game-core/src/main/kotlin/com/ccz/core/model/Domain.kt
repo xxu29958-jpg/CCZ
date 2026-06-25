@@ -112,6 +112,9 @@ data class Combatant(
     /** True while a [Ailment.SILENCE] is active — the unit may not cast (it may still move/attack/wait). */
     val silenced: Boolean get() = ailments.any { it.kind == Ailment.SILENCE }
 
+    /** True while a [Ailment.STUN] is active — the unit may take no action except waiting (it is skipped). */
+    val stunned: Boolean get() = ailments.any { it.kind == Ailment.STUN }
+
     fun withHp(hp: Int): Combatant = copy(vitals = vitals.copy(hp = hp))
 }
 

@@ -53,7 +53,9 @@ Status: Accepted（Phase 1 已落地）
 > ENEMY + duration≥1。大兴山关羽获 `skill_5`「沉默」可对敌方治疗者程远志施放 → 程远志被沉默后 `EnemyAi.healCommand` 取空目标转普攻
 > (AI 正确降级、不死循环)。**双向可见**:检视面板 `combatantSummary` 显「沉默 N」+ `Event.StatusApplied`→紫色徽章 + 日志行。
 > **不 bump RULES_VERSION**:合法性门从不进回放折叠(回放走 `Resolver.apply` 非 `CommandValidator`)、golden 无 ailment 故 tick no-op
-> 逐字节不变。**剩**:毒 DoT(改同场输出→bump)/麻痹(挡全部命令)/混乱 → cleanse → 概率/RNG → AoE/召唤/控制/天气/被动 aura。
+> 逐字节不变。
+>
+> **第二个命令合法性 ailment — 麻痹(Stun)已落地**:`Ailment.STUN`(挡 Move/Attack/Cast,**仅 Wait 合法**故回合可越过该单位)。**复用沉默机器零 schema/RULES bump**(`ApplyAilment`/`ActiveAilment`/tick/`ailmentKind` 白名单皆 generic enum,STUN 自动扩;save v5 已支持、内容 `apply_ailment` 已解 `ailment` 字段)。`Combatant.stunned` 派生 + `RejectReason.ACTOR_STUNNED`;门放 `checkMove`/`checkAttack`/`checkCast` **起始**(stun 先于 silence 报更根本因)+ **全部 preview**(`legalDestinations`/`legalTargets`/`legalSkills`/`legalCastTargets` 对 stunned 返空)——后者是 **AI 终止的关键**:`EnemyAi` 见空 preview 即把 stunned actor 降级为 `Command.Wait`(合法)而非提交被拒的 Move/Attack(否则 `runEnemyTurn` 遇拒会中止整个敌方回合)。**刻意不**放 `actorEligibility`/`checkWait`(共享给 Wait,否则 stunned 单位永不 markActed → AI 死锁)。大兴山张飞获 `skill_6`「麻痹」(stun enemy,duration 1);检视面板显「麻痹 N」+ 徽章 + 日志(复用沉默路径)。`ailmentLabel`/`RejectPhrase` 穷尽 when 编译期强制补 STUN/ACTOR_STUNNED 臂。**剩**:毒 DoT(改同场输出→bump)/混乱 → cleanse → 概率/RNG → AoE/召唤/控制/天气/被动 aura。
 
 ## Context
 

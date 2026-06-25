@@ -12,6 +12,7 @@ internal fun unitName(state: BattleState, id: String): String = state.units[id]?
 /** Chinese display label for an ailment kind (ADR 0008); exhaustive `when` so a new kind must add its label. */
 internal fun ailmentLabel(kind: Ailment): String = when (kind) {
     Ailment.SILENCE -> "沉默"
+    Ailment.STUN -> "麻痹"
 }
 
 /**
