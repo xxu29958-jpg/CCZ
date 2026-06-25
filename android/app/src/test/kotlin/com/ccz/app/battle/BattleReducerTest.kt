@@ -300,6 +300,25 @@ class BattleReducerTest {
     }
 
     @Test
+    fun tappingAnEmptyTileRecordsItForTerrainInspection() {
+        val ui = start()
+        assertNull("nothing is inspected before the first tap", ui.inspected)
+        val empty = Pos(DemoBattle.WIDTH - 1, DemoBattle.HEIGHT - 1)
+        val after = reducer.tapTile(ui, empty)
+        assertEquals("the tapped tile is recorded for the terrain panel", empty, after.inspected)
+        assertNull("an empty-tile tap selects nothing", after.selection)
+    }
+
+    @Test
+    fun tappingAUnitRecordsItsTileForInspectionWhileSelecting() {
+        val ui = start()
+        val guanPos = ui.state.units.getValue("guan").pos
+        val after = reducer.tapTile(ui, guanPos)
+        assertEquals("selecting a unit also surfaces the terrain it stands on", guanPos, after.inspected)
+        assertEquals("the unit is still selected", "guan", after.selection?.unit)
+    }
+
+    @Test
     fun tappingATileHoldingOnlyADeadUnitSelectsNothing() {
         val base = start()
         val foe = base.state.units.getValue("foe")

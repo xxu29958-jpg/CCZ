@@ -40,6 +40,9 @@ object CampaignRuntime {
     /** Both packs ship as one campaign release; their `content_version` is shared (ADR 0007). */
     fun contentVersion(): String = battlePack().manifest.contentVersion
 
+    /** Display names for the campaign's terrain (terrainId → name), for the battle's tile inspector. */
+    fun terrainNames(): Map<String, String> = battlePack().tables.terrain.associate { it.id to it.name }
+
     fun context(): BattleContext = setup.context
 
     fun initialState(): BattleState = setup.initialState

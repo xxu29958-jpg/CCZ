@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.ccz.app.battle.BattleLabels
 import com.ccz.app.battle.BattleReducer
 import com.ccz.app.battle.BattleScreen
 import com.ccz.app.campaign.CampaignRuntime
@@ -58,11 +59,15 @@ private fun BattleHost() {
     val context = remember { CampaignRuntime.context() }
     val reducer = remember { BattleReducer(context, CampaignRuntime.script(), CampaignRuntime.scriptContext()) }
     val initial = remember { reducer.initial(CampaignRuntime.initialState()) }
+    val terrainNames = remember { CampaignRuntime.terrainNames() }
     BattleScreen(
         map = context.map,
         reducer = reducer,
         initial = initial,
-        skillLabel = { id -> context.skills[id]?.name ?: id },
+        labels = BattleLabels(
+            skill = { id -> context.skills[id]?.name ?: id },
+            terrain = { id -> terrainNames[id] ?: id },
+        ),
         script = CampaignRuntime.script(),
     )
 }
