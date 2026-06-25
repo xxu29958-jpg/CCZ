@@ -163,6 +163,31 @@ class BattleReducerTest {
     }
 
     @Test
+    fun endTurnFramesPlaysOneFramePerEnemyCommandEndingBackAtThePlayer() {
+        val ui = start()
+        val frames = reducer.endTurnFrames(ui)
+        assertTrue("the enemy turn animates over multiple frames, not a single collapsed one", frames.size > 1)
+        assertEquals("the last frame returns control to the player", Faction.PLAYER, frames.last().state.active)
+        assertTrue("the frames show progression (the board changes across the sequence)", frames.first().state != frames.last().state)
+    }
+
+    @Test
+    fun endTurnIsExactlyTheLastPlaybackFrame() {
+        // The collapsed (non-animated) endTurn is just the final frame — so the authority path is unchanged and
+        // the screen can either animate the frames or take the last; both agree on the settled state.
+        val ui = start()
+        assertEquals(reducer.endTurnFrames(ui).last(), reducer.endTurn(ui))
+    }
+
+    @Test
+    fun endTurnFramesOfADecidedBattleIsASingleNoOpFrame() {
+        val won = reducer.initial(withDead(DemoBattle.initialState(), "foe", "foe2"))
+        val frames = reducer.endTurnFrames(won)
+        assertEquals("a decided battle has no enemy turn to animate — one frame", 1, frames.size)
+        assertSame("the frame is the unchanged state", won, frames.single())
+    }
+
+    @Test
     fun endTurnRunsTheEnemyTurnAndReturnsControlToThePlayer() {
         val ui = start()
         val after = reducer.endTurn(ui)

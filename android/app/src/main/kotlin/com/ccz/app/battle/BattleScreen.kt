@@ -11,6 +11,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,6 +24,10 @@ import com.ccz.core.battle.BattleOutcome
 import com.ccz.core.battle.BattleState
 import com.ccz.core.event.SScript
 import com.ccz.core.event.WinLoseCondition
+import kotlinx.coroutines.delay
+
+/** How long each enemy-turn playback frame (one blow) is shown before advancing to the next. */
+private const val PLAYBACK_STEP_MS = 450L
 
 /**
  * Display-name lookups the battle UI needs, each resolving an id to a human name from the campaign's
@@ -49,13 +54,33 @@ fun BattleScreen(
     script: SScript,
 ) {
     var ui by remember { mutableStateOf(initial) }
+    // Enemy-turn playback: a non-null [playback] queue means the enemy turn is animating one blow at a time;
+    // input is locked (animating) until it drains. [playbackId] is a monotonic token the effect keys on — set
+    // synchronously by End Turn so the lock engages immediately, and bumped each turn so even two consecutive
+    // turns that produced value-equal frame lists still replay (keying on the list value would skip that). The
+    // effect shows each frame for [PLAYBACK_STEP_MS] (no trailing delay after the last), then nulls the queue to
+    // unlock. Frames are reducer output (authority); this layer only paces them — it owns no combat truth.
+    var playback by remember { mutableStateOf<List<BattleUiState>?>(null) }
+    var playbackId by remember { mutableStateOf(0) }
+    val animating = playback != null
+
+    LaunchedEffect(playbackId) {
+        val frames = playback ?: return@LaunchedEffect
+        frames.forEachIndexed { index, frame ->
+            ui = frame
+            if (index < frames.lastIndex) delay(PLAYBACK_STEP_MS)
+        }
+        playback = null
+    }
+
     Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
         OutcomeBanner(outcome = ui.outcome)
-        Hud(ui = ui, script = script, onEndTurn = { ui = reducer.endTurn(ui) })
+        // While the enemy turn animates, input is locked so the player can't command a half-resolved turn.
+        Hud(ui = ui, script = script, onEndTurn = { if (!animating) { playback = reducer.endTurnFrames(ui); playbackId++ } })
         Spacer(modifier = Modifier.height(12.dp))
-        SkillBar(ui = ui, skillLabel = labels.skill, onSelectSkill = { ui = reducer.selectSkill(ui, it) })
-        WaitButton(ui = ui, onWait = { ui = reducer.wait(ui) })
-        BattleBoard(map = map, ui = ui, onTapTile = { pos -> ui = reducer.tapTile(ui, pos) })
+        SkillBar(ui = ui, skillLabel = labels.skill, onSelectSkill = { if (!animating) ui = reducer.selectSkill(ui, it) })
+        WaitButton(ui = ui, onWait = { if (!animating) ui = reducer.wait(ui) })
+        BattleBoard(map = map, ui = ui, onTapTile = { pos -> if (!animating) ui = reducer.tapTile(ui, pos) })
         TerrainPanel(map = map, ui = ui, terrainName = labels.terrain)
         Spacer(modifier = Modifier.height(12.dp))
         EventLog(log = ui.log)
