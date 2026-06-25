@@ -3,10 +3,12 @@ package com.ccz.core.battle
 import com.ccz.core.event.SScript
 import com.ccz.core.event.WinLoseCondition
 import com.ccz.core.model.DamageKind
+import com.ccz.core.model.EffectTarget
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
 import com.ccz.core.model.RangeSpec
 import com.ccz.core.model.Skill
+import com.ccz.core.model.SkillEffect
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -224,5 +226,46 @@ class GameplayQueryTest {
     fun outcomeIsOngoingWithEmptyWinLoseLists() {
         val state = stateOf(combatant("p", Faction.PLAYER, Pos(0, 0)), combatant("e", Faction.ENEMY, Pos(1, 0), hp = 0))
         assertEquals(BattleOutcome.ONGOING, Gameplay.outcome(state, sScript()), "no conditions configured → never decided")
+    }
+
+    // --- threat-range preview: the read-only "danger zone" overlay the presentation layer paints. ---
+
+    @Test
+    fun threatenedTilesAreMoveReachExpandedByAttackRange() {
+        // A melee unit (move 1, range 1) at the center of an open 5x5: it can stand or step to any of the 4
+        // neighbours, and from each strike one tile out → the danger zone is the radius-2 Manhattan diamond.
+        val state = stateOf(combatant("e", Faction.ENEMY, Pos(2, 2)), active = Faction.PLAYER)
+        val ctx = contextOf(flat(5, 5), classes = classesOf(move = 1), skills = skillsOf(range = RangeSpec(1, 1)))
+        val threat = Gameplay.threatenedTiles(state, "e", ctx)
+        // Radius-2 diamond around (2,2): center + 4 at r1 + 8 at r2 = 13 tiles, all in bounds.
+        assertEquals(13, threat.size, "the danger zone is the radius-2 diamond")
+        assertTrue(Pos(4, 2) in threat && Pos(2, 4) in threat, "reach-2 tiles are threatened")
+        assertTrue(Pos(3, 3) in threat, "a diagonal-2 tile reachable via a step then a strike is threatened")
+        assertFalse(Pos(0, 0) in threat || Pos(4, 4) in threat, "tiles beyond move+range are safe")
+    }
+
+    @Test
+    fun threatenedTilesAreNotGatedByActiveSideOrActionEconomy() {
+        // Unlike legalDestinations/legalTargets, threat is a planning preview: it answers for an ENEMY on the
+        // PLAYER's turn (and for a unit that has already acted) — exactly the case where the move query is empty.
+        val state = stateOf(combatant("e", Faction.ENEMY, Pos(1, 1)), active = Faction.PLAYER).markActed("e")
+        val ctx = contextOf(flat(5, 5), classes = classesOf(move = 1), skills = skillsOf(range = RangeSpec(1, 1)))
+        assertTrue(Gameplay.legalDestinations(state, "e", ctx).isEmpty(), "the off-side, acted unit has no legal moves")
+        assertTrue(Gameplay.threatenedTiles(state, "e", ctx).isNotEmpty(), "but its threat zone is still previewable")
+    }
+
+    @Test
+    fun threatenedTilesAreEmptyWithoutAReachableDamageSkill() {
+        val ctx = contextOf(flat(5, 5))
+        assertEquals(emptySet(), Gameplay.threatenedTiles(stateOf(combatant("m", Faction.PLAYER, Pos(0, 0))), "ghost", ctx), "unknown unit")
+        val dead = stateOf(combatant("m", Faction.PLAYER, Pos(0, 0), hp = 0))
+        assertEquals(emptySet(), Gameplay.threatenedTiles(dead, "m", ctx), "a dead unit threatens nothing")
+        // A unit whose only skill is an effect (cast) skill has no ATTACK reach → no danger zone.
+        val healOnly = mapOf(
+            "heal" to Skill("heal", "Heal", DamageKind.PHYSICAL, 0, RangeSpec(0, 1), listOf(SkillEffect.Heal(EffectTarget.ALLY, 30))),
+        )
+        val state = stateOf(combatant("m", Faction.PLAYER, Pos(2, 2)))
+        val healCtx = contextOf(flat(5, 5), skills = healOnly, loadouts = mapOf("m" to listOf("heal")))
+        assertEquals(emptySet(), Gameplay.threatenedTiles(state, "m", healCtx), "a cast-only unit has no attack threat")
     }
 }

@@ -28,7 +28,7 @@ import com.ccz.core.model.Pos
 private val CELL_SIZE = 44.dp
 
 /** The mutually-exclusive highlight a tile can carry, derived from the snapshot. */
-private enum class CellMark { NONE, MOVE, SELECTED, TARGET, CAST_TARGET }
+private enum class CellMark { NONE, MOVE, SELECTED, TARGET, CAST_TARGET, DANGER }
 
 /** Everything needed to draw one grid cell, derived from the current snapshot. */
 private data class CellModel(
@@ -53,7 +53,7 @@ fun BattleBoard(map: BattleMap, ui: BattleUiState, onTapTile: (Pos) -> Unit) {
     Column(modifier = Modifier.verticalScroll(rememberScrollState()).horizontalScroll(rememberScrollState())) {
         for (y in 0 until map.height) {
             BoardRow(
-                cells = (0 until map.width).map { x -> cellAt(map, ui.selection, unitsByPos, effectsByPos, Pos(x, y)) },
+                cells = (0 until map.width).map { x -> cellAt(map, ui, unitsByPos, effectsByPos, Pos(x, y)) },
                 onTapTile = onTapTile,
             )
         }
@@ -124,11 +124,12 @@ private fun EffectBadge(effect: BattleEffect, modifier: Modifier = Modifier) {
 
 private fun cellAt(
     map: BattleMap,
-    selection: Selection?,
+    ui: BattleUiState,
     unitsByPos: Map<Pos, Combatant>,
     effectsByPos: Map<Pos, BattleEffect>,
     pos: Pos,
 ): CellModel {
+    val selection = ui.selection
     val unit = unitsByPos[pos]
     val targetMark = if (selection?.castSkill == true) CellMark.CAST_TARGET else CellMark.TARGET
     val mark = when {
@@ -138,6 +139,9 @@ private fun cellAt(
         unit != null && unit.id in (selection?.targets ?: emptySet()) -> targetMark
         unit != null && unit.id == selection?.unit -> CellMark.SELECTED
         pos in (selection?.destinations ?: emptySet()) -> CellMark.MOVE
+        // Lowest precedence: the threat overlay only shows when nothing is selected (the reducer clears one
+        // when it sets the other), so a selection mark always wins on any shared tile.
+        pos in ui.threat -> CellMark.DANGER
         else -> CellMark.NONE
     }
     // effectsByPos already anchors the latest effect to whoever stands (or just fell) on each tile — a
@@ -150,13 +154,14 @@ private fun tileColor(cell: CellModel): Color = when {
     cell.mark == CellMark.TARGET -> Color(0xFFEF9A9A)
     cell.mark == CellMark.CAST_TARGET -> Color(0xFFA5D6A7) // green-tint for a SELF/ALLY cast target
     cell.mark == CellMark.MOVE || cell.mark == CellMark.SELECTED -> Color(0xFF9CCC65)
+    cell.mark == CellMark.DANGER -> Color(0xFFFFB74D) // hazard-amber for an enemy's threat zone
     cell.tile.moveCost > 1 -> Color(0xFF558B2F)
     else -> Color(0xFFCFD8DC)
 }
 
 private fun borderWidth(cell: CellModel) = when (cell.mark) {
     CellMark.SELECTED -> 3.dp
-    CellMark.TARGET, CellMark.CAST_TARGET -> 2.dp
+    CellMark.TARGET, CellMark.CAST_TARGET, CellMark.DANGER -> 2.dp
     else -> 1.dp
 }
 
@@ -164,6 +169,7 @@ private fun borderColor(cell: CellModel): Color = when (cell.mark) {
     CellMark.SELECTED -> Color(0xFFFFC107)
     CellMark.TARGET -> Color(0xFFD32F2F)
     CellMark.CAST_TARGET -> Color(0xFF2E7D32)
+    CellMark.DANGER -> Color(0xFFE64A19) // deep-orange outline, distinct from the red attack-target ring
     else -> Color(0xFF90A4AE)
 }
 

@@ -64,7 +64,13 @@ data class Selection(
  * badges, a pure translation of the authority's events), a short human-readable event log, and
  * the tile the player last tapped ([inspected], null until the first tap) so the UI can show that
  * terrain's cover — a read-only readout of the map, never a command.
+ *
+ * Flat immutable snapshot: each field is an independent read-only view facet projected from the authority,
+ * grown additively as the board gained affordances (selection → effects → log → outcome → inspected → threat).
+ * Grouping them would ripple through every render/reducer call site (`ui.selection`, `ui.threat`, …) for no
+ * cohesion gain, so the parameter gate is suppressed (a view-model holder, not a god-object).
  */
+@Suppress("LongParameterList")
 data class BattleUiState(
     val state: BattleState,
     val selection: Selection? = null,
@@ -72,6 +78,10 @@ data class BattleUiState(
     val log: List<String> = emptyList(),
     val outcome: BattleOutcome = BattleOutcome.ONGOING,
     val inspected: Pos? = null,
+    // The "danger zone" of the last-tapped non-selectable unit (typically an enemy): every tile it could
+    // strike (Gameplay.threatenedTiles). Empty whenever a player unit is selected or the board is cleared —
+    // it is a read-only planning overlay, mutually exclusive with the move/attack selection (BattleReducer).
+    val threat: Set<Pos> = emptySet(),
 )
 
 /**
@@ -182,8 +192,9 @@ class BattleReducer(
         val skills = Gameplay.legalSkills(ui.state, unitId, context)
         // Selectable while the unit can still do something this turn: a fresh unit has destinations and
         // skills; a unit that has only MOVED has no destinations but keeps its skills (move-then-attack)
-        // and can Wait; a fully-acted (or off-side / dead) unit has neither, so it cannot be selected.
-        if (destinations.isEmpty() && skills.isEmpty()) return clearSelection(ui)
+        // and can Wait; a fully-acted (or off-side / dead) unit has neither, so it cannot be selected as the
+        // player's actor — instead preview its threat range (the typical case being an enemy tap).
+        if (destinations.isEmpty() && skills.isEmpty()) return previewThreat(ui, unitId)
         val skill = skills.firstOrNull()
         val (targets, cast) = skill?.let { targetsOf(ui.state, unitId, it) } ?: (emptySet<String>() to false)
         return ui.copy(
@@ -196,8 +207,19 @@ class BattleReducer(
                 castSkill = cast,
             ),
             effects = emptyList(),
+            // Selecting the player's own actor replaces any enemy threat overlay with its move/attack options.
+            threat = emptySet(),
         )
     }
+
+    /**
+     * Shows a non-selectable unit's danger zone (every tile [Gameplay.threatenedTiles] reports it could strike)
+     * instead of clearing on the tap — so a player can tap an enemy to see its reach and plan around the
+     * focus-fire AI. Read-only: it owns no rule, the tiles come straight from the authority's query, and it
+     * clears the player's own selection (the overlay and a move/attack selection are mutually exclusive).
+     */
+    private fun previewThreat(ui: BattleUiState, unitId: String): BattleUiState =
+        clearSelection(ui).copy(threat = Gameplay.threatenedTiles(ui.state, unitId, context))
 
     fun endTurn(ui: BattleUiState): BattleUiState {
         if (ui.outcome != BattleOutcome.ONGOING) return ui
@@ -249,7 +271,10 @@ class BattleReducer(
     /** Applies one accepted enemy command: carry the last blow's badges forward, log it, refresh verdict. */
     private fun applyEnemyCommand(ui: BattleUiState, command: Command, resolution: Resolution): BattleUiState {
         val effects = effectsOf(resolution.events).ifEmpty { ui.effects }
-        return ui.copy(selection = null, effects = effects)
+        // threat = empty as defense-in-depth: endTurn already clears it before the enemy loop, but these
+        // helpers don't go through clearSelection, so clear it locally to keep the no-stale-overlay invariant
+        // robust to any future entry into the enemy turn.
+        return ui.copy(selection = null, effects = effects, threat = emptySet())
             .withVerdict(resolution.state, appendLog(ui.log, enemyLogLine(command, resolution.events, resolution.state)))
     }
 
@@ -259,7 +284,7 @@ class BattleReducer(
         when (val result = Gameplay.submit(ui.state, Command.EndTurn(ui.state.active), context)) {
             is Gameplay.Outcome.Accepted -> {
                 val resolution = tickAfter(result.resolution)
-                ui.copy(selection = null).withVerdict(resolution.state, appendLog(appendLog(ui.log, note), turnBanner(resolution.state)))
+                ui.copy(selection = null, threat = emptySet()).withVerdict(resolution.state, appendLog(appendLog(ui.log, note), turnBanner(resolution.state)))
             }
             is Gameplay.Outcome.Rejected -> ui.copy(log = appendLog(ui.log, note))
         }
@@ -360,5 +385,5 @@ class BattleReducer(
         return copy(state = state, outcome = verdict, log = banner)
     }
 
-    private fun clearSelection(ui: BattleUiState): BattleUiState = ui.copy(selection = null, effects = emptyList())
+    private fun clearSelection(ui: BattleUiState): BattleUiState = ui.copy(selection = null, effects = emptyList(), threat = emptySet())
 }
