@@ -10,14 +10,20 @@ package com.ccz.core.model
  */
 sealed interface SkillEffect {
     /**
-     * Restore a flat [amount] of HP to the cast's target (capped at its max HP). Deterministic and
-     * RNG-free — the same clamp terrain healing uses. [amount] is a content-authored parameter on the
-     * same footing as [Skill.powerCoeff] (ADR 0008 magnitude gate: gated by contentVersion, NOT
-     * RULES_VERSION). It carries no `require`: a non-positive amount is rejected as a clean
-     * `ContentValidator` issue (>= 1) and, defensively, the resolver only heals when amount > 0.
+     * Restore HP to the cast's target (capped at its max HP), by [amount] interpreted per [mode]:
+     * [HealMode.FLAT] = a flat HP amount; [HealMode.PERCENT_MAX] = a percent of the target's max HP
+     * (the legacy 战法 "恢复生命X%" shape — see ADR 0008). Deterministic and RNG-free; percent uses
+     * integer truncating math (`hpMax * amount / 100`), no floats. [amount] is a content-authored
+     * parameter on the same footing as [Skill.powerCoeff] (ADR 0008 magnitude gate: gated by
+     * contentVersion, NOT RULES_VERSION). It carries no `require`: a bad amount is rejected as a clean
+     * `ContentValidator` issue (FLAT >= 1; PERCENT_MAX in 1..100), and the resolver only heals when the
+     * computed amount > 0.
      */
-    data class Heal(val target: EffectTarget, val amount: Int) : SkillEffect
+    data class Heal(val target: EffectTarget, val amount: Int, val mode: HealMode = HealMode.FLAT) : SkillEffect
 }
+
+/** How a [SkillEffect.Heal]'s amount is read: a flat HP value, or a percent of the target's max HP. */
+enum class HealMode { FLAT, PERCENT_MAX }
 
 /**
  * Who a [SkillEffect] lands on, relative to the caster. Phase 1: the caster itself ([SELF]) or a

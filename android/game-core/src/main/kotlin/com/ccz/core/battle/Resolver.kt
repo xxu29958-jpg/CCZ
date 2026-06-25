@@ -2,6 +2,7 @@ package com.ccz.core.battle
 
 import com.ccz.core.model.DamageKind
 import com.ccz.core.model.Faction
+import com.ccz.core.model.HealMode
 import com.ccz.core.model.Skill
 import com.ccz.core.model.SkillEffect
 import com.ccz.core.model.UnitClass
@@ -42,11 +43,16 @@ object Resolver {
         skill.effects.forEach { effect ->
             when (effect) {
                 is SkillEffect.Heal -> {
-                    // Guard amount > 0 (ContentValidator enforces >= 1; this is defense-in-depth so a bad
-                    // amount can never reduce HP) and only heal a living, not-full target — same shape as
-                    // applyTerrainHeal. No RNG, pure integer clamp.
-                    if (effect.amount > 0 && target.alive && target.hp < target.hpMax) {
-                        val gained = (target.hp + effect.amount).coerceAtMost(target.hpMax) - target.hp
+                    // FLAT = the amount directly; PERCENT_MAX = a percent of max HP via integer-truncating
+                    // math (hpMax * amount / 100; hpMax is small so no overflow, no floats). Guard amount > 0
+                    // (ContentValidator enforces the bounds; this is defense-in-depth so a bad amount can never
+                    // reduce HP) and only heal a living, not-full target — same clamp shape as applyTerrainHeal.
+                    val healAmount = when (effect.mode) {
+                        HealMode.FLAT -> effect.amount
+                        HealMode.PERCENT_MAX -> target.hpMax * effect.amount / 100
+                    }
+                    if (healAmount > 0 && target.alive && target.hp < target.hpMax) {
+                        val gained = (target.hp + healAmount).coerceAtMost(target.hpMax) - target.hp
                         target = target.withHp(target.hp + gained)
                         events += Event.Healed(target.id, gained)
                     }

@@ -2,7 +2,7 @@
     "manifest": {
         "native_format_version": "1",
         "content_id": "ccz_daxingshan",
-        "content_version": "0.2.0",
+        "content_version": "0.3.0",
         "source": {
             "mod": "trssgshz"
         },
@@ -390,7 +390,8 @@
                     {
                         "type": "heal",
                         "target": "ally",
-                        "amount": 60
+                        "amount": 30,
+                        "mode": "percent_max"
                     }
                 ]
             }
