@@ -310,6 +310,53 @@ class EnemyAiTest {
     }
 
     @Test
+    fun aPureHealerRepositionsTowardAWoundedAllyNotTowardFoes() {
+        // A pure healer (heal skill, no damage skill) with a wounded ally OUT of heal range and a foe in the
+        // opposite direction. Without support-repositioning it marched toward the foe; now it steps to a tile
+        // from which it can heal the ally next turn (4,0 is adjacent to the wounded ally at 5,0).
+        val ctx2 = contextOf(flat(6, 1), classes = classesOf(move = 5), skills = mapOf("heal" to healSkill), loadouts = mapOf("e" to listOf("heal")))
+        val state = stateOf(
+            combatant("e", Faction.ENEMY, Pos(2, 0)),
+            combatant("zwounded", Faction.ENEMY, Pos(5, 0), hp = 30),
+            combatant("foe", Faction.PLAYER, Pos(0, 0)),
+            active = Faction.ENEMY,
+        )
+        assertEquals(Command.Move("e", Pos(4, 0)), EnemyAi.nextCommand(state, ctx2))
+    }
+
+    @Test
+    fun aPureDisablerRepositionsToItsCastBandOfAFoe() {
+        // A pure disabler with a RANGED (band 2-2) silence and a foe at distance 4. Closing on the nearest foe
+        // would stop at distance 1 (out of the 2-2 band); support-repositioning instead takes the cast band (2,0
+        // is exactly distance 2 from the foe), so it can silence next turn.
+        val rsilence = Skill("rsilence", "RSilence", DamageKind.PHYSICAL, 0, RangeSpec(2, 2), listOf(SkillEffect.ApplyAilment(EffectTarget.ENEMY, Ailment.SILENCE, 1)))
+        val ctx2 = contextOf(flat(6, 1), classes = classesOf(move = 5), skills = mapOf("rsilence" to rsilence), loadouts = mapOf("e" to listOf("rsilence")))
+        val state = stateOf(
+            combatant("e", Faction.ENEMY, Pos(0, 0)),
+            combatant("foe", Faction.PLAYER, Pos(4, 0)),
+            active = Faction.ENEMY,
+        )
+        assertEquals(Command.Move("e", Pos(2, 0)), EnemyAi.nextCommand(state, ctx2))
+    }
+
+    @Test
+    fun aPureSelfHealerDoesNotChaseAWoundedAllyItCannotReach() {
+        // A SELF-band heal can only target the caster (castTargetAllows SELF requires target == caster). A
+        // full-HP self-healer must NOT reposition toward a wounded ALLY it could never heal — it falls through
+        // to the foe-closing fallback. Guards canCastFrom against over-matching the band (it reuses castTargetAllows).
+        val selfHeal = Skill("sheal", "Self Heal", DamageKind.PHYSICAL, 0, RangeSpec(0, 1), listOf(SkillEffect.Heal(EffectTarget.SELF, 30)))
+        val ctx2 = contextOf(flat(6, 1), classes = classesOf(move = 5), skills = mapOf("sheal" to selfHeal), loadouts = mapOf("e" to listOf("sheal")))
+        val state = stateOf(
+            combatant("e", Faction.ENEMY, Pos(2, 0)),
+            combatant("zwounded", Faction.ENEMY, Pos(5, 0), hp = 30),
+            combatant("foe", Faction.PLAYER, Pos(0, 0)),
+            active = Faction.ENEMY,
+        )
+        val move = assertIs<Command.Move>(EnemyAi.nextCommand(state, ctx2), "with no valid cast target it closes on the foe")
+        assertTrue(manhattan(move.to, Pos(0, 0)) < manhattan(Pos(2, 0), Pos(0, 0)), "moves toward the foe, not the unreachable wounded ally")
+    }
+
+    @Test
     fun planIsPureAndAlwaysAcceptedBySubmit() {
         val state = stateOf(
             combatant("e", Faction.ENEMY, Pos(0, 0)),

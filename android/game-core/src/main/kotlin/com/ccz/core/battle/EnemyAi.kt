@@ -28,7 +28,9 @@ import com.ccz.core.model.SkillEffect
  * tie-broken nearest then id) with the first DAMAGE skill that can reach it (a cast/effect skill is never used
  * as an attack); else reposition — prefer a reachable tile it could ATTACK a foe from, nearest by Manhattan
  * (so a ranged unit takes its range band, even backing away from a too-close foe, and a melee unit closes to
- * striking distance), falling back to simply closing on the nearest foe; if it can do neither, Wait.
+ * striking distance); else (a pure-support unit with no damage skill) a tile it could CAST a support skill from
+ * on a valid target (wounded ally / un-affected foe); falling back to simply closing on the nearest foe; if it
+ * can do none, Wait.
  */
 object EnemyAi {
     fun nextCommand(state: BattleState, context: BattleContext): Command {
@@ -150,6 +152,14 @@ object EnemyAi {
                     .thenBy { it.y },
             )
         }
+        // No damage-firing tile (a pure-support unit has no damage skill): reposition toward a tile from which
+        // it could CAST on a valid target — a meaningfully wounded ally (heal) or a not-yet-affected foe
+        // (enemy-disable) — so a stranded medic/disabler acts next turn instead of marching at foes via the
+        // close-on-nearest-foe fallback below. Nearest such tile by Manhattan, with a stable x/y tie-break.
+        val castFiring = destinations.filter { canCastFrom(state, context, actor, it) }
+        if (castFiring.isNotEmpty()) {
+            return castFiring.minWith(compareBy({ manhattan(it, actor.pos) }, { it.x }, { it.y }))
+        }
         // No firing position reachable: close on the nearest foe (only if a tile is strictly closer).
         val foe = nearestUnit(state, actor.pos, foes.map { it.id }.toSet()) ?: return null
         val best = destinations.minWith(compareBy({ manhattan(it, foe.pos) }, { it.x }, { it.y }))
@@ -159,6 +169,34 @@ object EnemyAi {
     /** True if from [tile] some skill's range covers some foe — i.e. the unit could attack after moving there. */
     private fun canAttackFrom(tile: Pos, skills: List<Skill>, foes: List<Combatant>): Boolean =
         skills.any { skill -> foes.any { foe -> skill.range.covers(manhattan(tile, foe.pos)) } }
+
+    /**
+     * True if from [tile] the actor could CAST a support skill on a valid target — a meaningfully wounded
+     * target a [SkillEffect.Heal] can reach (its band: a SELF heal only its own tile, an ALLY heal any same-side
+     * unit), or a not-yet-affected foe an enemy-disable can reach (see [isEnemyDisable]/[alreadyAffected]). The
+     * per-target band is checked through [castTargetAllows] — the SAME predicate [Gameplay.legalCastTargets] uses
+     * — so this reposition preview cannot disagree with what the cast would actually accept (a SELF-only healer
+     * won't chase a wounded ally it can't reach). Lets [stepTowardNearestFoe] move a stranded pure-support unit
+     * toward where it can act. Pure, RNG-free.
+     */
+    private fun canCastFrom(state: BattleState, context: BattleContext, actor: Combatant, tile: Pos): Boolean {
+        for (skillId in Gameplay.legalSkills(state, actor.id, context)) {
+            val skill = context.skills[skillId] ?: continue
+            if (skill.effects.isEmpty()) continue
+            if (state.units.values.any { isSupportTarget(actor, skill, it, tile) }) return true
+        }
+        return false
+    }
+
+    /** Whether [target] is a valid support target for [actor]'s [skill] cast from [tile]: in range, the band
+     *  accepts it ([castTargetAllows]), and it is meaningfully wounded (heal) or not-yet-affected (disable). */
+    private fun isSupportTarget(actor: Combatant, skill: Skill, target: Combatant, tile: Pos): Boolean {
+        if (!target.alive || !skill.range.covers(manhattan(tile, target.pos))) return false
+        if (skill.effects.any { !castTargetAllows(it, actor, target) }) return false
+        val healable = skill.effects.any { it is SkillEffect.Heal } && target.hp * 2 < target.hpMax
+        val disablable = skill.effects.firstOrNull { isEnemyDisable(it) }?.let { !alreadyAffected(target, it) } == true
+        return healable || disablable
+    }
 
     /** The actor class's combat affinity (percent) for the terrain on [tile]; 100 when neutral/unknown. */
     private fun terrainAffinityAt(context: BattleContext, actor: Combatant, tile: Pos): Int =
