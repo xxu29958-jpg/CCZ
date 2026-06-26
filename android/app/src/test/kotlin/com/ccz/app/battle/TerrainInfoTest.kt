@@ -1,6 +1,8 @@
 package com.ccz.app.battle
 
 import com.ccz.core.battle.BattleMap
+import com.ccz.core.battle.BattleProgress
+import com.ccz.core.battle.BattleState
 import com.ccz.core.battle.MapTile
 import com.ccz.core.model.ActiveAilment
 import com.ccz.core.model.ActiveEffect
@@ -146,6 +148,61 @@ class TerrainInfoTest {
     fun statusChipsAreEmptyForACleanUnit() {
         assertEquals("", statusChips(unitWith()))
         assertFalse(hasHostileStatus(unitWith()))
+    }
+
+    private fun combatant(id: String, faction: Faction, hp: Int = 100): Combatant = Combatant(
+        identity = CombatIdentity(id, id, "cls", faction),
+        pos = Pos(0, 0),
+        vitals = CombatVitals(hp = hp, hpMax = 100),
+        stats = CombatStats(atk = 80, def = 20, mat = 30, res = 10),
+        rates = CombatRates(),
+    )
+
+    private fun stateOf(
+        units: List<Combatant>,
+        acted: Set<String> = emptySet(),
+        moved: Set<String> = emptySet(),
+    ): BattleState = BattleState(
+        units = units.associateBy { it.id },
+        turn = 1,
+        active = Faction.PLAYER,
+        rngState = 0L,
+        progress = BattleProgress(acted = acted, moved = moved),
+    )
+
+    @Test
+    fun isSpentOnlyForActedPlayerSideUnits() {
+        val hero = combatant("hero", Faction.PLAYER)
+        val ally = combatant("ally", Faction.ALLY)
+        val foe = combatant("foe", Faction.ENEMY)
+        // Acted player/ally units are spent; the enemy is never marked spent even when it has acted.
+        val state = stateOf(listOf(hero, ally, foe), acted = setOf("hero", "ally", "foe"))
+        assertTrue("an acted player unit is spent", isSpent(hero, state))
+        assertTrue("an acted ally unit is spent", isSpent(ally, state))
+        assertFalse("an enemy unit is never dimmed", isSpent(foe, state))
+        // A player unit that has not acted is still available.
+        val fresh = stateOf(listOf(hero), acted = emptySet())
+        assertFalse("a player unit that has not acted is not spent", isSpent(hero, fresh))
+        // Move-then-attack: a unit that has MOVED but not yet ACTED can still attack/Wait, so it must NOT be
+        // dimmed — isSpent keys on hasActed (not hasMoved), mirroring the action economy that still allows acting.
+        val movedNotActed = stateOf(listOf(hero), acted = emptySet(), moved = setOf("hero"))
+        assertFalse("a moved-but-not-acted unit is not spent", isSpent(hero, movedNotActed))
+    }
+
+    @Test
+    fun forceTallyCountsLivingUnitsPerSide() {
+        val state = stateOf(
+            listOf(
+                combatant("hero", Faction.PLAYER),
+                combatant("ally", Faction.ALLY),
+                combatant("dead", Faction.PLAYER, hp = 0), // dead player — excluded from the player count
+                combatant("foe1", Faction.ENEMY),
+                combatant("foe2", Faction.ENEMY, hp = 0), // dead enemy — excluded from the enemy count
+            ),
+        )
+        val tally = forceTally(state)
+        assertEquals("living player + ally counted together, dead excluded", 2, tally.player)
+        assertEquals("a dead enemy is not counted", 1, tally.enemy)
     }
 
     @Test

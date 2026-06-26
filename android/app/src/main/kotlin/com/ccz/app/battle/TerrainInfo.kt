@@ -1,7 +1,9 @@
 package com.ccz.app.battle
 
 import com.ccz.core.battle.BattleMap
+import com.ccz.core.battle.BattleState
 import com.ccz.core.model.Combatant
+import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
 
 /**
@@ -81,3 +83,31 @@ fun statusChips(unit: Combatant): String {
 
 /** True if [unit] carries any ailment or stat-debuff — used to tint its [statusChips] as a hostile state. */
 fun hasHostileStatus(unit: Combatant): Boolean = unit.ailments.isNotEmpty() || unit.effects.any { it.amount < 0 }
+
+/** PLAYER and ALLY act on the player's turn (mirrors game-core's sameSide for the player band). */
+private fun isPlayerSide(faction: Faction): Boolean = faction == Faction.PLAYER || faction == Faction.ALLY
+
+/**
+ * True when [unit] is one of the PLAYER's own units that has already taken its action this turn — under the
+ * Fire-Emblem action economy it can neither move nor act again ([com.ccz.core.battle.CommandValidator] rejects
+ * any further command), so the board dims it and the player sees at a glance who is still available. Enemy units
+ * are never marked spent (their economy is the AI's, not the player's to track). Pure read of authoritative
+ * [state]; [com.ccz.core.battle.BattleState.hasActed] is cleared on EndTurn, so this resets each turn.
+ */
+fun isSpent(unit: Combatant, state: BattleState): Boolean = isPlayerSide(unit.faction) && state.hasActed(unit.id)
+
+/** Living unit counts per side for the HUD: player (PLAYER + ALLY) vs enemy. */
+data class ForceTally(val player: Int, val enemy: Int)
+
+/**
+ * The living-unit count on each side, so the HUD shows annihilation-objective progress at a glance — a defeated
+ * unit stops rendering, so the player cannot count tiles to see who is left. Counts who is on the board NOW
+ * (reinforcements raise the enemy count as they spawn), which is the correct live reading. Pure read of [state].
+ */
+fun forceTally(state: BattleState): ForceTally {
+    val living = state.units.values.filter { it.alive }
+    return ForceTally(
+        player = living.count { isPlayerSide(it.faction) },
+        enemy = living.count { it.faction == Faction.ENEMY },
+    )
+}
