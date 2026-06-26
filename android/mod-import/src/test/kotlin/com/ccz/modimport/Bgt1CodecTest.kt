@@ -53,6 +53,35 @@ class Bgt1CodecTest {
         assertFailsWith<Bgt1FormatException> { Bgt1Codec.decrypt("not a bgt1 blob at all".toByteArray(), key) }
     }
 
+    private val frameKlen = 16
+
+    @Test
+    fun frameWithNegativePayloadLengthFailsClosedInsteadOfCrashing() {
+        // A crafted/corrupt blob whose length field decodes negative previously reached
+        // copyOfRange(start, start + payloadLen) with start+payloadLen < start → IllegalArgumentException,
+        // escaping the codec's Bgt1FormatException contract and aborting the import. total is set to MATCH the
+        // framed length so only the negative guard can throw (this test fails if that guard is deleted).
+        val total = Bgt1Codec.FRAME_OVERHEAD + frameKlen + (-1)
+        assertFailsWith<Bgt1FormatException> { Bgt1Codec.validateFrame(payloadLen = -1, realKlen = frameKlen, total = total, blobSize = 4096) }
+    }
+
+    @Test
+    fun frameWithImplausiblyLargePayloadLengthFailsClosedOverflowProof() {
+        // A near-Int.MAX payloadLen would overflow FRAME_OVERHEAD+realKlen+payloadLen to a negative wrap and slip
+        // through the mismatch/overrun checks → the SAME copyOfRange escape. Rejecting payloadLen > blobSize
+        // before any addition closes that band. Here a payload larger than the whole blob is malformed.
+        assertFailsWith<Bgt1FormatException> { Bgt1Codec.validateFrame(payloadLen = 4096, realKlen = frameKlen, total = 0, blobSize = 100) }
+    }
+
+    @Test
+    fun frameOverrunningTheBlobFailsClosed() {
+        // payloadLen fits the blob (<= blobSize) and matches the declared total, but header+payload exceeds the
+        // blob → fail closed (no over-read). Exercises the overrun check specifically, past the length guard.
+        val payloadLen = 100
+        val total = Bgt1Codec.FRAME_OVERHEAD + frameKlen + payloadLen
+        assertFailsWith<Bgt1FormatException> { Bgt1Codec.validateFrame(payloadLen, realKlen = frameKlen, total = total, blobSize = payloadLen) }
+    }
+
     private fun sampleJson(rows: Int): ByteArray {
         val sb = StringBuilder("﻿[\r\n")
         for (i in 1..rows) {
