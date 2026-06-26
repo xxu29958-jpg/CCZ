@@ -119,8 +119,9 @@ object EnemyAi {
      */
     private fun attackCommand(state: BattleState, context: BattleContext, actor: Combatant): Command? {
         // Only DAMAGE skills attack — a cast/effect skill (e.g. a heal) is never used as a chip attack.
+        // (legalSkills only returns ids the context defines, so the lookup is never null here.)
         val reachable = Gameplay.legalSkills(state, actor.id, context)
-            .filter { context.skills[it]?.effects.isNullOrEmpty() }
+            .filter { context.skills[it]?.isAttack == true }
             .flatMap { skill -> Gameplay.legalTargets(state, actor.id, skill, context).map { id -> id to skill } }
         val best = reachable
             .mapNotNull { (id, skill) -> state.units[id]?.let { foe -> Triple(foe, id, skill) } }
@@ -135,7 +136,7 @@ object EnemyAi {
         val foes = foesOf(state, actor)
         val destinations = Gameplay.legalDestinations(state, actor.id, context)
         if (foes.isEmpty() || destinations.isEmpty()) return null
-        val skills = Gameplay.legalSkills(state, actor.id, context).mapNotNull { context.skills[it] }.filter { it.effects.isEmpty() }
+        val skills = Gameplay.legalSkills(state, actor.id, context).mapNotNull { context.skills[it] }.filter { it.isAttack }
         // Prefer a reachable tile the unit could attack a foe from, nearest by Manhattan (a cheap proxy
         // for least movement — exact on uniform terrain) — so ranged units take their range band (even
         // backing up) and melee units close to striking distance. The current tile is never one (the
@@ -182,7 +183,7 @@ object EnemyAi {
     private fun canCastFrom(state: BattleState, context: BattleContext, actor: Combatant, tile: Pos): Boolean {
         for (skillId in Gameplay.legalSkills(state, actor.id, context)) {
             val skill = context.skills[skillId] ?: continue
-            if (skill.effects.isEmpty()) continue
+            if (skill.isAttack) continue
             if (state.units.values.any { isSupportTarget(actor, skill, it, tile) }) return true
         }
         return false

@@ -69,9 +69,9 @@ object Gameplay {
         if (attacker.stunned) return emptySet() // a stunned unit may take no action (single-sourced with checkAttack)
         val skill = context.skills[skillId] ?: return emptySet()
         if (!context.loadoutAllows(attackerId, skillId)) return emptySet()
-        // An effect (cast) skill is cast-only — never an attack (single-sourced with checkAttack's
-        // SKILL_IS_CAST_ONLY gate, the inverse of legalCastTargets excluding a damage-only skill).
-        if (skill.effects.isNotEmpty()) return emptySet()
+        // An effect (cast) skill is cast-only — never an attack (single-sourced via Skill.isCast with
+        // checkAttack's SKILL_IS_CAST_ONLY gate, the inverse of legalCastTargets excluding a damage-only skill).
+        if (skill.isCast) return emptySet()
         return state.units.values
             .filter { target ->
                 target.alive &&
@@ -101,7 +101,7 @@ object Gameplay {
         // CASTER_SILENCED via the same stunned/silenced properties).
         if (caster.stunned || caster.silenced) return emptySet()
         val skill = context.skills[skillId] ?: return emptySet()
-        if (!context.loadoutAllows(casterId, skillId) || skill.effects.isEmpty()) return emptySet()
+        if (!context.loadoutAllows(casterId, skillId) || skill.isAttack) return emptySet()
         return state.units.values
             .filter { target ->
                 target.alive &&
@@ -153,7 +153,7 @@ object Gameplay {
         val unitClass = context.classes[unit.classId] ?: return emptySet()
         val attackSkills = (context.loadouts[unitId] ?: context.skills.keys.toList())
             .mapNotNull { context.skills[it] }
-            .filter { it.effects.isEmpty() }
+            .filter { it.isAttack }
         if (attackSkills.isEmpty()) return emptySet()
         // Exclude the unit itself from occupancy so its origin counts as a reachable firing position (it may
         // attack without moving); allies block stops but can be fired over, enemies block transit (MoveReachability).
