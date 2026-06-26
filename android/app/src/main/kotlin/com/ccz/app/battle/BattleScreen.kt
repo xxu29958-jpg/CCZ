@@ -128,7 +128,8 @@ private fun OutcomeBanner(outcome: BattleOutcome) {
 private fun Hud(ui: BattleUiState, script: SScript, onEndTurn: () -> Unit) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = "Turn ${ui.state.turn} · ${sideLabel(ui.state.active)}")
+            val tally = forceTally(ui.state)
+            Text(text = "Turn ${ui.state.turn} · ${sideLabel(ui.state.active)} · 敌 ${tally.enemy} · 我 ${tally.player}")
             objectiveText(script, ui.state)?.let { Text(text = it, style = MaterialTheme.typography.bodySmall) }
             Text(text = ui.selection?.unit?.let { "Selected: ${ui.state.units[it]?.name ?: it}" } ?: "Tap a unit to select")
         }

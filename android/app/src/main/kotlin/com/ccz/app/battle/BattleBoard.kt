@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -27,6 +28,9 @@ import com.ccz.core.model.Pos
 
 private val CELL_SIZE = 44.dp
 
+/** Opacity of a player unit that has already acted this turn — dimmed but still legible. */
+private const val SPENT_ALPHA = 0.4f
+
 /** The mutually-exclusive highlight a tile can carry, derived from the snapshot. */
 private enum class CellMark { NONE, MOVE, SELECTED, TARGET, CAST_TARGET, DANGER }
 
@@ -37,6 +41,9 @@ private data class CellModel(
     val unit: Combatant?,
     val mark: CellMark,
     val effect: BattleEffect?,
+    // True when [unit] is a player unit that has already acted this turn — drawn dimmed so the player sees who
+    // is still available (Fire-Emblem action economy). Never true for an enemy / empty tile. See [isSpent].
+    val spent: Boolean,
 )
 
 /**
@@ -78,14 +85,18 @@ private fun GridCell(cell: CellModel, onTap: (Pos) -> Unit) {
             .clickable { onTap(cell.pos) },
         contentAlignment = Alignment.Center,
     ) {
-        cell.unit?.let { UnitMarker(it) }
+        cell.unit?.let { UnitMarker(unit = it, spent = cell.spent) }
         cell.effect?.let { EffectBadge(effect = it, modifier = Modifier.align(Alignment.TopCenter)) }
     }
 }
 
 @Composable
-private fun UnitMarker(unit: Combatant) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+private fun UnitMarker(unit: Combatant, spent: Boolean) {
+    // A spent unit (already acted this turn) is dimmed so the player can tell at a glance it can do no more.
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.alpha(if (spent) SPENT_ALPHA else 1f),
+    ) {
         Text(text = unit.name.take(2), color = factionColor(unit.faction), fontWeight = FontWeight.Bold)
         // hp/hpMax with a health-tier color so the player can read how hurt a unit is, not just its raw hp.
         Text(text = "${unit.hp}/${unit.hpMax}", fontSize = 9.sp, color = hpColor(unit.hp, unit.hpMax))
@@ -159,7 +170,14 @@ private fun cellAt(
     }
     // effectsByPos already anchors the latest effect to whoever stands (or just fell) on each tile — a
     // defeated unit keeps its tile in state, so its "KO" still lands here even though it stops rendering.
-    return CellModel(pos = pos, tile = map.tileAt(pos), unit = unit, mark = mark, effect = effectsByPos[pos])
+    return CellModel(
+        pos = pos,
+        tile = map.tileAt(pos),
+        unit = unit,
+        mark = mark,
+        effect = effectsByPos[pos],
+        spent = unit?.let { isSpent(it, ui.state) } ?: false,
+    )
 }
 
 private fun tileColor(cell: CellModel): Color = when {
