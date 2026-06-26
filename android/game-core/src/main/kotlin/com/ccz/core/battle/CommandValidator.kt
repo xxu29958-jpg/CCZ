@@ -88,9 +88,9 @@ object CommandValidator {
         val skill = context.skills[command.skill] ?: return RejectReason.UNKNOWN_SKILL
         if (!context.loadoutAllows(command.attacker, command.skill)) return RejectReason.SKILL_NOT_IN_LOADOUT
         // An effect (cast) skill is not an attack — it must go through Command.Cast, never the damage path
-        // (the inverse of checkCast's SKILL_HAS_NO_EFFECT). Single-sourced with legalTargets, which likewise
-        // reports no attack targets for an effect skill, so the preview and this gate cannot disagree.
-        if (skill.effects.isNotEmpty()) return RejectReason.SKILL_IS_CAST_ONLY
+        // (the inverse of checkCast's SKILL_HAS_NO_EFFECT). Single-sourced with legalTargets via Skill.isCast,
+        // which likewise reports no attack targets for an effect skill, so the preview and this gate cannot disagree.
+        if (skill.isCast) return RejectReason.SKILL_IS_CAST_ONLY
         if (command.attacker == command.target) return RejectReason.SELF_TARGET
         val target = state.units[command.target] ?: return RejectReason.TARGET_NOT_FOUND
         if (!target.alive) return RejectReason.TARGET_DEAD
@@ -117,7 +117,7 @@ object CommandValidator {
         if (caster.silenced) return RejectReason.CASTER_SILENCED
         val skill = context.skills[command.skill] ?: return RejectReason.UNKNOWN_SKILL
         if (!context.loadoutAllows(command.caster, command.skill)) return RejectReason.SKILL_NOT_IN_LOADOUT
-        if (skill.effects.isEmpty()) return RejectReason.SKILL_HAS_NO_EFFECT
+        if (skill.isAttack) return RejectReason.SKILL_HAS_NO_EFFECT
         val target = state.units[command.target] ?: return RejectReason.TARGET_NOT_FOUND
         if (!target.alive) return RejectReason.TARGET_DEAD
         // Every effect's SELF/ALLY band must accept this target (single-sourced in castTargetAllows so the

@@ -141,4 +141,19 @@ data class Skill(
     // skill, byte-identical to before (existing Skill construction, DEMO_SKILLS, and goldens are unchanged).
     // A skill with non-empty effects is a "cast" skill, resolved via Command.Cast / Resolver.cast.
     val effects: List<SkillEffect> = emptyList(),
-)
+) {
+    /**
+     * The single source for the ADR 0008 use-kind split: a skill with effects is a CAST skill (submitted as
+     * [Command.Cast], resolved by [Resolver.cast]); one with none is a pure-damage ATTACK skill ([Command.Attack]).
+     * Today the two are exhaustive and mutually exclusive (`isCast == !isAttack`), so the gameplay validator, the
+     * read-only target/skill queries, the enemy AI, and the presentation reducer all classify a skill through
+     * THIS one property rather than re-deriving `effects.isEmpty()` inline. When ADR 0008 Phase 4's damage+rider
+     * COMPOSITE skills land (a skill that both attacks and carries an effect), change the split HERE — and let
+     * each call site decide how to treat the new kind — instead of hunting every inline emptiness check.
+     */
+    val isCast: Boolean get() = effects.isNotEmpty()
+
+    /** The exact inverse of [isCast] — a pure-damage skill, submitted as a [Command.Attack]. Derived from
+     *  [isCast] (not a second `effects.isEmpty()`) so the split has literally ONE definition to change for Phase 4. */
+    val isAttack: Boolean get() = !isCast
+}

@@ -160,8 +160,9 @@ class BattleReducer(
         else clearSelection(ui)
     }
 
-    /** Whether [skillId] is an effect (cast) skill — routed through [Command.Cast] rather than [Command.Attack]. */
-    private fun isCastSkill(skillId: String): Boolean = context.skills[skillId]?.effects?.isNotEmpty() == true
+    /** Whether [skillId] is an effect (cast) skill — routed through [Command.Cast] rather than [Command.Attack].
+     *  Classified through game-core's single-source [com.ccz.core.model.Skill.isCast], not re-derived here. */
+    private fun isCastSkill(skillId: String): Boolean = context.skills[skillId]?.isCast == true
 
     /** The targets game-core reports for [unitId] using [skillId], plus whether it is a cast skill. */
     private fun targetsOf(state: BattleState, unitId: String, skillId: String): Pair<Set<String>, Boolean> {
