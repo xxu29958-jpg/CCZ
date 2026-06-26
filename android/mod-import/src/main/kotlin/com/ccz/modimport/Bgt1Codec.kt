@@ -24,7 +24,7 @@ object Bgt1Codec {
     private const val SUPPORTED_VERSION = 1
     private const val MAX_SECONDARY_KEY = 0x21
     private const val LEN_FIELD = 4
-    private const val FRAME_OVERHEAD = 0x16 // header + payloadLen field + prefixLen field
+    internal const val FRAME_OVERHEAD = 0x16 // header + payloadLen field + prefixLen field
 
     /** True when [blob] starts with the BGT1 magic. */
     fun isBgt1(blob: ByteArray): Boolean =
@@ -49,11 +49,8 @@ object Bgt1Codec {
 
         val payloadLen = u32le(streamField(blob, OFF_SECONDARY + realKlen, key1, key2), 0)
         val prefixLen = u32le(streamField(blob, OFF_SECONDARY + LEN_FIELD + realKlen, key1, key2), 0)
-        if (FRAME_OVERHEAD + realKlen + payloadLen != total) {
-            throw Bgt1FormatException("size mismatch: $FRAME_OVERHEAD+$realKlen+$payloadLen != $total")
-        }
+        validateFrame(payloadLen, realKlen, total, blob.size)
         val start = FRAME_OVERHEAD + realKlen
-        if (start + payloadLen > blob.size) throw Bgt1FormatException("payload overruns blob")
         val payload = blob.copyOfRange(start, start + payloadLen)
         key1.reset(); key2.reset()
         val encrypted = minOf(prefixLen, payloadLen)
@@ -94,6 +91,29 @@ object Bgt1Codec {
         }
         out[OFF_CHECKSUM] = checksum(out).toByte()
         return out
+    }
+
+    /**
+     * Validates the decoded frame lengths before slicing the payload (fail-closed). A NEGATIVE [payloadLen] —
+     * a crafted/corrupt blob whose 4-byte length field has the sign bit set — is the LOAD-BEARING guard:
+     * without it, `copyOfRange(start, start + payloadLen)` (with `start + payloadLen < start`) throws
+     * `IllegalArgumentException`, which ESCAPES this codec's [Bgt1FormatException] contract and aborts the whole
+     * import batch on one bad resource. The guard rejects both a negative length AND one larger than the whole
+     * blob BEFORE forming any sum — this is OVERFLOW-PROOF: a near-Int.MAX payloadLen would otherwise wrap the
+     * framed-length addition (`FRAME_OVERHEAD + realKlen + payloadLen`) negative and slip through the
+     * mismatch/overrun checks, re-opening the exact same copyOfRange escape via integer overflow. A payload
+     * cannot exceed its containing blob, so `payloadLen > blobSize` is always malformed; with that rejected, the
+     * subsequent framed-length sum cannot overflow (blobSize is a real array size). Also re-asserts the total /
+     * blob-size consistency the cipher framing requires. `internal` so the length guards can be unit-tested
+     * directly (a blob that decodes to an out-of-range length is impractical to craft — the length field is
+     * XOR-streamed under the private key schedule).
+     */
+    internal fun validateFrame(payloadLen: Int, realKlen: Int, total: Int, blobSize: Int) {
+        if (payloadLen < 0 || payloadLen > blobSize) throw Bgt1FormatException("implausible payload length: $payloadLen (blob $blobSize)")
+        if (FRAME_OVERHEAD + realKlen + payloadLen != total) {
+            throw Bgt1FormatException("size mismatch: $FRAME_OVERHEAD+$realKlen+$payloadLen != $total")
+        }
+        if (FRAME_OVERHEAD + realKlen + payloadLen > blobSize) throw Bgt1FormatException("payload overruns blob")
     }
 
     private fun recoverSecondaryKeyLength(blob: ByteArray, key1: SecretKey): Int {
