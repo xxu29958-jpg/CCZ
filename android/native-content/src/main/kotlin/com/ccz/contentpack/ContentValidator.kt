@@ -1,5 +1,6 @@
 package com.ccz.contentpack
 
+import com.ccz.core.model.CombatStats
 import com.ccz.core.model.EffectTarget
 import com.ccz.core.model.HealMode
 import com.ccz.core.model.SkillEffect
@@ -142,6 +143,14 @@ object ContentValidator {
      *   saturates at the top tier by design rather than being a content error.
      * - unit level mirrors [com.ccz.contentpack.assembly.GrowthBudget]'s `level-1` growth scaling (>= 1):
      *   level 0 / negative silently budgets to the base panel (levels coerced to 0), masking a data error.
+     * - unit hp_max mirrors a living unit's minimum vitals (>= 1): a 0 / negative max HP is clamped by
+     *   [com.ccz.contentpack.assembly.GrowthBudget.budgetHp]'s `coerceIn(0, cap)` to 0, so the assembler
+     *   produces a unit with hp = hpMax = 0 — `Combatant.alive` (hp > 0) is false, so SpawnUnit would deploy
+     *   a "dead on arrival" unit (instantly satisfying AnnihilateEnemies / failing ProtectAlive, and rendering
+     *   a 0/0 ghost). This is the highest-consequence floor in the family, symmetric with grade/level.
+     * - unit stats (atk/def/mat/res) have a non-negative floor (>= 0) as defense-in-depth: a negative stat is
+     *   silently clamped to 0 by the budget, masking a data error (0 itself is legitimate — a unit with no magic
+     *   attack, say — so only negatives are rejected).
      */
     private fun validateNumericBounds(tables: ContentTables): List<ValidationIssue> {
         val issues = mutableListOf<ValidationIssue>()
@@ -178,8 +187,22 @@ object ContentValidator {
             if (unit.profile.level < 1) {
                 issues += ValidationIssue("units[$index].level", "level must be >= 1")
             }
+            if (unit.profile.hpMax < 1) {
+                issues += ValidationIssue("units[$index].hp_max", "hp_max must be >= 1")
+            }
+            issues += negativeStatIssues(unit.profile.stats, "units[$index].stats")
         }
         return issues
+    }
+
+    /** Non-negative floors (>= 0) on a unit's four combat stats — defense-in-depth: the budget silently
+     *  clamps a negative to 0, masking a data error. 0 is legitimate (e.g. a unit with no magic), so only
+     *  negatives gate. [path] is the unit's stats path. */
+    private fun negativeStatIssues(stats: CombatStats, path: String): List<ValidationIssue> = buildList {
+        if (stats.atk < 0) add(ValidationIssue("$path.atk", "atk must be >= 0"))
+        if (stats.def < 0) add(ValidationIssue("$path.def", "def must be >= 0"))
+        if (stats.mat < 0) add(ValidationIssue("$path.mat", "mat must be >= 0"))
+        if (stats.res < 0) add(ValidationIssue("$path.res", "res must be >= 0"))
     }
 
     /**
