@@ -190,10 +190,10 @@ class ContentValidatorTest {
     fun negativeUnitGradeFailClosed() {
         // grade is a non-negative quality-tier index; a negative tier is malformed content. A too-high
         // tier is NOT an error (the assembler saturates it at the top tier), so only the lower bound gates.
-        val negative = validContent(tables = defaultTables().copy(units = listOf(unitDef(grade = -1))))
+        val negative = validContent(tables = defaultTables().copy(units = listOf(unitDef(profile = profile(grade = -1)))))
         assertTrue(ContentValidator.validate(negative).any { it.path == "units[0].grade" })
 
-        val high = validContent(tables = defaultTables().copy(units = listOf(unitDef(grade = 99))))
+        val high = validContent(tables = defaultTables().copy(units = listOf(unitDef(profile = profile(grade = 99)))))
         assertEquals(emptyList(), ContentValidator.validate(high), "a too-high grade saturates, not rejected")
     }
 
@@ -211,11 +211,43 @@ class ContentValidatorTest {
     @Test
     fun nonPositiveUnitLevelFailClosed() {
         // level < 1 budgets to the base panel (growth scales by level-1, coerced to 0), masking a data error.
-        val zero = validContent(tables = defaultTables().copy(units = listOf(unitDef(level = 0))))
+        val zero = validContent(tables = defaultTables().copy(units = listOf(unitDef(profile = profile(level = 0)))))
         assertTrue(ContentValidator.validate(zero).any { it.path == "units[0].level" })
 
-        val negative = validContent(tables = defaultTables().copy(units = listOf(unitDef(level = -3))))
+        val negative = validContent(tables = defaultTables().copy(units = listOf(unitDef(profile = profile(level = -3)))))
         assertTrue(ContentValidator.validate(negative).any { it.path == "units[0].level" })
+    }
+
+    @Test
+    fun nonPositiveUnitHpMaxFailClosed() {
+        // hp_max <= 0 is clamped to 0 by the budget → a unit with hp = hpMax = 0 is dead-on-arrival
+        // (alive = hp > 0 is false), so SpawnUnit would deploy a 0/0 ghost: reject at load, fail-closed.
+        val zero = validContent(tables = defaultTables().copy(units = listOf(unitDef(profile = profile(hpMax = 0)))))
+        assertTrue(ContentValidator.validate(zero).any { it.path == "units[0].hp_max" })
+
+        val negative = validContent(tables = defaultTables().copy(units = listOf(unitDef(profile = profile(hpMax = -10)))))
+        assertTrue(ContentValidator.validate(negative).any { it.path == "units[0].hp_max" })
+
+        val one = validContent(tables = defaultTables().copy(units = listOf(unitDef(profile = profile(hpMax = 1)))))
+        assertEquals(emptyList(), ContentValidator.validate(one), "hp_max == 1 is the valid floor")
+    }
+
+    @Test
+    fun negativeUnitStatFailClosed() {
+        // A negative stat is silently clamped to 0 by the budget (masking a data error); 0 itself is
+        // legitimate (a unit with no magic), so only negatives gate — defense-in-depth alongside hp_max.
+        // All four stat branches are covered so a typo in any one is caught.
+        val negAtk = validContent(tables = defaultTables().copy(units = listOf(unitDef(profile = profile(stats = CombatStats(-1, 120, 60, 90))))))
+        assertTrue(ContentValidator.validate(negAtk).any { it.path == "units[0].stats.atk" })
+        val negDef = validContent(tables = defaultTables().copy(units = listOf(unitDef(profile = profile(stats = CombatStats(180, -1, 60, 90))))))
+        assertTrue(ContentValidator.validate(negDef).any { it.path == "units[0].stats.def" })
+        val negMat = validContent(tables = defaultTables().copy(units = listOf(unitDef(profile = profile(stats = CombatStats(180, 120, -1, 90))))))
+        assertTrue(ContentValidator.validate(negMat).any { it.path == "units[0].stats.mat" })
+        val negRes = validContent(tables = defaultTables().copy(units = listOf(unitDef(profile = profile(stats = CombatStats(180, 120, 60, -1))))))
+        assertTrue(ContentValidator.validate(negRes).any { it.path == "units[0].stats.res" })
+
+        val zeroMagic = validContent(tables = defaultTables().copy(units = listOf(unitDef(profile = profile(stats = CombatStats(180, 120, 0, 0))))))
+        assertEquals(emptyList(), ContentValidator.validate(zeroMagic), "a 0 stat is legitimate, not rejected")
     }
 
     // Override any table via defaultTables().copy(...) to keep the parameter list small
@@ -267,14 +299,21 @@ class ContentValidatorTest {
     private fun unitDef(
         classId: String = "cavalry",
         skills: List<String> = listOf("atk"),
-        grade: Int = 0,
-        level: Int = 1,
+        // Profile knobs are bundled into a value object (CCZ rule: not loose params) — build via profile(...).
+        profile: UnitProfile = profile(),
     ): UnitDef =
         UnitDef(
             identity = UnitIdentity("zhaoyun", "Zhao Yun", classId, Faction.PLAYER),
-            profile = UnitProfile(level = level, hpMax = 200, stats = CombatStats(180, 120, 60, 90), grade = grade),
+            profile = profile,
             loadout = UnitLoadout(skills = skills),
         )
+
+    private fun profile(
+        level: Int = 1,
+        hpMax: Int = 200,
+        stats: CombatStats = CombatStats(180, 120, 60, 90),
+        grade: Int = 0,
+    ): UnitProfile = UnitProfile(level = level, hpMax = hpMax, stats = stats, grade = grade)
 
     private fun skillDef(min: Int = 1, max: Int = 1): SkillDef =
         SkillDef(
