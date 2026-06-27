@@ -18,10 +18,47 @@ data class PackMap(
 @Serializable
 data class PackSize(val width: Int, val height: Int)
 
-/** Battle scripts wrapper (`events.s_scripts`). */
+/** Event scripts wrapper: battle scripts (`s_scripts`) and cutscene scripts (`r_scripts`). */
 @Serializable
 data class PackEvents(
     @SerialName("s_scripts") val sScripts: List<PackBattle> = emptyList(),
+    @SerialName("r_scripts") val rScripts: List<PackRScript> = emptyList(),
+)
+
+/** One cutscene script (`events.r_scripts`): an ordered list of scenario ops. */
+@Serializable
+data class PackRScript(
+    val id: String,
+    val ops: List<PackScenarioOp>,
+)
+
+/**
+ * A scenario (cutscene) op. `type` is the polymorphic discriminator the native loader reads; only the fields
+ * a given op needs are set and the writer omits null defaults, so a `dialogue` op serializes as
+ * `{type, line}` and a `scene_transition` as `{type, target}` — matching the native `ScenarioOpDto` variants.
+ */
+@Serializable
+data class PackScenarioOp(
+    val type: String,
+    val line: PackDialogueLine? = null,
+    val target: String? = null,
+) {
+    companion object {
+        const val DIALOGUE = "dialogue"
+        const val SCENE_TRANSITION = "scene_transition"
+
+        fun dialogue(speaker: String?, text: String): PackScenarioOp =
+            PackScenarioOp(DIALOGUE, line = PackDialogueLine(speaker = speaker, text = text))
+
+        fun sceneTransition(target: String): PackScenarioOp = PackScenarioOp(SCENE_TRANSITION, target = target)
+    }
+}
+
+/** A `dialogue` op's line: an optional [speaker] (null = narration, key omitted) and the spoken [text]. */
+@Serializable
+data class PackDialogueLine(
+    val speaker: String? = null,
+    val text: String,
 )
 
 /** One battle script: deploy roster via `pre` spawns, with win/lose conditions. */
