@@ -95,6 +95,36 @@ class LegacyBattleEndToEndTest {
     }
 
     @Test
+    fun allyFactionDeploysOnThePlayerSide() {
+        // An ALLY-faction placement (an allied NPC, e.g. the full-stage 大兴山 dispatch's 0x46 friend roster)
+        // spawns same-side as the player: the engine groups PLAYER‖ALLY, so the player cannot attack it and
+        // the enemy can. Proves Placement.faction override drives a real 3-faction deployment end-to-end.
+        val terrainMap = """{"desc":"tm","map_width":3,"map_height":3,"map_value":[[1,1,1],[1,1,1],[1,1,1]]}"""
+        val battle = MapBattleSpec(
+            battleId = "ally",
+            mapId = "am",
+            protect = "hero_1",
+            placements = listOf(
+                Placement("hero_1", 0, 0),
+                Placement("hero_2", 1, 0, faction = LegacyBattleBuilder.ALLY_FACTION),
+                Placement("hero_3", 2, 2, enemy = true),
+            ),
+        )
+        val content = LegacyBattleBuilder.loadOnMap(meta, sources(), terrainMap, battle)
+        assertEquals(emptyList(), ContentValidator.validate(content), "3-faction pack must validate")
+
+        val setup = CampaignAssembler.assemble(content, "ally", "am")
+        val units = setup.initialState.units
+        assertEquals(Faction.ALLY, units.getValue("hero_2").faction, "ally NPC spawns as ALLY (faction override)")
+        assertEquals(Faction.PLAYER, units.getValue("hero_1").faction)
+        assertEquals(Faction.ENEMY, units.getValue("hero_3").faction)
+        assertTrue(
+            "hero_2" !in Gameplay.legalTargets(setup.initialState, "hero_1", "skill_1", setup.context),
+            "the player cannot attack a same-side ally",
+        )
+    }
+
+    @Test
     fun portedDataAssemblesIntoAValidLoadableBattle() {
         val content = LegacyBattleBuilder.load(meta, sources(), spec)
 
