@@ -24,11 +24,19 @@ import com.ccz.core.event.SScript
  * battle authority; this only loads + assembles content and never holds a second copy of combat truth.
  */
 object CampaignRuntime {
-    const val BATTLE_SCRIPT_ID = "daxingshan"
-    const val MAP_ID = "daxingshan_map"
+    const val BATTLE_SCRIPT_ID = "daxingshan_full"
+    const val MAP_ID = "daxingshan_full_map"
     const val INTRO_SCRIPT_ID = "daxingshan_intro"
 
-    private const val BATTLE_PACK = "/content/ccz_daxingshan/campaign.json"
+    // The faithful FULL-STAGE 大兴山 battle (real dispatch roster on the complete 23×16 map, #138). The battle
+    // pack is a HAND-MAINTAINED artifact: `LegacyPackGenerator.generateFullStage` emits the real roster/coords
+    // (basic attacks, content_version 0.1.0), then the hand-authored effect-skill table (skill_2~8) + the player
+    // trio's effect loadouts (刘备 heal/cleanse, 关羽 debuff/silence, 张飞 buff/stun) + 程远志's enemy 破甲 are
+    // spliced in and the version bumped to 0.7.0 — DO NOT blind-regenerate over it (the CampaignRuntimeTest +
+    // CastRoutingTest guards loudly fail if the splice is lost). The authored intro r-script ships in
+    // ccz_daxingshan/intro.json (portrait-based, so unit-id-independent); both packs share one content_version
+    // (ADR 0007).
+    private const val BATTLE_PACK = "/content/ccz_daxingshan_full/campaign.json"
     private const val SCENARIO_PACK = "/content/ccz_daxingshan/intro.json"
 
     private val setup: BattleSetup by lazy { CampaignAssembler.assemble(battlePack(), BATTLE_SCRIPT_ID, MAP_ID) }
