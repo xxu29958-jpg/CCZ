@@ -1,8 +1,11 @@
 package com.ccz.modimport
 
+import com.ccz.modimport.LegacyScriptDecoder.LegacyLine
 import com.ccz.modimport.LegacyScriptDecoder.LegacyObjectives
+import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -78,6 +81,37 @@ class LegacySemanticMapperTest {
         assertTrue(m.lose.isEmpty())
         assertEquals(1, m.unsupported.size)
         assertTrue("无名小卒" in m.unsupported[0].reason)
+    }
+
+    @Test
+    fun mapsDialogueLinesToDialogueOpsVerbatim() {
+        val lines = listOf(
+            LegacyLine(scene = "战前过渡", speaker = "程远志", text = "借粮重任，托付于你。", offset = 0),
+            LegacyLine(scene = "战前过渡", speaker = null, text = "（三骑并辔上山）", offset = 10),
+        )
+        val ops = LegacySemanticMapper.mapDialogue(lines)
+        assertEquals(2, ops.size)
+        assertEquals(PackScenarioOp.DIALOGUE, ops[0].type)
+        assertEquals("程远志", ops[0].line?.speaker)
+        assertEquals("借粮重任，托付于你。", ops[0].line?.text)
+        assertNull(ops[1].line?.speaker, "narration carries no speaker")
+        assertEquals("（三骑并辔上山）", ops[1].line?.text)
+    }
+
+    @Test
+    fun dialogueOpSerializesToTheNativeWireShape() {
+        // {type:"dialogue", line:{speaker,text}} with null target/speaker omitted (matches native ScenarioOpDto)
+        val json = Json
+        val spoken = json.encodeToString(PackScenarioOp.serializer(), PackScenarioOp.dialogue("程远志", "借粮。"))
+        assertTrue("\"type\":\"dialogue\"" in spoken, spoken)
+        assertTrue("\"speaker\":\"程远志\"" in spoken)
+        assertTrue("\"target\"" !in spoken, "a dialogue op omits the null target key: $spoken")
+        val narration = json.encodeToString(PackScenarioOp.serializer(), PackScenarioOp.dialogue(null, "旁白"))
+        assertTrue("\"speaker\"" !in narration, "narration omits the null speaker key: $narration")
+        // scene_transition op: {type:"scene_transition", target} with the null line key omitted
+        val scene = json.encodeToString(PackScenarioOp.serializer(), PackScenarioOp.sceneTransition("幽州·大兴山"))
+        assertTrue("\"type\":\"scene_transition\"" in scene && "\"target\":\"幽州·大兴山\"" in scene, scene)
+        assertTrue("\"line\"" !in scene, "a scene_transition op omits the null line key: $scene")
     }
 
     @Test

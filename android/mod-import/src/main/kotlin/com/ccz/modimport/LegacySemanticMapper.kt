@@ -53,6 +53,15 @@ object LegacySemanticMapper {
         return MappedObjectives(win, lose, unsupported)
     }
 
+    /**
+     * Map decoded dialogue lines into cutscene dialogue ops, one op per line. Faithful and lossless: the
+     * speaker and text are carried verbatim (legacy line breaks preserved). Scene framing — `scene_transition`,
+     * portraits, bgm, fades — is a presentation/generation choice, NOT inferred here, so this layer stays a
+     * pure content mapping (the generator adds framing if it wants).
+     */
+    fun mapDialogue(lines: List<LegacyScriptDecoder.LegacyLine>): List<PackScenarioOp> =
+        lines.map { PackScenarioOp.dialogue(it.speaker, it.text) }
+
     private fun mapSide(
         clauses: List<String>,
         side: String,
