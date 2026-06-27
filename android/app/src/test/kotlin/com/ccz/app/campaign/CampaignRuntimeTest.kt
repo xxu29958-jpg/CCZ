@@ -30,19 +30,29 @@ class CampaignRuntimeTest {
     }
 
     @Test
-    fun theRealRosterDeploysWithRealSides() {
+    fun theFullRosterDeploysWithAllThreeFactionsAndEffectSkills() {
         val state = CampaignRuntime.initialState()
-        assertEquals(setOf("hero_1", "hero_2", "hero_3", "hero_226", "hero_227"), state.units.keys)
-        assertEquals(Faction.PLAYER, state.units.getValue("hero_2").faction) // 关羽
+        assertEquals("the faithful full stage deploys the whole dispatch roster (3 player + 22 enemy + 8 ally)", 33, state.units.size)
+        assertEquals(
+            "all three sides take the field",
+            setOf(Faction.PLAYER, Faction.ALLY, Faction.ENEMY),
+            state.units.values.map { it.faction }.toSet(),
+        )
+        assertEquals(Faction.PLAYER, state.units.getValue("hero_1").faction) // 刘备 protagonist
         assertEquals(Faction.ENEMY, state.units.getValue("hero_226").faction) // 程远志 (spawn faction override)
-        assertEquals(Faction.ENEMY, state.units.getValue("hero_227").faction) // 邓茂
+        assertEquals(Faction.ALLY, state.units.getValue("hero_650").faction) // a dispatched allied NPC
+        // the player trio keeps its hand-authored effect skills (the reconciliation survived into the live runtime)
+        val loadouts = CampaignRuntime.context().loadouts
+        assertTrue("刘备 keeps heal+cleanse", loadouts.getValue("hero_1").containsAll(listOf("skill_2", "skill_8")))
+        assertTrue("关羽 keeps debuff+silence", loadouts.getValue("hero_2").containsAll(listOf("skill_4", "skill_5")))
+        assertTrue("张飞 keeps buff+stun", loadouts.getValue("hero_3").containsAll(listOf("skill_3", "skill_6")))
     }
 
     @Test
-    fun theBattleIsFoughtOnRealCroppedTerrain() {
+    fun theBattleIsFoughtOnTheFullRealMap() {
         val map = CampaignRuntime.context().map
-        assertEquals(8, map.width)
-        assertEquals(7, map.height)
+        assertEquals("the full uncropped terrainMap_1", 23, map.width)
+        assertEquals(16, map.height)
         val terrains = (0 until map.width).flatMap { x -> (0 until map.height).map { y -> map.tileAt(Pos(x, y)).terrainId } }.toSet()
         assertTrue("the board carries real legacy terrain (荒地/山地/树林)", terrains.any { it in setOf("terrain_3", "terrain_4", "terrain_5") })
         assertTrue("a real map has more than one terrain type", terrains.size > 1)
@@ -56,30 +66,29 @@ class CampaignRuntimeTest {
     }
 
     @Test
-    fun everyEnemyAdvancesOnItsAutoDrivenTurn() {
+    fun theEnemyTurnTerminatesAndHandsBackToThePlayer() {
         val reducer = BattleReducer(CampaignRuntime.context(), CampaignRuntime.script(), CampaignRuntime.scriptContext())
         val start = reducer.initial(CampaignRuntime.initialState())
         val after = reducer.endTurn(start)
-        start.state.units.values.filter { it.faction == Faction.ENEMY }.forEach { enemy ->
-            assertTrue(
-                "enemy ${enemy.id} must be able to move on its turn (not stranded by terrain)",
-                after.state.units.getValue(enemy.id).pos != enemy.pos,
-            )
-        }
+        // 22 enemies auto-drive then the loop hands control back: a crowded big map must still TERMINATE (active
+        // becomes PLAYER again) and the AI must not be globally stranded (some enemy advances toward a foe — a
+        // back-rank unit may be blocked by its own line, so "every enemy moves" no longer holds, but "some does").
+        assertEquals("the enemy turn terminates and returns control to the player", Faction.PLAYER, after.state.active)
+        val enemies = start.state.units.values.filter { it.faction == Faction.ENEMY }
+        assertTrue("at least one enemy advances on its turn", enemies.any { after.state.units.getValue(it.id).pos != it.pos })
     }
 
     @Test
     fun growthAndGradeBudgetRealHeroPanelsOnTheField() {
         val state = CampaignRuntime.initialState()
-        // 关羽 — 裨将 +4 atk / +6 hp per level; level 8, grade 2 (140%): atk 137, hp 228.
+        // 关羽 — 裨将 +4 atk / +6 hp per level; level 8, grade 2 (140%): atk 137, hp 228 (deploy level preserved).
         val guanyu = state.units.getValue("hero_2")
         assertEquals(137, guanyu.stats.atk)
         assertEquals(228, guanyu.hpMax)
-        // 邓茂 — 黄巾军 +3 atk / +5 hp per level; level 4, grade 0 (100%): atk 84, hp 155.
-        val dengmao = state.units.getValue("hero_227")
-        assertEquals(84, dengmao.stats.atk)
-        assertEquals(155, dengmao.hpMax)
-        assertTrue("the grade-2 veteran outscales the grade-0 rookie", guanyu.stats.atk > dengmao.stats.atk)
+        // a real dispatched enemy at its low LEGACY level — the leveled grade-2 veteran outscales it, proving
+        // growth × grade still bites for the real full roster, not just the curated subset.
+        val grunt = state.units.getValue("hero_226") // 程远志 (重骑兵), real deploy level 2
+        assertTrue("the grade-2 veteran outscales a real low-level enemy", guanyu.stats.atk > grunt.stats.atk)
     }
 
     @Test
