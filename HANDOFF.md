@@ -36,7 +36,19 @@
 
 ## 在途任务
 
-- 无（成长/品质评级 + 真实战斗进 app 弧线 #82–#93 + 自主优化审计扫荡 #95–#98 + 优化 backlog 三片〔地形检视 #8 / 敌方 AI 低血优先 / LegacyBattleBuilder DRY #9/#10〕+ **自主优化审计扫荡 ④ 全 4 片 #126–#128** 收尾,工作树干净）。优化审计高价值项已扫净;余项审计判低价值/高风险或需独立 ADR,已诚实 defer（见下方 bullet）。
+- **下一弧线:真·旧作整关移植**（用户裁决"要"）。现 大兴山 demo 是**手工设计的简化对局**（非旧作 S_00 真实部署——实证 S_00 真实部署是整关全套大名单〔水军/曹丕/黄巾兵/费祎…〕,demo 那 5 人一个不在）。要忠实搬整关:dispatch 记录解析 → 真 roster+坐标 → 完整 23×16 地图（棋盘滚动 #96 已支持,无需裁剪）→ pack → 可玩。**dispatch 布局 RE 已起步并入仓**（`docs/recon/eex-dispatch-layout.md`:0x4b 玩家 = 列表索引+x/y 直接字段、0x47/0x46 敌友 = 80/20 child 槽循环、hid@child+4;剩余:反汇编敌友 child 子对象定 x/y 偏移 + 解 0x4a own-force 列表 + 可靠链式遍历）。下一轮直接从该文件开建。
+- 无其它在途（成长/品质评级 #82–#93 + 自主优化审计扫荡 #95–#98 + 优化扫荡 ④ #126–#128 + **内容生成器框架 #130–135** 均收尾,工作树干净）。
+
+## 内容生成器框架（ADR 0009，#130–135，本轮）
+
+把旧作移植从"一次性转换器"升级成**内容生成器框架**:EEX 旧作脚本生成器是第一个插件;**Content Pack 是唯一 ABI**;game-core 永不解析 EEX/旧 VM。已落地大兴山 **vertical slice 闭环**（真 S_00 脚本 → 引擎目标,对账等价手写）:
+- **#130** ADR 0009（方向 + 硬边界 + 止损门）+ EEX 解密真相源入仓（`docs/recon/`:codex 两份 ledger + 独立验证工具 `eex_decode.py`〔全 316 文件 framing 通过〕/`eex_initpara.py`〔从 .so 抽 99 op 长度模型逐字节对照〕/`eex_convert.py`〔大兴山真内容样本〕）+ **`EexCodec`**（EEX 容器字节级读取:framing + cmd-tagged 字符串,fail-closed,只答"文件里有什么"）。
+- **#131** `LegacyScriptDecoder`（EEX 原始流 → legacy AST:对白〔`&` 拆说话人〕/场景标签/胜负条件块,只解格式不碰引擎语义）。
+- **#132** `LegacySemanticMapper`（clause → 引擎 `PackCondition`:全灭同义词集 + side-aware 死亡〔lose→protect_alive / win→defeat_unit〕,不可信映射标 unsupported）。
+- **#133** r_script（过场）pack DTO + 对白映射（`LegacyLine` → dialogue op,wire-format 对 native 双向核验）。
+- **#134** `LegacyObjectiveImporter`（真脚本派生胜负目标 + 按 roster 过滤:邹靖出 roster、回合 deadline unsupported;落选阶段 unsupported 不静默丢）。
+- **#135** 接进 `LegacyPackGenerator`:`generate()` 读真 `S_00.eex_new` → 派生大兴山目标 → `MapBattleSpec.win/lose`,**离线对账 RECONCILE: True**（派生 = committed `win=[annihilate]`/`lose=[protect 刘备]`）。**committed pack 不重生覆盖**——保住手添效果战法 skill_2~6（KNOWN_ISSUES 据实更新）。
+- 全程纯函数 + fail-closed + 合成测试（mod-import count 71 测,CI 不跑 mod-import,靠本地门 + 对抗审）+ 每片 2 镜头对抗审 0 P1。`Resolver`/RNG/`Formula`/`RULES_VERSION`/golden 零碰。
 
 ## 下一步（V1 Roadmap，每片走 `skills/ship-slice`）
 
