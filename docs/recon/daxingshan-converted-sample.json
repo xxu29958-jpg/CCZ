@@ -1,0 +1,141 @@
+{
+  "_provenance": {
+    "tool": "eex_convert.py (fail-closed first slice)",
+    "source_file": "S_00.eex_new",
+    "dialogue_offset_range": [
+      "0x4100",
+      "0x4700"
+    ],
+    "decoded_from": "real legacy EEX (decrypted), faithful text"
+  },
+  "r_script": {
+    "id": "daxingshan_intro_real",
+    "ops": [
+      {
+        "type": "scene_transition",
+        "target": "幽州·大兴山"
+      },
+      {
+        "type": "dialogue",
+        "line": {
+          "speaker": "程远志",
+          "text": "邓将军，我等欲攻蓟城，怎奈军资不足，今日这借粮重任，便托付于你，万万不可大意。"
+        }
+      },
+      {
+        "type": "dialogue",
+        "line": {
+          "speaker": "邓茂",
+          "text": "程将军安心，邓某出马，岂能空手而回？"
+        }
+      },
+      {
+        "type": "dialogue",
+        "line": {
+          "speaker": "程远志",
+          "text": "尔须得约束手下，不可胡作非为。休要有违大贤良师将令！"
+        }
+      },
+      {
+        "type": "dialogue",
+        "line": {
+          "speaker": "邓茂",
+          "text": "……这个自然，自然。"
+        }
+      },
+      {
+        "type": "dialogue",
+        "line": {
+          "speaker": "邓茂",
+          "text": "（呸，想填饱肚子，还装甚良善。靠汝这无能之辈，我等早饿死了！）"
+        }
+      },
+      {
+        "type": "dialogue",
+        "line": {
+          "speaker": "邓茂",
+          "text": "出发！"
+        }
+      },
+      {
+        "type": "dialogue",
+        "line": {
+          "speaker": "百姓2",
+          "text": "你……你等要作甚？"
+        }
+      },
+      {
+        "type": "dialogue",
+        "line": {
+          "speaker": "黄巾兵2",
+          "text": "老乡，我等乃是太平教徒，今日特来借粮。"
+        }
+      },
+      {
+        "type": "dialogue",
+        "line": {
+          "speaker": "百姓2",
+          "text": "借粮？如今四下里饿殍遍野，我等何来粮食相借？"
+        }
+      },
+      {
+        "type": "dialogue",
+        "line": {
+          "speaker": "百姓2",
+          "text": "啊…………"
+        }
+      },
+      {
+        "type": "dialogue",
+        "line": {
+          "speaker": "邓茂",
+          "text": "一刀一个岂不爽快，何必跟他废话！"
+        }
+      },
+      {
+        "type": "dialogue",
+        "line": {
+          "speaker": "黄巾兵2",
+          "text": "邓将军……"
+        }
+      },
+      {
+        "type": "dialogue",
+        "line": {
+          "speaker": "邓茂",
+          "text": "违逆黄天者，实在该死！待搜出粮食，尔等再放把火，烧个干干净净！"
+        }
+      },
+      {
+        "type": "dialogue",
+        "line": {
+          "speaker": "黄巾兵2",
+          "text": "邓将军，咱们太平教以善道教化天下，程将军亦有军令……"
+        }
+      }
+    ]
+  },
+  "s_script_objectives": {
+    "win": [
+      {
+        "type": "annihilate_enemies"
+      }
+    ],
+    "lose": [
+      {
+        "type": "protect_alive",
+        "unit": "hero_1"
+      },
+      {
+        "type": "protect_alive",
+        "unit": "hero_182"
+      }
+    ]
+  },
+  "unsupported": [
+    {
+      "clause": "回合数超过15",
+      "reason": "turn-deadline lose ('回合数超过15'): CCZ SurviveTurns is survive-to-win (opposite); needs a TurnLimit condition"
+    }
+  ]
+}
