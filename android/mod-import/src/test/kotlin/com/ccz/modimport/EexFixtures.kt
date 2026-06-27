@@ -32,6 +32,33 @@ internal object EexFixtures {
         return b
     }
 
+    /** One actor written into a [dispatchRec] slot: its [slot] index plus the fields the importer reads. */
+    data class DispatchUnit(val slot: Int, val hid: Int, val x: Int, val y: Int, val level: Int)
+
+    /**
+     * A dispatch record: `<cmd:u8> 00 02 00` then [slots] fixed slots of [stride] bytes. Each [units] entry
+     * writes its actor (hid @+0x2, x @[xOff], y @[yOff], level @+0x1a, all signed little-endian) into its slot;
+     * every other slot stays zero (hid 0 = an empty sentinel). Mirrors the on-disk shape [LegacyRosterImporter]
+     * reads — the per-side field offsets are passed in by the test so they stay an independent spec cross-check.
+     */
+    fun dispatchRec(cmd: Int, slots: Int, stride: Int, xOff: Int, yOff: Int, units: List<DispatchUnit>): ByteArray {
+        val body = ByteArray(slots * stride)
+        body[0] = 0x02; body[1] = 0x00 // the `02 00` tag word after the cmd (slot 0's +0x0 field)
+        for (u in units) {
+            val base = u.slot * stride
+            putS16(body, base + 0x2, u.hid)
+            putS16(body, base + xOff, u.x)
+            putS16(body, base + yOff, u.y)
+            putS16(body, base + 0x1a, u.level)
+        }
+        return byteArrayOf((cmd and 0xff).toByte(), 0x00) + body
+    }
+
+    private fun putS16(b: ByteArray, o: Int, v: Int) {
+        b[o] = (v and 0xff).toByte()
+        b[o + 1] = ((v ushr 8) and 0xff).toByte()
+    }
+
     fun putU32(b: ByteArray, o: Int, v: Int) {
         b[o] = (v and 0xff).toByte()
         b[o + 1] = ((v ushr 8) and 0xff).toByte()
