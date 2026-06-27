@@ -47,7 +47,15 @@ data class PackSpawn(
 data class PackCondition(
     val type: String,
     val unit: String? = null,
-)
+) {
+    /** The content-pack win/lose discriminator strings, single-sourced for every producer (the battle
+     *  builder and the legacy semantic mapper) so the wire-format ids cannot drift between them. */
+    companion object {
+        const val ANNIHILATE_ENEMIES = "annihilate_enemies"
+        const val PROTECT_ALIVE = "protect_alive"
+        const val DEFEAT_UNIT = "defeat_unit"
+    }
+}
 
 @Serializable
 data class PackPos(val x: Int, val y: Int)
@@ -90,8 +98,8 @@ data class MapBattleSpec(
  */
 object LegacyBattleBuilder {
     private const val SPAWN = "spawn_unit"
-    private const val ANNIHILATE = "annihilate_enemies"
-    private const val PROTECT = "protect_alive"
+    private const val ANNIHILATE = PackCondition.ANNIHILATE_ENEMIES
+    private const val PROTECT = PackCondition.PROTECT_ALIVE
     private const val ENEMY = "ENEMY"
 
     private val writer = Json { prettyPrint = true }
