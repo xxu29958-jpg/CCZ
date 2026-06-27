@@ -30,6 +30,8 @@ import java.io.File
  * where `<extractedRoot>` holds `json/` (the dic_* tables) and `terrainJson/` (the terrainMap_*.json maps).
  */
 object LegacyPackGenerator {
+    // 大兴山 is gkid 1, whose stage script is Scenes/S_00.eex_new (S_n ↔ gkid n+1; see docs/recon).
+    private const val DAXINGSHAN_SCRIPT = "S_00.eex_new"
     private const val BASIC_ATTACK_ID = "skill_1"
     private const val BASIC_ATTACK_JSON = """[{"skid":1,"name":"普攻","type":0,"hurt_num":100,"mp_consume":0}]"""
 
@@ -60,12 +62,19 @@ object LegacyPackGenerator {
         RosterEntry(hid = 227, x = 0, y = 1, enemy = true, level = 4), // 邓茂   黄巾军 grade 0
     )
 
-    /** Generate the 大兴山 battle pack JSON from the legacy tables under [extractedRoot] (json/ + terrainJson/). */
+    /**
+     * Generate the 大兴山 battle pack JSON from the legacy tables under [extractedRoot] (`json/` + `terrainJson/`
+     * + `Scenes/`). The win/lose objectives are DERIVED from the real stage script (gkid 1 大兴山 → `S_00.eex_new`)
+     * via [LegacyObjectiveImporter], scoped to the deployed roster, instead of being hand-coded — for 大兴山 they
+     * reconcile to annihilate-enemies / protect-刘备 (the script's protect-邹靖 falls out of roster since 邹靖 is
+     * not deployed in this curated battle; its turn deadline is unsupported).
+     */
     fun generate(extractedRoot: String): String {
         val root = File(extractedRoot)
         val jsonDir = File(root, "json")
         val hids = DAXINGSHAN.map { it.hid }.toSet()
-        val roster = readArray(jsonDir, "dic_hero.json").filter { it.jsonObject["hid"]?.jsonPrimitive?.int in hids }
+        val allHeroes = readArray(jsonDir, "dic_hero.json")
+        val roster = allHeroes.filter { it.jsonObject["hid"]?.jsonPrimitive?.int in hids }
         require(roster.size == hids.size) { "extracted dic_hero is missing some roster hids: $hids" }
         val jobIds = roster.mapNotNull { it.jsonObject["jobid"]?.jsonPrimitive?.int }.toSet()
         val jobs = readArray(jsonDir, "dic_job.json").filter { it.jsonObject["jobid"]?.jsonPrimitive?.int in jobIds }
@@ -79,13 +88,27 @@ object LegacyPackGenerator {
             dicJobTerrain = read(jsonDir, "dic_jobTerrain.json"),
         )
         val terrainMap = cropTerrainMap(read(File(root, "terrainJson"), "terrainMap_1.json"))
+        val objectives = importObjectives(root, allHeroes, hids)
         val spec = MapBattleSpec(
             battleId = "daxingshan",
             mapId = "daxingshan_map",
-            protect = "hero_1", // 刘备 falling = defeat
+            protect = "hero_1", // 刘备 falling = defeat (fallback if the script declares no win/lose)
             placements = DAXINGSHAN.map { Placement("hero_${it.hid}", it.x, it.y, it.enemy, it.level) },
+            win = objectives.win.ifEmpty { null },
+            lose = objectives.lose.ifEmpty { null },
         )
         return LegacyBattleBuilder.toJson(grantBasicAttack(LegacyBattleBuilder.buildBattleOnMap(meta(), sources, terrainMap, spec)))
+    }
+
+    /** Import 大兴山's win/lose objectives from the real `Scenes/S_00.eex_new`, scoped to the deployed roster.
+     *  [allHeroes] (full dic_hero) resolves any name (incl. non-deployed allies like 邹靖) to its hero id. */
+    private fun importObjectives(root: File, allHeroes: List<JsonElement>, hids: Set<Int>): LegacyObjectiveImporter.ImportedObjectives {
+        val nameToId = allHeroes.associate { hero ->
+            (hero.jsonObject["name"]?.jsonPrimitive?.content ?: "") to "hero_${hero.jsonObject["hid"]?.jsonPrimitive?.int}"
+        }
+        val rosterIds = hids.mapTo(HashSet()) { "hero_$it" }
+        val scriptBytes = File(File(root, "Scenes"), DAXINGSHAN_SCRIPT).readBytes()
+        return LegacyObjectiveImporter.importObjectives(scriptBytes, rosterIds, nameToId::get)
     }
 
     /** Crop the real terrainMap to the [WIN_W]×[WIN_H] window at ([WIN_X],[WIN_Y]) as a terrainMap JSON. */

@@ -116,12 +116,22 @@ data class BattleSpec(
     val placements: List<Placement>,
 )
 
-/** A battle fought on a *real* ported legacy map (its size/terrain come from the map, not the spec). */
+/**
+ * A battle fought on a *real* ported legacy map (its size/terrain come from the map, not the spec).
+ *
+ * [win]/[lose] are the battle's objectives. When null they default to the synthesized
+ * annihilate-enemies / protect-[protect] pair (the original behavior); when supplied they are the
+ * objectives DERIVED from the real legacy script ([LegacyObjectiveImporter]) — already scoped to the
+ * deployed roster — so a battle's win/lose come from the script instead of being hand-coded. [protect]
+ * remains the fallback for the synthesized case.
+ */
 data class MapBattleSpec(
     val battleId: String,
     val mapId: String,
     val protect: String,
     val placements: List<Placement>,
+    val win: List<PackCondition>? = null,
+    val lose: List<PackCondition>? = null,
 )
 
 /**
@@ -148,9 +158,13 @@ object LegacyBattleBuilder {
         val size = PackSize(spec.width, spec.height)
         val row = List(spec.width) { spec.terrainId }
         val map = PackMap(id = mapId(spec.battleId), size = size, tileset = "legacy", tiles = List(spec.height) { row })
-        val battle = battleScript(spec.battleId, spec.protect, spec.placements, size, mapLabel = "")
+        val battle = battleScript(spec.battleId, defaultWin(), defaultLose(spec.protect), spec.placements, Bounds(size, ""))
         return assemble(meta, sources, battle, map, spec.placements)
     }
+
+    /** The synthesized battle's default objectives, used when a spec does not carry script-derived ones. */
+    private fun defaultWin(): List<PackCondition> = listOf(PackCondition(ANNIHILATE))
+    private fun defaultLose(protect: String): List<PackCondition> = listOf(PackCondition(PROTECT, unit = protect))
 
     /** Serialize a built battle pack as native content-pack JSON. */
     fun toJson(pack: PackContent): String = writer.encodeToString(PackContent.serializer(), pack)
@@ -173,7 +187,10 @@ object LegacyBattleBuilder {
     ): PackContent {
         require(spec.placements.isNotEmpty()) { "battle needs at least one placement" }
         val map = LegacyMapMapper.mapMap(terrainMapJson, spec.mapId)
-        val battle = battleScript(spec.battleId, spec.protect, spec.placements, map.size, mapLabel = " '${spec.mapId}'")
+        // Use the script-derived objectives when the spec carries them; else fall back to the synthesized pair.
+        val win = spec.win ?: defaultWin()
+        val lose = spec.lose ?: defaultLose(spec.protect)
+        val battle = battleScript(spec.battleId, win, lose, spec.placements, Bounds(map.size, " '${spec.mapId}'"))
         val pack = assemble(meta, sources, battle, map, spec.placements)
         // A real ported map can reference terrain ids absent from the imported catalog (edge/void ids);
         // auto-fill them as default passable terrain so coverage validation passes (synth maps need none).
@@ -184,26 +201,29 @@ object LegacyBattleBuilder {
     fun loadOnMap(meta: PackMeta, sources: LegacyTableSources, terrainMapJson: String, spec: MapBattleSpec): NativeContent =
         ContentJsonLoader.load(toJson(buildBattleOnMap(meta, sources, terrainMapJson, spec)))
 
+    /** The bounding map a battle's placements must fit, plus its [label] for the off-map error message
+     *  ("" for a synthesized field, " 'id'" for a real ported map). Bundled so [battleScript] stays in budget. */
+    private data class Bounds(val size: PackSize, val label: String)
+
     /**
-     * The deploy-and-fight battle script: annihilate-enemies to win, protect [protect] to avoid loss, and a
-     * `pre` spawn per placement (faction-overridden for enemies). Single-sources the spawn mapping AND the
-     * off-map bounds check for both builders — [size] is the bounding map and [mapLabel] names it in the
-     * error message ("" for a synthesized field, " 'id'" for a real ported map).
+     * The deploy-and-fight battle script: the [win]/[lose] objectives and a `pre` spawn per placement
+     * (faction-overridden for enemies). Single-sources the spawn mapping AND the off-map bounds check for both
+     * builders — [bounds] is the bounding map (size + label).
      */
     private fun battleScript(
         battleId: String,
-        protect: String,
+        win: List<PackCondition>,
+        lose: List<PackCondition>,
         placements: List<Placement>,
-        size: PackSize,
-        mapLabel: String,
+        bounds: Bounds,
     ): PackBattle =
         PackBattle(
             id = battleId,
-            win = listOf(PackCondition(ANNIHILATE)),
-            lose = listOf(PackCondition(PROTECT, unit = protect)),
+            win = win,
+            lose = lose,
             pre = placements.map { p ->
-                require(p.x in 0 until size.width && p.y in 0 until size.height) {
-                    "placement of '${p.unit}' at (${p.x}, ${p.y}) is off the ${size.width}x${size.height} map$mapLabel"
+                require(p.x in 0 until bounds.size.width && p.y in 0 until bounds.size.height) {
+                    "placement of '${p.unit}' at (${p.x}, ${p.y}) is off the ${bounds.size.width}x${bounds.size.height} map${bounds.label}"
                 }
                 PackSpawn(type = SPAWN, unit = p.unit, at = PackPos(p.x, p.y), faction = if (p.enemy) ENEMY else null)
             },
