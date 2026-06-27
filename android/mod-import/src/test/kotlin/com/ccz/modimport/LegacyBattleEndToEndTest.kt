@@ -73,6 +73,28 @@ class LegacyBattleEndToEndTest {
     }
 
     @Test
+    fun scriptDerivedObjectivesOverrideTheSynthesizedDefaults() {
+        // when a spec carries script-derived win/lose (LegacyObjectiveImporter output), the battle uses them
+        // instead of the synthesized annihilate-enemies / protect default — here "kill the enemy 曹将 to win".
+        val terrainMap = """{"desc":"tm","map_width":3,"map_height":3,"map_value":[[1,1,1],[1,1,1],[1,1,1]]}"""
+        // protect="hero_4" is the FALLBACK lose (used only if no override) — kept deliberately different from the
+        // overridden lose so the assertions distinguish "spec honored" from "default fired" on BOTH sides.
+        val derived = MapBattleSpec(
+            battleId = "obj",
+            mapId = "om",
+            protect = "hero_4",
+            placements = listOf(Placement("hero_1", 0, 0), Placement("hero_4", 2, 2, enemy = true)),
+            win = listOf(PackCondition(PackCondition.DEFEAT_UNIT, unit = "hero_4")),
+            lose = listOf(PackCondition(PackCondition.PROTECT_ALIVE, unit = "hero_1")),
+        )
+        val script = checkNotNull(LegacyBattleBuilder.buildBattleOnMap(meta, sources(), terrainMap, derived).events).sScripts.single()
+        assertEquals(listOf(PackCondition(PackCondition.DEFEAT_UNIT, unit = "hero_4")), script.win, "win is the spec's, not the annihilate default")
+        assertEquals(listOf(PackCondition(PackCondition.PROTECT_ALIVE, unit = "hero_1")), script.lose, "lose is the spec's (hero_1), not the default protect(hero_4)")
+        // the derived-objective pack still loads + validates end-to-end
+        assertEquals(emptyList(), ContentValidator.validate(LegacyBattleBuilder.loadOnMap(meta, sources(), terrainMap, derived)))
+    }
+
+    @Test
     fun portedDataAssemblesIntoAValidLoadableBattle() {
         val content = LegacyBattleBuilder.load(meta, sources(), spec)
 
