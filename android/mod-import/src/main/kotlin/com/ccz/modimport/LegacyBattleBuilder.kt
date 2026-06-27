@@ -103,8 +103,20 @@ data class PackPos(val x: Int, val y: Int)
  * group, not a level), so deploy levels are a battle-spec design input — exactly the "战役元数据指定的
  * 出场等级" ADR 0006 names. A unit placed above level 1 is budgeted by its class growth × quality grade
  * at assembly time; this is what makes the growth/grade levers actually bite for ported heroes.
+ *
+ * [faction] (when set) is the explicit spawn faction — [LegacyBattleBuilder.ENEMY_FACTION] /
+ * [LegacyBattleBuilder.ALLY_FACTION] / `"PLAYER"` — and OVERRIDES [enemy]; it is how an allied NPC deploys
+ * as ALLY (the engine groups PLAYER‖ALLY as one side, so allies fight alongside the player). When null, the
+ * [enemy] shorthand picks ENEMY vs the unit's own default faction.
  */
-data class Placement(val unit: String, val x: Int, val y: Int, val enemy: Boolean = false, val level: Int = 1)
+data class Placement(
+    val unit: String,
+    val x: Int,
+    val y: Int,
+    val enemy: Boolean = false,
+    val level: Int = 1,
+    val faction: String? = null,
+)
 
 /** A synthesized skirmish over ported data: a flat map plus a deploy-and-fight battle script. */
 data class BattleSpec(
@@ -147,7 +159,10 @@ object LegacyBattleBuilder {
     private const val SPAWN = "spawn_unit"
     private const val ANNIHILATE = PackCondition.ANNIHILATE_ENEMIES
     private const val PROTECT = PackCondition.PROTECT_ALIVE
-    private const val ENEMY = "ENEMY"
+
+    /** Spawn-faction override strings (must match the engine's `Faction` enum names the content loader decodes). */
+    const val ENEMY_FACTION: String = "ENEMY"
+    const val ALLY_FACTION: String = "ALLY"
 
     private val writer = Json { prettyPrint = true }
 
@@ -225,7 +240,7 @@ object LegacyBattleBuilder {
                 require(p.x in 0 until bounds.size.width && p.y in 0 until bounds.size.height) {
                     "placement of '${p.unit}' at (${p.x}, ${p.y}) is off the ${bounds.size.width}x${bounds.size.height} map${bounds.label}"
                 }
-                PackSpawn(type = SPAWN, unit = p.unit, at = PackPos(p.x, p.y), faction = if (p.enemy) ENEMY else null)
+                PackSpawn(type = SPAWN, unit = p.unit, at = PackPos(p.x, p.y), faction = p.faction ?: if (p.enemy) ENEMY_FACTION else null)
             },
         )
 
