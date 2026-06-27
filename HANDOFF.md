@@ -36,10 +36,10 @@
 
 ## 在途任务
 
-- **下一弧线:真·旧作整关移植**（用户裁决"要"）。现 大兴山 demo 是**手工设计的简化对局**（非旧作 S_00 真实部署——实证 S_00 真实部署是整关全套大名单〔水军/曹丕/黄巾兵/费祎…〕,demo 那 5 人一个不在）。要忠实搬整关:dispatch 记录解析 → 真 roster+坐标 → 完整 23×16 地图（棋盘滚动 #96 已支持,无需裁剪）→ pack → 可玩。**dispatch 布局 RE 已起步并入仓**（`docs/recon/eex-dispatch-layout.md`:0x4b 玩家 = 列表索引+x/y 直接字段、0x47/0x46 敌友 = 80/20 child 槽循环、hid@child+4;剩余:反汇编敌友 child 子对象定 x/y 偏移 + 解 0x4a own-force 列表 + 可靠链式遍历）。下一轮直接从该文件开建。
-- 无其它在途（成长/品质评级 #82–#93 + 自主优化审计扫荡 #95–#98 + 优化扫荡 ④ #126–#128 + **内容生成器框架 #130–135** 均收尾,工作树干净）。
+- **下一弧线:真·旧作整关移植**（用户裁决"要"）。现 大兴山 demo 是**手工设计的简化对局**（非旧作 S_00 真实部署——实证 S_00 真实部署是整关全套大名单〔黄巾兵/邹靖部/将领…〕,demo 那 5 人一个不在）。要忠实搬整关:dispatch 记录解析 → 真 roster+坐标 → 完整 23×16 地图（棋盘滚动 #96 已支持,无需裁剪）→ pack → 可玩。**dispatch 布局 RE 已坐实 + `LegacyRosterImporter` 已落地**（#137,见下「内容生成器框架」）:0x47 敌军(80×0x38)/0x46 友军(20×0x34) child 槽布局逐字段反汇编 + 对真 S_00 双向核实——真解出 **23 敌 + 8 友 + 2 增援波**(`docs/recon/eex-dispatch-layout.md` 已无"待定")。玩家本方军不在文件(旧作交互布阵),是设计输入。**剩余(下一轮):把 `LegacyRosterImporter.Deployment` 接进 `LegacyPackGenerator`** —— 真 roster+坐标 → 完整 23×16 terrainMap_1(不裁剪)→ pack,玩家三兄弟布于 deploy 区,产出可玩真·整关(替换现手工 5 人 8×7 裁剪 demo)。
+- 无其它在途（成长/品质评级 #82–#93 + 自主优化审计扫荡 #95–#98 + 优化扫荡 ④ #126–#128 + **内容生成器框架 #130–135 + 真 roster 导入 #137** 均收尾,工作树干净）。
 
-## 内容生成器框架（ADR 0009，#130–135，本轮）
+## 内容生成器框架（ADR 0009，#130–135 + 真 roster 导入 #137）
 
 把旧作移植从"一次性转换器"升级成**内容生成器框架**:EEX 旧作脚本生成器是第一个插件;**Content Pack 是唯一 ABI**;game-core 永不解析 EEX/旧 VM。已落地大兴山 **vertical slice 闭环**（真 S_00 脚本 → 引擎目标,对账等价手写）:
 - **#130** ADR 0009（方向 + 硬边界 + 止损门）+ EEX 解密真相源入仓（`docs/recon/`:codex 两份 ledger + 独立验证工具 `eex_decode.py`〔全 316 文件 framing 通过〕/`eex_initpara.py`〔从 .so 抽 99 op 长度模型逐字节对照〕/`eex_convert.py`〔大兴山真内容样本〕）+ **`EexCodec`**（EEX 容器字节级读取:framing + cmd-tagged 字符串,fail-closed,只答"文件里有什么"）。
@@ -48,7 +48,8 @@
 - **#133** r_script（过场）pack DTO + 对白映射（`LegacyLine` → dialogue op,wire-format 对 native 双向核验）。
 - **#134** `LegacyObjectiveImporter`（真脚本派生胜负目标 + 按 roster 过滤:邹靖出 roster、回合 deadline unsupported;落选阶段 unsupported 不静默丢）。
 - **#135** 接进 `LegacyPackGenerator`:`generate()` 读真 `S_00.eex_new` → 派生大兴山目标 → `MapBattleSpec.win/lose`,**离线对账 RECONCILE: True**（派生 = committed `win=[annihilate]`/`lose=[protect 刘备]`）。**committed pack 不重生覆盖**——保住手添效果战法 skill_2~6（KNOWN_ISSUES 据实更新）。
-- 全程纯函数 + fail-closed + 合成测试（mod-import count 71 测,CI 不跑 mod-import,靠本地门 + 对抗审）+ 每片 2 镜头对抗审 0 P1。`Resolver`/RNG/`Formula`/`RULES_VERSION`/golden 零碰。
+- **#137** `LegacyRosterImporter`（**真·整关移植第六层 = 真 roster + 坐标**）:从真 EEX 战斗脚本解出敌/友双方部署。**dispatch 布局逐字段反汇编坐实**（`libMyGame.so` Thumb:`DispatchOne{Enemy,Friend}::initPara` 子对象字段读取 + 两侧 `HandleScript` actor 回填定 X/Y——**坐标存 4 字节 int(`#0x30/#0x38` 敌 / `#0x2c/#0x34` 友),不是 `strh`**,曾误用 `strh` 字段解出"四单位同格"被真数据揪出纠正）→ 敌军 0x47(80×0x38,hid`+0x2`/X`+0xe`/Y`+0x14`/lvl`+0x1a`)、友军 0x46(20×0x34,hid`+0x2`/X`+0xa`/Y`+0x10`/lvl`+0x1a`)。**fail-closed 可靠定位**:字节粒度扫 `<cmd> 00 02 00`,整条记录结构自洽(slot0 实兵 + 每个非哨兵槽在图内)才接受,随机字节通过率 ≈`0.5^80`,绝不从噪声造 roster;同侧首条=开局部署,其余计 `reinforcementRecords`(增援波不静默丢)。**对真 S_00 双向核实**:解出 **23 敌(596@(20,5)…)+ 8 友 + 2 增援波**,与独立 python 解码逐字段一致。玩家本方军不在文件(交互布阵),留作设计输入。`docs/recon/eex-dispatch-layout.md` 收口为坐实布局(无"待定")。
+- 全程纯函数 + fail-closed + 合成测试（#137 `LegacyRosterImporterTest` +7,mod-import 共 95 测;CI 不跑 mod-import,靠本地门 + 对抗审）+ 每片 2 镜头对抗审 0 P1。`Resolver`/RNG/`Formula`/`RULES_VERSION`/golden 零碰。
 
 ## 下一步（V1 Roadmap，每片走 `skills/ship-slice`）
 
