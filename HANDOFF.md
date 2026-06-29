@@ -1,5 +1,13 @@
 # Handoff
 
+> Latest local note (2026-06-30): `legacy_stage_3` (石门攻击战) is now promoted and app-selectable.
+> Generated with `:mod-import:generateLegacyStage -PstageId=3` from the E-drive decrypted package, committed as
+> `content/legacy_stage_3/campaign.json`, and registered as `PromotedStageRuntimes.ShimenAttack`. The pack
+> validates+assembles before write, deploys 72 opening units on the real 28x24 map (3 PLAYER / 18 ALLY /
+> 51 ENEMY), uses default annihilate/protect-LiuBei objectives, and has no deferred metadata. `PlayableStageCatalog`
+> now exposes stages 1/2/3; unlocked-but-unregistered rows such as `legacy_stage_4` still cannot launch.
+> Verified locally: `:app:testGrayDebugUnitTest`, `:app:detekt`, `:app:assertAndroidTestCountEqualsBaseline`.
+
 > Latest local note (2026-06-30): Daxingshan stage 1 now uses the same generic decrypted-package promotion path as
 > later stages. `LegacyStagePackGenerator` accepts `-PstageId=1 -PcontentVersion=0.7.0`, applies proposal-ready
 > same-tile deployment collisions by keeping script-referenced units in native `events.deferred_deployments[]`, and
@@ -16,8 +24,8 @@
 > game had interactive deployment, grants the current basic attack, and validates+assembles before writing. The
 > generated `content/legacy_stage_2/campaign.json` deploys 43 units on the real 21x20 map (3 PLAYER / 11 ALLY /
 > 29 ENEMY), uses default annihilate/protect-LiuBei objectives, and is registered through
-> `PromotedStageRuntimes.QuyangSiege`; `PlayableStageCatalog` now exposes `legacy_stage_1` and `legacy_stage_2`,
-> while unlocked-but-unregistered rows such as `legacy_stage_3` still cannot launch. Root/app test baselines are
+> `PromotedStageRuntimes.QuyangSiege`; `PlayableStageCatalog` now exposes `legacy_stage_1` and `legacy_stage_2`.
+> Root/app test baselines are
 > 514 / 102. Verified locally with `:mod-import` test/detekt plus the full current local gate. Next promotion step:
 > either batch more original-ready stages through `generateLegacyStage`, or first add an explicit player-deployment
 > policy before widening app exposure.

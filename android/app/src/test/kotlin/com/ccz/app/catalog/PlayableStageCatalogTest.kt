@@ -16,9 +16,13 @@ class PlayableStageCatalogTest {
         val playable = PlayableStageCatalog.playableStages()
 
         assertEquals(397, PlayableStageCatalog.catalogStageCount())
-        assertEquals(listOf(CampaignRuntime.STAGE_ID, PromotedStageRuntimes.QuyangSiege.stageId), playable.map { it.stage.id })
+        assertEquals(
+            listOf(CampaignRuntime.STAGE_ID, PromotedStageRuntimes.QuyangSiege.stageId, PromotedStageRuntimes.ShimenAttack.stageId),
+            playable.map { it.stage.id },
+        )
         assertSame(CampaignRuntime, playable.first().runtime)
-        assertSame(PromotedStageRuntimes.QuyangSiege, playable.last().runtime)
+        assertSame(PromotedStageRuntimes.QuyangSiege, playable[1].runtime)
+        assertSame(PromotedStageRuntimes.ShimenAttack, playable[2].runtime)
     }
 
     @Test
@@ -46,23 +50,31 @@ class PlayableStageCatalogTest {
     }
 
     @Test
-    fun promotedSecondStageUnlocksAndLaunchesNativeRuntime() {
-        val access = PlayableStageCatalog.resolvePurchase(
+    fun promotedStagesUnlockAndLaunchNativeRuntimes() {
+        val second = PlayableStageCatalog.resolvePurchase(
             productId = PlayableStageCatalog.FULL_UNLOCK_PRODUCT_ID,
             stageId = PromotedStageRuntimes.QuyangSiege.stageId,
         )
+        val third = PlayableStageCatalog.resolvePurchase(
+            productId = PlayableStageCatalog.FULL_UNLOCK_PRODUCT_ID,
+            stageId = PromotedStageRuntimes.ShimenAttack.stageId,
+        )
 
-        assertTrue(access.stageAccess.unlocked)
-        assertTrue(access.canStart)
-        assertSame(PromotedStageRuntimes.QuyangSiege, access.launchRuntimeOrNull())
-        assertEquals(43, access.launchRuntimeOrNull()!!.initialState().units.size)
+        assertTrue(second.stageAccess.unlocked)
+        assertTrue(second.canStart)
+        assertSame(PromotedStageRuntimes.QuyangSiege, second.launchRuntimeOrNull())
+        assertEquals(43, second.launchRuntimeOrNull()!!.initialState().units.size)
+        assertTrue(third.stageAccess.unlocked)
+        assertTrue(third.canStart)
+        assertSame(PromotedStageRuntimes.ShimenAttack, third.launchRuntimeOrNull())
+        assertEquals(72, third.launchRuntimeOrNull()!!.initialState().units.size)
     }
 
     @Test
     fun unlockedButUnregisteredLegacyStageDoesNotLaunch() {
         val access = PlayableStageCatalog.resolvePurchase(
             productId = PlayableStageCatalog.FULL_UNLOCK_PRODUCT_ID,
-            stageId = "legacy_stage_3",
+            stageId = "legacy_stage_4",
         )
 
         assertTrue(access.stageAccess.unlocked)

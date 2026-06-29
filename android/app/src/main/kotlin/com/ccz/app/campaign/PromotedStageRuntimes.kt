@@ -9,5 +9,12 @@ object PromotedStageRuntimes {
         battlePackResource = "/content/legacy_stage_2/campaign.json",
     )
 
-    fun all(): List<CampaignStageRuntime> = listOf(QuyangSiege)
+    val ShimenAttack: BundledBattleRuntime = BundledBattleRuntime(
+        stageId = "legacy_stage_3",
+        battleScriptId = "legacy_stage_3",
+        mapId = "legacy_stage_3_map",
+        battlePackResource = "/content/legacy_stage_3/campaign.json",
+    )
+
+    fun all(): List<CampaignStageRuntime> = listOf(QuyangSiege, ShimenAttack)
 }
