@@ -35,8 +35,9 @@ object LegacyStagePackGenerator {
         PlayerSeed(hid = 3, level = 7),
     )
 
-    fun generate(extractedRoot: String, stageId: Int): String {
+    fun generate(extractedRoot: String, stageId: Int, contentVersion: String = "0.1.0"): String {
         require(stageId > 0) { "stageId must be positive: $stageId" }
+        require(contentVersion.isNotBlank()) { "contentVersion must not be blank" }
         val root = File(extractedRoot)
         val jsonDir = File(root, "json")
         val scene = File(File(root, "Scenes"), scriptName(stageId))
@@ -46,32 +47,19 @@ object LegacyStagePackGenerator {
         val profile = LegacyRosterImporter.detectOpcodeProfile(scriptBytes, map.size.width, map.size.height)
         val deployment = LegacyRosterImporter.importDeployment(scriptBytes, map.size.width, map.size.height, profile)
         require(deployment.units.isNotEmpty()) { "stage $stageId has no opening deployment" }
-        requireNoDeploymentCollisions(stageId, deployment)
-
-        val imported = deployment.units.map { unit ->
-            Placement(
-                unit = "$HERO_PREFIX${unit.hid}",
-                x = unit.x,
-                y = unit.y,
-                level = maxOf(1, unit.level),
-                faction = if (unit.side == LegacyRosterImporter.Side.ENEMY) {
-                    LegacyBattleBuilder.ENEMY_FACTION
-                } else {
-                    LegacyBattleBuilder.ALLY_FACTION
-                },
-            )
-        }
-        val players = playerPlacements(map, imported)
-        val placements = players + imported
+        val imported = deploymentPlacements(stageId, deployment, scriptBytes, profile)
+        val players = playerPlacements(map, imported.opening)
+        val placements = players + imported.opening
         val allHeroes = readArray(jsonDir, "dic_hero.json")
-        val hids = placements.mapTo(HashSet()) { it.unit.removePrefix(HERO_PREFIX).toInt() }
+        val hids = (placements + imported.deferred.map { it.placement })
+            .mapTo(HashSet()) { it.unit.removePrefix(HERO_PREFIX).toInt() }
         val objectives = importObjectives(allHeroes, hids, scriptBytes, profile)
         val battleId = battleId(stageId)
         val pack = grantBasicAttack(
             LegacyBattleBuilder.buildBattleOnMap(
                 meta = PackMeta(
                     contentId = "trssgshz_$battleId",
-                    contentVersion = "0.1.0",
+                    contentVersion = contentVersion,
                     mod = SOURCE_MOD,
                     entry = battleId,
                 ),
@@ -85,6 +73,7 @@ object LegacyStagePackGenerator {
                     win = objectives.win.ifEmpty { null },
                     lose = objectives.lose.ifEmpty { null },
                 ),
+                deferredPlacements = imported.deferred,
             ),
         )
         val json = LegacyBattleBuilder.toJson(pack)
@@ -92,12 +81,76 @@ object LegacyStagePackGenerator {
         return json
     }
 
-    private fun requireNoDeploymentCollisions(stageId: Int, deployment: LegacyRosterImporter.Deployment) {
-        val collisions = deployment.units.groupBy { it.x to it.y }.filterValues { it.size > 1 }
-        require(collisions.isEmpty()) {
-            "stage $stageId has deployment collisions; run planLegacyStages and promote it only after applying proposals"
+    private data class StageDeployments(
+        val opening: List<Placement>,
+        val deferred: List<DeferredPlacement>,
+    )
+
+    private data class DeploymentKey(
+        val side: LegacyRosterImporter.Side,
+        val hid: Int,
+        val slot: Int,
+    )
+
+    private fun deploymentPlacements(
+        stageId: Int,
+        deployment: LegacyRosterImporter.Deployment,
+        scriptBytes: ByteArray,
+        profile: LegacyEexOpcodeProfile,
+    ): StageDeployments {
+        val deferredKeys = proposedDeferredKeys(stageId, deployment, scriptBytes, profile)
+        val opening = ArrayList<Placement>()
+        val deferred = ArrayList<DeferredPlacement>()
+        deployment.traces.forEach { trace ->
+            val placement = placement(trace)
+            if (trace.key() in deferredKeys) {
+                deferred += DeferredPlacement(placement)
+            } else {
+                opening += placement
+            }
         }
+        return StageDeployments(opening, deferred)
     }
+
+    private fun proposedDeferredKeys(
+        stageId: Int,
+        deployment: LegacyRosterImporter.Deployment,
+        scriptBytes: ByteArray,
+        profile: LegacyEexOpcodeProfile,
+    ): Set<DeploymentKey> {
+        val collisions = deployment.traces.groupBy { it.unit.x to it.unit.y }.filterValues { it.size > 1 }
+        if (collisions.isEmpty()) return emptySet()
+        val actorStateRefs = LegacyActorStateScanner.scan(scriptBytes, profile)
+        val deferred = HashSet<DeploymentKey>()
+        collisions.forEach { (cell, traces) ->
+            val referenced = traces.filter { actorStateRefs.forActor(it.unit.hid).isNotEmpty() }
+            val unreferenced = traces.filter { actorStateRefs.forActor(it.unit.hid).isEmpty() }
+            require(referenced.isNotEmpty() && unreferenced.size == 1) {
+                "stage $stageId has unresolved deployment collision at (${cell.first}, ${cell.second}); " +
+                    "run planLegacyStages and promote only proposal-ready collision groups"
+            }
+            referenced.mapTo(deferred) { it.key() }
+        }
+        return deferred
+    }
+
+    private fun placement(trace: LegacyRosterImporter.RosterTrace): Placement {
+        val unit = trace.unit
+        return Placement(
+            unit = "$HERO_PREFIX${unit.hid}",
+            x = unit.x,
+            y = unit.y,
+            level = maxOf(1, unit.level),
+            faction = if (unit.side == LegacyRosterImporter.Side.ENEMY) {
+                LegacyBattleBuilder.ENEMY_FACTION
+            } else {
+                LegacyBattleBuilder.ALLY_FACTION
+            },
+        )
+    }
+
+    private fun LegacyRosterImporter.RosterTrace.key(): DeploymentKey =
+        DeploymentKey(side = unit.side, hid = unit.hid, slot = slot)
 
     private fun playerPlacements(map: PackMap, imported: List<Placement>): List<Placement> {
         val occupied = imported.mapTo(HashSet()) { it.x to it.y }
@@ -177,10 +230,11 @@ object LegacyStagePackGenerator {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        require(args.size == 3 && args[0].isNotBlank() && args[1].isNotBlank()) {
-            "usage: <extractedRoot> <outPath> <stageId>"
+        require(args.size in 3..4 && args[0].isNotBlank() && args[1].isNotBlank()) {
+            "usage: <extractedRoot> <outPath> <stageId> [contentVersion]"
         }
         val stageId = args[2].toIntOrNull() ?: error("stageId must be an integer: '${args[2]}'")
-        File(args[1]).apply { parentFile?.mkdirs() }.writeText(generate(args[0], stageId), Charsets.UTF_8)
+        File(args[1]).apply { parentFile?.mkdirs() }
+            .writeText(generate(args[0], stageId, args.getOrNull(3) ?: "0.1.0"), Charsets.UTF_8)
     }
 }

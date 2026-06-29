@@ -2,6 +2,10 @@
 
 Date: 2026-06-27
 
+Update 2026-06-30: the current concrete stage-pack generator is `LegacyStagePackGenerator`, exposed through
+`:mod-import:generateLegacyStage`. The older Daxingshan-specific `LegacyPackGenerator` vertical-slice helper has
+been removed from the codebase.
+
 Status: Accepted（Phase 1 EexCodec 起步）
 
 ## Context

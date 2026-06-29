@@ -1,5 +1,15 @@
 # Handoff
 
+> Latest local note (2026-06-30): Daxingshan stage 1 now uses the same generic decrypted-package promotion path as
+> later stages. `LegacyStagePackGenerator` accepts `-PstageId=1 -PcontentVersion=0.7.0`, applies proposal-ready
+> same-tile deployment collisions by keeping script-referenced units in native `events.deferred_deployments[]`, and
+> emits `content/legacy_stage_1/campaign.json` with ids `legacy_stage_1` / `legacy_stage_1_map`. The old
+> hand-spliced `ccz_daxingshan_full` resource and the Daxingshan-only `LegacyPackGenerator.generateFullStage`
+> Gradle path are gone. `CampaignRuntime` now combines the generated stage-1 battle pack with the authored
+> `ccz_daxingshan/intro.json`; `legacy_stage_2` remains registered through `PromotedStageRuntimes.QuyangSiege`.
+> Current promoted stages use the default player trio plus generated `skill_1`; true per-hero/effect skill import
+> remains future converter work.
+
 > Latest local note (2026-06-30): `legacy_stage_2` (曲阳围城战) is now promoted from migration evidence into a
 > committed native battle pack. `LegacyStagePackGenerator` adds a production `generateLegacyStage` Gradle entry
 > that reads a ready `S_<gkid-1>.eex_new` + `terrainMap_<gkid>.json`, adds the default player trio where the old

@@ -4,6 +4,12 @@ Date: 2026-06-25
 
 Status: Accepted
 
+Update 2026-06-30: the generated battle pack for stage 1 is now
+`content/legacy_stage_1/campaign.json`, produced by `LegacyStagePackGenerator` through
+`:mod-import:generateLegacyStage -PstageId=1`. The older Daxingshan-specific `LegacyPackGenerator` /
+`ccz_daxingshan_full` path has been removed; the two-pack decision still applies to generated battle data plus
+the authored `ccz_daxingshan/intro.json` scenario pack.
+
 ## Context
 
 真实战役(大兴山之战)由两部分内容组成,来源不同:

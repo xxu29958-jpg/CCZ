@@ -5,6 +5,7 @@ import com.ccz.contentpack.assembly.CampaignAssembler
 import com.ccz.contentpack.json.ContentJsonLoader
 import com.ccz.core.event.WinLoseCondition
 import com.ccz.core.model.Faction
+import com.ccz.core.model.Pos
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.writeBytes
@@ -47,6 +48,36 @@ class LegacyStagePackGeneratorTest {
     }
 
     @Test
+    fun appliesScriptRefCollisionProposalAsDeferredMetadata() {
+        val json = LegacyStagePackGenerator.generate(
+            extractedRoot = legacyRoot(
+                script = EexFixtures.eexBlob(
+                    enemyRec(
+                        listOf(
+                            EexFixtures.DispatchUnit(slot = 0, hid = 101, x = 1, y = 1, level = 2),
+                            EexFixtures.DispatchUnit(slot = 1, hid = 102, x = 1, y = 1, level = 3),
+                        ),
+                    ),
+                    actorVisibleRec(actor = 102),
+                ),
+            ),
+            stageId = 2,
+        )
+
+        val content = ContentJsonLoader.load(json)
+        assertEquals(emptyList(), ContentValidator.validate(content))
+        val setup = CampaignAssembler.assemble(content, "legacy_stage_2", "legacy_stage_2_map")
+        assertTrue("hero_102" !in setup.initialState.units, "script-referenced collision unit is not opening deployment")
+        assertTrue("hero_102" in setup.scriptContext.reserves, "deferred collision unit stays in reserves")
+        val deferred = setup.deferredDeployments.single()
+        assertEquals("hero_102", deferred.unit)
+        assertEquals(Pos(1, 1), deferred.at)
+        assertEquals(Faction.ENEMY, deferred.faction)
+        assertEquals("legacy_actor_state_refs", deferred.source)
+        assertEquals(listOf("skill_1"), setup.context.loadouts.getValue("hero_102"))
+    }
+
+    @Test
     fun rejectsCollisionStagesUntilProposalIsApplied() {
         val error = assertFailsWith<IllegalArgumentException> {
             LegacyStagePackGenerator.generate(
@@ -64,7 +95,7 @@ class LegacyStagePackGeneratorTest {
             )
         }
 
-        assertTrue(error.message.orEmpty().contains("deployment collisions"))
+        assertTrue(error.message.orEmpty().contains("unresolved deployment collision"))
     }
 
     private fun legacyRoot(script: ByteArray): String {
@@ -105,4 +136,18 @@ class LegacyStagePackGeneratorTest {
             layout = EexFixtures.DispatchLayout(slots = 20, stride = 0x34, xOff = 0xa, yOff = 0x10),
             units = units,
         )
+
+    private fun actorVisibleRec(actor: Int): ByteArray =
+        ByteArray(0x10).also {
+            putS16(it, 0x00, 0x4c)
+            putS16(it, 0x02, 0x40)
+            putS16(it, 0x06, 0x02)
+            putS16(it, 0x08, actor)
+            putS16(it, 0x0a, 0x04)
+        }
+
+    private fun putS16(bytes: ByteArray, offset: Int, value: Int) {
+        bytes[offset] = (value and 0xff).toByte()
+        bytes[offset + 1] = ((value ushr 8) and 0xff).toByte()
+    }
 }

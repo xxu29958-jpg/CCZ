@@ -31,39 +31,22 @@ tasks.test {
     useJUnitPlatform()
 }
 
-// Offline converter entrypoint (NOT a gate): reads the user's local decrypted legacy tables and writes a
-// playable real-data battle pack. Run e.g.:
-//   ./gradlew :mod-import:generateLegacyBattle -PextractedDir=<dir> -PoutPath=<file>
-tasks.register<JavaExec>("generateLegacyBattle") {
-    group = "ccz"
-    description = "Generate a real-data battle content pack from local legacy tables (offline converter)."
-    mainClass.set("com.ccz.modimport.LegacyPackGenerator")
-    classpath = sourceSets["main"].runtimeClasspath
-    args((project.findProperty("extractedDir") as String?).orEmpty(), (project.findProperty("outPath") as String?).orEmpty())
-}
-
-// Faithful FULL-STAGE variant: the real dispatched enemy + allied roster on the complete 23x16 map (vs the
-// curated crop above). Run e.g.:
-//   ./gradlew :mod-import:generateLegacyFullStage -PextractedDir=<dir> -PoutPath=<file>
-tasks.register<JavaExec>("generateLegacyFullStage") {
-    group = "ccz"
-    description = "Generate the faithful full-stage (real dispatch roster) battle pack (offline converter)."
-    mainClass.set("com.ccz.modimport.LegacyPackGenerator")
-    classpath = sourceSets["main"].runtimeClasspath
-    args((project.findProperty("extractedDir") as String?).orEmpty(), (project.findProperty("outPath") as String?).orEmpty(), "full")
-}
-
 // Production one-stage promotion: emits a validated+assembled native pack for a ready legacy catalog row.
+// Optional -PcontentVersion=<version> stamps the generated pack for a bundled campaign release.
 //   ./gradlew :mod-import:generateLegacyStage -PextractedDir=<dir> -PoutPath=<file> -PstageId=2
 tasks.register<JavaExec>("generateLegacyStage") {
     group = "ccz"
     description = "Generate one promoted native stage pack from local legacy scripts/maps/tables."
     mainClass.set("com.ccz.modimport.LegacyStagePackGenerator")
     classpath = sourceSets["main"].runtimeClasspath
+    val contentVersion = project.findProperty("contentVersion") as String?
     args(
-        (project.findProperty("extractedDir") as String?).orEmpty(),
-        (project.findProperty("outPath") as String?).orEmpty(),
-        (project.findProperty("stageId") as String?).orEmpty(),
+        listOfNotNull(
+            (project.findProperty("extractedDir") as String?).orEmpty(),
+            (project.findProperty("outPath") as String?).orEmpty(),
+            (project.findProperty("stageId") as String?).orEmpty(),
+            contentVersion?.takeIf { it.isNotBlank() },
+        ),
     )
 }
 
