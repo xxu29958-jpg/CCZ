@@ -96,9 +96,10 @@ runtime. Currently `legacy_stage_1` is registered to `CampaignRuntime`, which co
 pack with the authored Daxingshan intro. Generated native packs are currently registered for `legacy_stage_2`
 through `legacy_stage_6`, `legacy_stage_8` through `legacy_stage_14`, `legacy_stage_16` through
 `legacy_stage_19`, `legacy_stage_21`, `legacy_stage_23` through `legacy_stage_24`, and `legacy_stage_29` through
-`legacy_stage_31`, plus `legacy_stage_34` through `legacy_stage_42`. Other catalog rows may resolve commerce
-access but remain non-launchable until their native battle packs are promoted and registered. This keeps old-table
-catalog migration separate from playable runtime exposure.
+`legacy_stage_31`, plus `legacy_stage_34` through `legacy_stage_42`, `legacy_stage_44` through `legacy_stage_48`,
+`legacy_stage_50` through `legacy_stage_59`, and `legacy_stage_61` through `legacy_stage_62`. Other catalog rows may
+resolve commerce access but remain non-launchable until their native battle packs are promoted and registered. This
+keeps old-table catalog migration separate from playable runtime exposure.
 
 Generate a single promoted stage pack from a local decrypted resource tree with:
 

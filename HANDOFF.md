@@ -1,5 +1,14 @@
 # Handoff
 
+> Latest local note (2026-06-30): another report-ready promotion batch is app-selectable:
+> `legacy_stage_44` through `48`, `50` through `59`, and `61` through `62`. Generated with
+> `:mod-import:generateLegacyStage` from the E-drive decrypted package under
+> `content/legacy_stage_<id>/campaign.json`. Opening unit counts are
+> 38/27/63/50/41/72/59/55/46/75/70/81/79/44/40/68/68. Stages 51 and 57 have two protect objectives;
+> stages 52-53 protect `hero_3`; stages 58-59 protect `hero_2`; the others use `ProtectAlive("hero_1")`.
+> `PlayableStageCatalog` now exposes stages 1-6, 8-14, 16-19, 21, 23-24, 29-31, 34-42, 44-48, 50-59,
+> and 61-62. Verified locally with the full current local gate.
+
 > Latest local note (2026-06-30): next ready-stage batch is app-selectable:
 > `legacy_stage_31`, `34`, `35`, `36`, `37`, `38`, `39`, `40`, `41`, and `42`. Generated with
 > `:mod-import:generateLegacyStage` from the E-drive decrypted package under

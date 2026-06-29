@@ -62,6 +62,8 @@ registered production runtimes are currently:
 - `legacy_stage_16` through `legacy_stage_19`, `legacy_stage_21`, `legacy_stage_23` through `legacy_stage_24`,
   and `legacy_stage_29` through `legacy_stage_30` -> generated `PromotedStageRuntimes` entries
 - `legacy_stage_31`, `legacy_stage_34` through `legacy_stage_42` -> generated `PromotedStageRuntimes` entries
+- `legacy_stage_44` through `legacy_stage_48`, `legacy_stage_50` through `legacy_stage_59`, and
+  `legacy_stage_61` through `legacy_stage_62` -> generated `PromotedStageRuntimes` entries
 
 Promoted stages after `legacy_stage_1` use generated native packs and have no authored intros yet.
 `legacy_stage_7` remains deliberately unregistered until its all-referenced same-tile deployment collisions have
