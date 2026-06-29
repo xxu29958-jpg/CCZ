@@ -1,6 +1,15 @@
 # Handoff
 
 > Latest local note (2026-06-30): next eligible promotion batch is app-selectable:
+> `legacy_stage_209` through `210`, `214` through `222`, `224` through `231`, and `233`. Generated with
+> `:mod-import:generateLegacyStage` from the E-drive decrypted package under
+> `content/legacy_stage_<id>/campaign.json`. Opening unit counts are
+> 19/9/11/11/24/23/23/25/19/23/25/4/5/21/33/36/27/9/21/8. All have no deferred deployments.
+> `legacy_stage_221` is a single-terrain map and is pinned with `minTerrainKinds = 1`; `legacy_stage_231`
+> protects both `hero_3147` and `hero_1`. `PlayableStageCatalog` now also exposes these 20 stages.
+> Verified locally with the full current local gate.
+
+> Latest local note (2026-06-30): next eligible promotion batch is app-selectable:
 > `legacy_stage_165`, `172`, `174` through `176`, `178` through `180`, `182`, `186`, `189`, `194`,
 > `196` through `197`, `201` through `202`, and `204` through `207`. Generated with
 > `:mod-import:generateLegacyStage` from the E-drive decrypted package under
