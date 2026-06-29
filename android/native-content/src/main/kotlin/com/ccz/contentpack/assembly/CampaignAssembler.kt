@@ -124,10 +124,14 @@ object CampaignAssembler {
 
     private fun validatePreDeploymentOrder(script: SScript) {
         val deployed = mutableSetOf<String>()
+        val spawned = mutableSetOf<String>()
         val invalid = mutableListOf<String>()
         script.pre.forEachIndexed { index, op ->
             when (op) {
-                is BattleOp.SpawnUnit -> deployed += op.unit
+                is BattleOp.SpawnUnit -> {
+                    if (!spawned.add(op.unit)) invalid += preDeploymentRef(script.id, index, "spawn", op.unit)
+                    deployed += op.unit
+                }
                 is BattleOp.MoveUnit ->
                     if (op.unit !in deployed) invalid += preDeploymentRef(script.id, index, "move", op.unit)
                 is BattleOp.RemoveUnit ->
@@ -143,7 +147,7 @@ object CampaignAssembler {
         }
         if (invalid.isNotEmpty()) {
             throw CampaignAssemblyException(
-                "battle '${script.id}' pre-deployment references unit(s) not currently deployed: " +
+                "battle '${script.id}' has invalid pre-deployment op(s): " +
                     invalid.joinToString("; "),
             )
         }

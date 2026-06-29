@@ -315,6 +315,15 @@ class CampaignAssemblerTest {
     }
 
     @Test
+    fun assembleThrowsWhenPreSpawnsSameUnitTwice() {
+        val pre = listOf(BattleOp.SpawnUnit("hero", Pos(0, 0)), BattleOp.SpawnUnit("hero", Pos(1, 0)))
+
+        val error = assertFailsWith<CampaignAssemblyException> { CampaignAssembler.assemble(content(pre = pre), "b", "m") }
+
+        assertTrue(error.message.orEmpty().contains("events.sScripts[b].pre[1].spawn=hero"))
+    }
+
+    @Test
     fun assembleAllowsPreRemoveAfterSpawn() {
         val pre = listOf(
             BattleOp.SpawnUnit("hero", Pos(0, 0)),

@@ -47,6 +47,7 @@ internal object ContentEventValidator {
         portraitIds: Set<String>,
     ): List<ValidationIssue> {
         val issues = mutableListOf<ValidationIssue>()
+        issues += duplicatePreSpawns(script)
         (script.pre + script.post + script.mid.flatMap { it.actions }).forEach {
             issues += battleOp(script.id, it, unitIds, itemIds, portraitIds)
         }
@@ -63,6 +64,17 @@ internal object ContentEventValidator {
         script.win.forEach { issues += winLose(script.id, "win", it, unitIds) }
         script.lose.forEach { issues += winLose(script.id, "lose", it, unitIds) }
         return issues
+    }
+
+    private fun duplicatePreSpawns(script: SScript): List<ValidationIssue> {
+        val spawned = mutableSetOf<String>()
+        return script.pre.mapIndexedNotNull { index, op ->
+            if (op is BattleOp.SpawnUnit && !spawned.add(op.unit)) {
+                ValidationIssue("events.sScripts[${script.id}].pre[$index].unit", "duplicate pre spawn unit: ${op.unit}")
+            } else {
+                null
+            }
+        }
     }
 
     private fun unit(path: String, id: String, unitIds: Set<String>): ValidationIssue? =

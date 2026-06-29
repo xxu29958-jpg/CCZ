@@ -163,6 +163,23 @@ class ContentEventValidatorTest {
     }
 
     @Test
+    fun duplicatePreSpawnUnitFailClosed() {
+        val content = sScriptWith(
+            pre = listOf(
+                BattleOp.SpawnUnit("zhaoyun", at = Pos(0, 0)),
+                BattleOp.SpawnUnit("zhaoyun", at = Pos(1, 0)),
+            ),
+        )
+
+        assertTrue(
+            ContentValidator.validate(content).any {
+                it.path == "events.sScripts[s1].pre[1].unit" &&
+                    it.message.contains("duplicate pre spawn unit: zhaoyun")
+            },
+        )
+    }
+
+    @Test
     fun deferredDeploymentReferencesValidate() {
         val content = sScriptWith(deferredDeployments = listOf(DeferredDeploymentDef("s1", "zhaoyun", Pos(2, 1), Faction.ENEMY)))
 
