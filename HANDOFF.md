@@ -1,11 +1,19 @@
 # Handoff
 
+> Latest local note (2026-06-30): `legacy_stage_4` (汜水关之战 壹) is now promoted and app-selectable.
+> Generated with `:mod-import:generateLegacyStage -PstageId=4` from the E-drive decrypted package, committed as
+> `content/legacy_stage_4/campaign.json`, and registered as `PromotedStageRuntimes.SishuiPassOne`. The pack
+> validates+assembles before write, deploys 52 opening units on the real 19x20 map (3 PLAYER / 10 ALLY /
+> 39 ENEMY), uses default annihilate/protect-LiuBei objectives, and has no deferred metadata. `PlayableStageCatalog`
+> now exposes stages 1/2/3/4; unlocked-but-unregistered rows such as `legacy_stage_5` still cannot launch.
+> Verified locally: `:app:testGrayDebugUnitTest`, `:app:detekt`, `:app:assertAndroidTestCountEqualsBaseline`.
+
 > Latest local note (2026-06-30): `legacy_stage_3` (石门攻击战) is now promoted and app-selectable.
 > Generated with `:mod-import:generateLegacyStage -PstageId=3` from the E-drive decrypted package, committed as
 > `content/legacy_stage_3/campaign.json`, and registered as `PromotedStageRuntimes.ShimenAttack`. The pack
 > validates+assembles before write, deploys 72 opening units on the real 28x24 map (3 PLAYER / 18 ALLY /
 > 51 ENEMY), uses default annihilate/protect-LiuBei objectives, and has no deferred metadata. `PlayableStageCatalog`
-> now exposes stages 1/2/3; unlocked-but-unregistered rows such as `legacy_stage_4` still cannot launch.
+> exposed stages 1/2/3 at this point; later notes supersede launchability for subsequently promoted rows.
 > Verified locally: `:app:testGrayDebugUnitTest`, `:app:detekt`, `:app:assertAndroidTestCountEqualsBaseline`.
 
 > Latest local note (2026-06-30): Daxingshan stage 1 now uses the same generic decrypted-package promotion path as

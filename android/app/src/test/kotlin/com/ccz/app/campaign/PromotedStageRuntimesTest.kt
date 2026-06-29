@@ -16,6 +16,7 @@ class PromotedStageRuntimesTest {
         val expected = listOf(
             PromotedStageRuntimes.QuyangSiege to Triple("legacy_stage_2", "legacy_stage_2", "legacy_stage_2_map"),
             PromotedStageRuntimes.ShimenAttack to Triple("legacy_stage_3", "legacy_stage_3", "legacy_stage_3_map"),
+            PromotedStageRuntimes.SishuiPassOne to Triple("legacy_stage_4", "legacy_stage_4", "legacy_stage_4_map"),
         )
 
         expected.forEach { (runtime, ids) ->
@@ -31,12 +32,14 @@ class PromotedStageRuntimesTest {
     fun promotedStagesDeployRealLegacyRostersPlusDefaultPlayerParty() {
         assertRoster(PromotedStageRuntimes.QuyangSiege, expectedTotal = 43, expectedEnemies = 29, expectedAllies = 11)
         assertRoster(PromotedStageRuntimes.ShimenAttack, expectedTotal = 72, expectedEnemies = 51, expectedAllies = 18)
+        assertRoster(PromotedStageRuntimes.SishuiPassOne, expectedTotal = 52, expectedEnemies = 39, expectedAllies = 10)
     }
 
     @Test
     fun promotedStagesUseRealMapsAndDefaultObjectives() {
         assertMapAndObjectives(PromotedStageRuntimes.QuyangSiege, expectedWidth = 21, expectedHeight = 20)
         assertMapAndObjectives(PromotedStageRuntimes.ShimenAttack, expectedWidth = 28, expectedHeight = 24)
+        assertMapAndObjectives(PromotedStageRuntimes.SishuiPassOne, expectedWidth = 19, expectedHeight = 20)
     }
 
     private fun assertRoster(runtime: BundledBattleRuntime, expectedTotal: Int, expectedEnemies: Int, expectedAllies: Int) {

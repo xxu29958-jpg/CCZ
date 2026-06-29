@@ -17,12 +17,18 @@ class PlayableStageCatalogTest {
 
         assertEquals(397, PlayableStageCatalog.catalogStageCount())
         assertEquals(
-            listOf(CampaignRuntime.STAGE_ID, PromotedStageRuntimes.QuyangSiege.stageId, PromotedStageRuntimes.ShimenAttack.stageId),
+            listOf(
+                CampaignRuntime.STAGE_ID,
+                PromotedStageRuntimes.QuyangSiege.stageId,
+                PromotedStageRuntimes.ShimenAttack.stageId,
+                PromotedStageRuntimes.SishuiPassOne.stageId,
+            ),
             playable.map { it.stage.id },
         )
         assertSame(CampaignRuntime, playable.first().runtime)
         assertSame(PromotedStageRuntimes.QuyangSiege, playable[1].runtime)
         assertSame(PromotedStageRuntimes.ShimenAttack, playable[2].runtime)
+        assertSame(PromotedStageRuntimes.SishuiPassOne, playable[3].runtime)
     }
 
     @Test
@@ -51,30 +57,31 @@ class PlayableStageCatalogTest {
 
     @Test
     fun promotedStagesUnlockAndLaunchNativeRuntimes() {
-        val second = PlayableStageCatalog.resolvePurchase(
-            productId = PlayableStageCatalog.FULL_UNLOCK_PRODUCT_ID,
-            stageId = PromotedStageRuntimes.QuyangSiege.stageId,
-        )
-        val third = PlayableStageCatalog.resolvePurchase(
-            productId = PlayableStageCatalog.FULL_UNLOCK_PRODUCT_ID,
-            stageId = PromotedStageRuntimes.ShimenAttack.stageId,
+        val promoted = listOf(
+            PromotedStageRuntimes.QuyangSiege to 43,
+            PromotedStageRuntimes.ShimenAttack to 72,
+            PromotedStageRuntimes.SishuiPassOne to 52,
         )
 
-        assertTrue(second.stageAccess.unlocked)
-        assertTrue(second.canStart)
-        assertSame(PromotedStageRuntimes.QuyangSiege, second.launchRuntimeOrNull())
-        assertEquals(43, second.launchRuntimeOrNull()!!.initialState().units.size)
-        assertTrue(third.stageAccess.unlocked)
-        assertTrue(third.canStart)
-        assertSame(PromotedStageRuntimes.ShimenAttack, third.launchRuntimeOrNull())
-        assertEquals(72, third.launchRuntimeOrNull()!!.initialState().units.size)
+        promoted.forEach { (runtime, expectedUnits) ->
+            val access = PlayableStageCatalog.resolvePurchase(
+                productId = PlayableStageCatalog.FULL_UNLOCK_PRODUCT_ID,
+                stageId = runtime.stageId,
+            )
+            val launched = access.launchRuntimeOrNull()
+
+            assertTrue(access.stageAccess.unlocked)
+            assertTrue(access.canStart)
+            assertSame(runtime, launched)
+            assertEquals(expectedUnits, requireNotNull(launched).initialState().units.size)
+        }
     }
 
     @Test
     fun unlockedButUnregisteredLegacyStageDoesNotLaunch() {
         val access = PlayableStageCatalog.resolvePurchase(
             productId = PlayableStageCatalog.FULL_UNLOCK_PRODUCT_ID,
-            stageId = "legacy_stage_4",
+            stageId = "legacy_stage_5",
         )
 
         assertTrue(access.stageAccess.unlocked)

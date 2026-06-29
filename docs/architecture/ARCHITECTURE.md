@@ -52,7 +52,8 @@ Catalog access and playability are deliberately separate. A legacy catalog row c
 entitlements, but it can launch only after the app registers a native battle runtime for that stage. The
 registered production runtimes are currently `legacy_stage_1` -> `CampaignRuntime` (generated native stage pack
 plus authored Daxingshan intro), `legacy_stage_2` -> `PromotedStageRuntimes.QuyangSiege`, and `legacy_stage_3`
--> `PromotedStageRuntimes.ShimenAttack` (generated native packs, no authored intros yet).
+-> `PromotedStageRuntimes.ShimenAttack`, and `legacy_stage_4` -> `PromotedStageRuntimes.SishuiPassOne`
+(generated native packs, no authored intros yet).
 
 Command validation is realized today inside `game-core` (the `Gameplay.submit` facade over
 `CommandValidator`), since legality is a deterministic rule and `game-core` is the sole combat
