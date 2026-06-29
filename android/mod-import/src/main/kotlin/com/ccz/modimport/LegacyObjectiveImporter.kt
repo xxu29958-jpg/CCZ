@@ -34,8 +34,9 @@ object LegacyObjectiveImporter {
         scriptBytes: ByteArray,
         rosterIds: Set<String>,
         nameToId: (String) -> String?,
+        profile: LegacyEexOpcodeProfile = LegacyEexOpcodeProfile.LEGACY_DECODED,
     ): ImportedObjectives {
-        val mapped = LegacyScriptDecoder.decode(scriptBytes).objectives
+        val mapped = LegacyScriptDecoder.decode(scriptBytes, profile).objectives
             .map { LegacySemanticMapper.mapObjectives(it, nameToId) }
         // Keep EVERY block's unsupported clauses, not just the chosen block's — a non-selected phase's
         // objectives (e.g. 大兴山 phase-1 reach-village) must not vanish silently (fail-closed contract).

@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">CCZ Tactics</string>
+    <string name="stage_picker_title">可进入关卡</string>
+    <string name="stage_picker_buy_full_unlock">购买 %1$s 并发货</string>
+    <string name="stage_picker_start">进入 %1$s</string>
+    <string name="stage_picker_locked">未解锁：缺少 %1$s</string>
+    <string name="stage_picker_not_playable">已解锁，但此关 native 战斗包尚未入库</string>
+    <string name="stage_picker_ready">已解锁，可进入 native 关卡</string>
 </resources>

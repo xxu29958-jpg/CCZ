@@ -54,6 +54,23 @@ class LegacyScriptDecoderTest {
     }
 
     @Test
+    fun decodesCurrentApkOpcodeProfile() {
+        val block = "胜利条件\n★·全灭敌军。\n\n失败条件\n☆·刘备死亡。"
+        val script = LegacyScriptDecoder.decode(
+            eexBlob(
+                strRec(0x0f, "战前过渡"),
+                strRec(0x45, "&程远志\n借粮重任，托付于你。"),
+                strRec(0x54, block),
+            ),
+            LegacyEexOpcodeProfile.TRSSGSHZ_CURRENT_APK,
+        )
+
+        assertEquals("战前过渡", script.dialogue.single().scene)
+        assertEquals("程远志", script.dialogue.single().speaker)
+        assertEquals(listOf("全灭敌军。"), script.objectives.single().win)
+    }
+
+    @Test
     fun aPlainCommonInfoTextIsNotMistakenForAnObjectiveBlock() {
         // CommonInfo 0x18 is also a scene location — only blocks carrying BOTH 胜利/失败条件 are objectives
         val script = LegacyScriptDecoder.decode(eexBlob(strRec(0x18, "蓟城  刺史府")))

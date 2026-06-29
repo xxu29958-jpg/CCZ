@@ -37,6 +37,7 @@ internal object ContentEventValidator {
         portraitIds: Set<String>,
     ): List<ValidationIssue> =
         events.sScripts.flatMap { script(it, unitIds, itemIds, portraitIds) } +
+            deferredDeployments(events, unitIds) +
             events.rScripts.flatMap { rScript(it, portraitIds) }
 
     private fun script(
@@ -99,6 +100,36 @@ internal object ContentEventValidator {
             is BattleOp.Script -> embeddedScenarioOp(path, op.op, portraitIds)
             BattleOp.ForceWin, BattleOp.ForceLose -> emptyList()
         }
+    }
+
+    private fun deferredDeployments(events: EventTables, unitIds: Set<String>): List<ValidationIssue> {
+        val scripts = events.sScripts.associateBy { it.id }
+        return events.deferredDeployments.flatMapIndexed { index, deployment ->
+            deferredDeployment(index, deployment, scripts, unitIds)
+        }
+    }
+
+    private fun deferredDeployment(
+        index: Int,
+        deployment: DeferredDeploymentDef,
+        scripts: Map<String, SScript>,
+        unitIds: Set<String>,
+    ): List<ValidationIssue> {
+        val path = "events.deferredDeployments[$index]"
+        val preSpawned = scripts[deployment.scriptId]?.pre.orEmpty()
+            .filterIsInstance<BattleOp.SpawnUnit>()
+            .mapTo(HashSet()) { it.unit }
+        return listOfNotNull(
+            if (deployment.scriptId in scripts) null else ValidationIssue("$path.script", "unknown s-script: ${deployment.scriptId}"),
+            unit(path, deployment.unit, unitIds),
+            pos("$path.at", deployment.at),
+            if (deployment.source.isBlank()) ValidationIssue("$path.source", "source is blank") else null,
+            if (deployment.unit in preSpawned) {
+                ValidationIssue(path, "deferred unit is already spawned in pre: ${deployment.unit}")
+            } else {
+                null
+            },
+        )
     }
 
     /**

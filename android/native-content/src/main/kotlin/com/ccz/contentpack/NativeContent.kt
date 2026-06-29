@@ -13,6 +13,7 @@ data class NativeContent(
     val manifest: ContentManifest,
     val tables: ContentTables,
     val events: EventTables = EventTables(),
+    val commerce: CommerceTables = CommerceTables(),
 )
 
 data class ContentTables(
@@ -28,6 +29,67 @@ data class EventTables(
     val rScripts: List<RScript> = emptyList(),
     val sScripts: List<SScript> = emptyList(),
     val portraitSubjects: List<PortraitSubjectDef> = emptyList(),
+    val deferredDeployments: List<DeferredDeploymentDef> = emptyList(),
+)
+
+/**
+ * Native deployment metadata for a unit that starts as a reserve and is intended to appear later at [at].
+ *
+ * This is not executed by game-core by itself. A later script translation must still emit a SpawnUnit; the
+ * metadata lets converters preserve legacy hidden/replacement deployment evidence and lets validation fail
+ * closed on ids and map bounds before battle setup is exposed.
+ */
+data class DeferredDeploymentDef(
+    val scriptId: String,
+    val unit: String,
+    val at: Pos,
+    val faction: Faction? = null,
+    val source: String = "content",
+)
+
+data class CommerceTables(
+    val products: List<ProductDef> = emptyList(),
+    val rewards: List<RewardDef> = emptyList(),
+    val stages: List<StageDef> = emptyList(),
+)
+
+data class ProductDef(
+    val id: String,
+    val name: String,
+    val price: PriceDef,
+    val rewardId: String,
+)
+
+data class PriceDef(
+    val amountFen: Int,
+    val currency: String = "CNY",
+)
+
+data class RewardDef(
+    val id: String,
+    val itemGrants: List<ItemGrantDef> = emptyList(),
+    val entitlements: List<EntitlementDef> = emptyList(),
+)
+
+data class ItemGrantDef(
+    val itemId: String,
+    val quantity: Int,
+)
+
+data class EntitlementDef(
+    val kind: EntitlementKind,
+    val target: String? = null,
+)
+
+enum class EntitlementKind {
+    ALL_STAGES,
+}
+
+data class StageDef(
+    val id: String,
+    val name: String,
+    val entry: String? = null,
+    val requiredItems: List<String> = emptyList(),
 )
 
 data class ContentManifest(

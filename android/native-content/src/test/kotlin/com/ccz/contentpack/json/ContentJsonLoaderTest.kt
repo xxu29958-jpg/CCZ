@@ -1,6 +1,7 @@
 package com.ccz.contentpack.json
 
 import com.ccz.contentpack.ContentValidator
+import com.ccz.contentpack.EntitlementKind
 import com.ccz.core.model.DamageKind
 import com.ccz.core.model.Faction
 import com.ccz.core.model.Pos
@@ -277,6 +278,24 @@ class ContentJsonLoaderTest {
     }
 
     @Test
+    fun decodesCommerceTablesAndValidatesReferences() {
+        val content = ContentJsonLoader.load(packWithCommerce())
+
+        assertEquals("trssgshz03", content.commerce.products.first().id)
+        assertEquals("yuanbao", content.commerce.rewards.first().itemGrants.single().itemId)
+        assertEquals(EntitlementKind.ALL_STAGES, content.commerce.rewards[1].entitlements.single().kind)
+        assertEquals(listOf("yuanbao"), content.commerce.stages.single().requiredItems)
+        assertTrue(ContentValidator.validate(content).isEmpty())
+    }
+
+    @Test
+    fun unknownEntitlementKindFailsClosed() {
+        assertFailsWith<ContentDecodeException> {
+            ContentJsonLoader.load(packWithCommerce().replace("\"all_stages\"", "\"vip_only\""))
+        }
+    }
+
+    @Test
     fun missingRequiredFieldFailsClosed() {
         val broken = samplePack().replace("\"hp_max\": 200,", "")
         assertTrue(broken != samplePack(), "guard: hp_max removal must change the JSON")
@@ -298,4 +317,29 @@ class ContentJsonLoaderTest {
         assertEquals(1, issues.size)
         assertEquals("manifest.native_format_version", issues.first().path)
     }
+
+    private fun packWithCommerce(): String =
+        samplePack()
+            .replace("\"items\": [],", "\"items\": [ { \"id\": \"yuanbao\", \"name\": \"Yuanbao\", \"type\": \"currency\" } ],")
+            .replace(
+                "\"events\": {",
+                """
+                "commerce": {
+                  "products": [
+                    { "id": "trssgshz03", "name": "Yuanbao x188",
+                      "price": { "amount_fen": 1200 }, "reward_id": "reward_trssgshz03" },
+                    { "id": "trssgshz01", "name": "Full game",
+                      "price": { "amount_fen": 1800 }, "reward_id": "reward_full" }
+                  ],
+                  "rewards": [
+                    { "id": "reward_trssgshz03", "item_grants": [ { "item_id": "yuanbao", "quantity": 188 } ] },
+                    { "id": "reward_full", "entitlements": [ { "kind": "all_stages" } ] }
+                  ],
+                  "stages": [
+                    { "id": "stage_1", "name": "Daxingshan", "entry": "events/r.json", "required_items": [ "yuanbao" ] }
+                  ]
+                },
+                "events": {
+                """.trimIndent(),
+            )
 }

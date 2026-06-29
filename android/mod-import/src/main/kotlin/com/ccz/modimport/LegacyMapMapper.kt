@@ -9,7 +9,7 @@ import kotlinx.serialization.json.Json
 internal data class LegacyTerrainMap(
     @SerialName("map_width") val width: Int,
     @SerialName("map_height") val height: Int,
-    @SerialName("map_value") val mapValue: List<List<Int>>,
+    @SerialName("map_value") val mapValue: List<List<Int?>?>,
 )
 
 /**
@@ -23,6 +23,7 @@ internal data class LegacyTerrainMap(
  */
 object LegacyMapMapper {
     const val TILESET: String = "legacy"
+    const val VOID_TERRAIN_ID: String = "terrain_void"
     private const val TERRAIN_PREFIX = "terrain_"
 
     private val reader = Json { ignoreUnknownKeys = true; isLenient = true }
@@ -33,19 +34,19 @@ object LegacyMapMapper {
         require(id.isNotBlank()) { "map id must not be blank" }
         val src = reader.decodeFromString(LegacyTerrainMap.serializer(), terrainMapJson.removePrefix("﻿"))
         require(src.width > 0 && src.height > 0) { "map '$id' size must be positive: ${src.width}x${src.height}" }
-        require(src.mapValue.size == src.height) {
-            "map '$id' has ${src.mapValue.size} rows but map_height=${src.height}"
-        }
-        val tiles = src.mapValue.mapIndexed { y, rowValues ->
-            require(rowValues.size == src.width) {
-                "map '$id' row $y has ${rowValues.size} tiles but map_width=${src.width}"
-            }
-            rowValues.map { terrainId ->
-                require(terrainId >= 0) { "map '$id' row $y has negative terrain id $terrainId" }
-                TERRAIN_PREFIX + terrainId
+        val tiles = List(src.height) { y ->
+            val rowValues = src.mapValue.getOrNull(y).orEmpty()
+            List(src.width) { x ->
+                terrainIdToTile(rowValues.getOrNull(x), id, y)
             }
         }
         return PackMap(id = id, size = PackSize(src.width, src.height), tileset = TILESET, tiles = tiles)
+    }
+
+    private fun terrainIdToTile(terrainId: Int?, mapId: String, y: Int): String {
+        if (terrainId == null) return VOID_TERRAIN_ID
+        require(terrainId >= 0) { "map '$mapId' row $y has negative terrain id $terrainId" }
+        return TERRAIN_PREFIX + terrainId
     }
 
     /** Serialize mapped maps as the content-pack `maps` table JSON array. */

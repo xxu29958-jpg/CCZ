@@ -6,6 +6,7 @@ import com.ccz.contentpack.ClassGrowth
 import com.ccz.contentpack.ClassMovement
 import com.ccz.contentpack.ContentManifest
 import com.ccz.contentpack.ContentTables
+import com.ccz.contentpack.DeferredDeploymentDef
 import com.ccz.contentpack.EventTables
 import com.ccz.contentpack.MapDef
 import com.ccz.contentpack.MapSize
@@ -53,8 +54,8 @@ class CampaignAssemblerTest {
         tiles: List<List<String>> = standardTiles,
         pre: List<BattleOp> = listOf(BattleOp.SpawnUnit("hero", Pos(0, 0)), BattleOp.SpawnUnit("foe", Pos(2, 2))),
         mid: List<BattleTrigger> = emptyList(),
+        deferredDeployments: List<DeferredDeploymentDef> = emptyList(),
         win: List<WinLoseCondition> = listOf(WinLoseCondition.AnnihilateEnemies),
-        terrain: List<TerrainDef> = terrainDefs(),
     ): NativeContent = NativeContent(
         manifest = ContentManifest(
             nativeFormatVersion = "1",
@@ -66,13 +67,13 @@ class CampaignAssemblerTest {
         tables = ContentTables(
             classes = classDefs(),
             units = unitDefs(),
-            terrain = terrain,
+            terrain = terrainDefs(),
             skills = skillDefs(),
             items = emptyList(),
             // Size derived from the tiles so every variant stays self-consistent (height x width).
             maps = listOf(MapDef(id = "m", size = MapSize(tiles.first().size, tiles.size), tileset = "t", tiles = tiles)),
         ),
-        events = EventTables(sScripts = listOf(battleScript(pre = pre, mid = mid, win = win))),
+        events = EventTables(sScripts = listOf(battleScript(pre = pre, mid = mid, win = win)), deferredDeployments = deferredDeployments),
     )
 
     private fun terrainDefs(): List<TerrainDef> = listOf(
@@ -282,6 +283,17 @@ class CampaignAssemblerTest {
         val error = assertFailsWith<CampaignAssemblyException> { CampaignAssembler.assemble(content(win = win), "b", "m") }
 
         assertTrue(error.message.orEmpty().contains("events.sScripts[b].win[0].pos=(4, 2)"))
+    }
+
+    @Test
+    fun assembleThrowsWhenDeferredDeploymentTargetFallsOutsideMap() {
+        val deferred = listOf(DeferredDeploymentDef("b", "extra", Pos(4, 0), Faction.ENEMY))
+
+        val error = assertFailsWith<CampaignAssemblyException> {
+            CampaignAssembler.assemble(content(deferredDeployments = deferred), "b", "m")
+        }
+
+        assertTrue(error.message.orEmpty().contains("events.deferredDeployments[b][0].at=(4, 0)"))
     }
 
     @Test

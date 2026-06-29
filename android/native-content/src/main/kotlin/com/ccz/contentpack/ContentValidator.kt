@@ -24,6 +24,7 @@ object ContentValidator {
         }
 
         val indexes = ContentIndexes.from(content.tables)
+        val scriptIds = content.events.sScripts.map { it.id }.toSet() + content.events.rScripts.map { it.id }
         issues += validateUniqueIds(content.tables)
         // Event scripts are addressed by id (manifest.entry, scenario-replay lookup) and the
         // event validator builds diagnostic paths keyed on script id, so ids must be unique.
@@ -31,13 +32,14 @@ object ContentValidator {
         issues += uniqueIds("events.sScripts", content.events.sScripts.map { it.id })
         issues += uniqueIds("events.rScripts", content.events.rScripts.map { it.id })
         issues += uniqueIds("events.portrait_subjects", content.events.portraitSubjects.map { it.id })
-        issues += validateManifestEntry(content.manifest, content.events)
+        issues += validateManifestEntry(content.manifest, scriptIds)
         issues += validatePortraitSubjectIds(content.tables, content.events.portraitSubjects)
         issues += validateUnits(content.tables, indexes)
         issues += validateClasses(content.tables, indexes)
         issues += validateItems(content.tables, indexes)
         issues += validateNumericBounds(content.tables)
         issues += validateMaps(content.tables, indexes.terrainIds)
+        issues += validateCommerce(content.commerce, indexes.itemIds, scriptIds)
         issues += ContentEventValidator.validate(
             events = content.events,
             unitIds = indexes.unitIds,
@@ -56,9 +58,8 @@ object ContentValidator {
             uniqueIds("items", tables.items.map { it.id }) +
             uniqueIds("maps", tables.maps.map { it.id })
 
-    private fun validateManifestEntry(manifest: ContentManifest, events: EventTables): List<ValidationIssue> {
+    private fun validateManifestEntry(manifest: ContentManifest, scriptIds: Set<String>): List<ValidationIssue> {
         val entry = manifest.entry
-        val scriptIds = events.sScripts.map { it.id }.toSet() + events.rScripts.map { it.id }
         return when {
             entry.isBlank() -> listOf(ValidationIssue("manifest.entry", "entry is blank"))
             entry !in scriptIds -> listOf(ValidationIssue("manifest.entry", "unknown entry script: $entry"))
@@ -242,6 +243,72 @@ object ContentValidator {
 
     private fun validateMaps(tables: ContentTables, terrainIds: Set<String>): List<ValidationIssue> =
         tables.maps.flatMapIndexed { index, map -> validateMap(index, map, terrainIds) }
+
+    private fun validateCommerce(
+        commerce: CommerceTables,
+        itemIds: Set<String>,
+        scriptIds: Set<String>,
+    ): List<ValidationIssue> {
+        val rewardIds = commerce.rewards.map { it.id }.toSet()
+        return uniqueIds("commerce.products", commerce.products.map { it.id }) +
+            uniqueIds("commerce.rewards", commerce.rewards.map { it.id }) +
+            uniqueIds("commerce.stages", commerce.stages.map { it.id }) +
+            validateProducts(commerce.products, rewardIds) +
+            validateRewards(commerce.rewards, itemIds) +
+            validateStages(commerce.stages, itemIds, scriptIds)
+    }
+
+    private fun validateProducts(products: List<ProductDef>, rewardIds: Set<String>): List<ValidationIssue> = buildList {
+        products.forEachIndexed { index, product ->
+            if (product.rewardId !in rewardIds) {
+                add(ValidationIssue("commerce.products[$index].reward_id", "unknown reward: ${product.rewardId}"))
+            }
+            if (product.price.amountFen < 0) {
+                add(ValidationIssue("commerce.products[$index].price.amount_fen", "amount must be >= 0"))
+            }
+            if (product.price.currency.isBlank()) {
+                add(ValidationIssue("commerce.products[$index].price.currency", "currency is blank"))
+            }
+        }
+    }
+
+    private fun validateRewards(rewards: List<RewardDef>, itemIds: Set<String>): List<ValidationIssue> = buildList {
+        rewards.forEachIndexed { rewardIndex, reward ->
+            if (reward.itemGrants.isEmpty() && reward.entitlements.isEmpty()) {
+                add(ValidationIssue("commerce.rewards[$rewardIndex]", "reward must grant an item or entitlement"))
+            }
+            reward.itemGrants.forEachIndexed { grantIndex, grant ->
+                if (grant.itemId !in itemIds) {
+                    add(ValidationIssue("commerce.rewards[$rewardIndex].item_grants[$grantIndex].item_id", "unknown item: ${grant.itemId}"))
+                }
+                if (grant.quantity <= 0) {
+                    add(ValidationIssue("commerce.rewards[$rewardIndex].item_grants[$grantIndex].quantity", "quantity must be > 0"))
+                }
+            }
+            reward.entitlements.forEachIndexed { entitlementIndex, entitlement ->
+                if (entitlement.kind == EntitlementKind.ALL_STAGES && entitlement.target != null) {
+                    add(ValidationIssue("commerce.rewards[$rewardIndex].entitlements[$entitlementIndex].target", "all_stages target must be null"))
+                }
+            }
+        }
+    }
+
+    private fun validateStages(
+        stages: List<StageDef>,
+        itemIds: Set<String>,
+        scriptIds: Set<String>,
+    ): List<ValidationIssue> = buildList {
+        stages.forEachIndexed { stageIndex, stage ->
+            if (stage.entry != null && stage.entry !in scriptIds) {
+                add(ValidationIssue("commerce.stages[$stageIndex].entry", "unknown entry script: ${stage.entry}"))
+            }
+            stage.requiredItems.forEachIndexed { itemIndex, item ->
+                if (item !in itemIds) {
+                    add(ValidationIssue("commerce.stages[$stageIndex].required_items[$itemIndex]", "unknown item: $item"))
+                }
+            }
+        }
+    }
 
     private fun uniqueIds(path: String, ids: List<String>): List<ValidationIssue> {
         val seen = mutableSetOf<String>()

@@ -78,4 +78,3 @@ data class SScript(
     val mid: List<BattleTrigger>,
     val post: List<BattleOp>,
 )
-

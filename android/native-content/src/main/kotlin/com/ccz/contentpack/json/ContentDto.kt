@@ -15,6 +15,7 @@ internal data class ContentDto(
     val manifest: ManifestDto,
     val tables: TablesDto,
     val events: EventsDto = EventsDto(),
+    val commerce: CommerceDto = CommerceDto(),
 )
 
 @Serializable
@@ -204,6 +205,54 @@ internal data class SizeDto(val width: Int, val height: Int)
 
 @Serializable
 internal data class PosDto(val x: Int, val y: Int)
+
+@Serializable
+internal data class CommerceDto(
+    val products: List<ProductDto> = emptyList(),
+    val rewards: List<RewardDto> = emptyList(),
+    val stages: List<StageDto> = emptyList(),
+)
+
+@Serializable
+internal data class ProductDto(
+    val id: String,
+    val name: String,
+    val price: PriceDto,
+    val rewardId: String,
+)
+
+@Serializable
+internal data class PriceDto(
+    val amountFen: Int,
+    val currency: String = "CNY",
+)
+
+@Serializable
+internal data class RewardDto(
+    val id: String,
+    val itemGrants: List<ItemGrantDto> = emptyList(),
+    val entitlements: List<EntitlementDto> = emptyList(),
+)
+
+@Serializable
+internal data class ItemGrantDto(
+    val itemId: String,
+    val quantity: Int,
+)
+
+@Serializable
+internal data class EntitlementDto(
+    val kind: String,
+    val target: String? = null,
+)
+
+@Serializable
+internal data class StageDto(
+    val id: String,
+    val name: String,
+    val entry: String? = null,
+    val requiredItems: List<String> = emptyList(),
+)
 
 /** Thrown when a content pack cannot be decoded or whitelisted; carries a locating message. */
 class ContentDecodeException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)

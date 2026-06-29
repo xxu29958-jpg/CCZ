@@ -12,6 +12,7 @@ internal object ContentMapper {
             manifest = toManifest(dto.manifest),
             tables = toTables(dto.tables),
             events = toEvents(dto.events),
+            commerce = toCommerce(dto.commerce),
         )
 
     private fun toManifest(dto: ManifestDto): ContentManifest =

@@ -1,6 +1,7 @@
 package com.ccz.modimport
 
 import com.ccz.modimport.EexFixtures.DispatchUnit
+import com.ccz.modimport.EexFixtures.DispatchLayout
 import com.ccz.modimport.EexFixtures.dispatchRec
 import com.ccz.modimport.EexFixtures.eexBlob
 import com.ccz.modimport.LegacyRosterImporter.Side
@@ -30,11 +31,11 @@ class LegacyRosterImporterTest {
     private val mapW = 23
     private val mapH = 16
 
-    private fun enemyRec(units: List<DispatchUnit>) =
-        dispatchRec(enemyCmd, enemySlots, enemyStride, enemyX, enemyY, units)
+    private fun enemyRec(units: List<DispatchUnit>, cmd: Int = enemyCmd) =
+        dispatchRec(cmd, DispatchLayout(enemySlots, enemyStride, enemyX, enemyY), units)
 
-    private fun friendRec(units: List<DispatchUnit>) =
-        dispatchRec(friendCmd, friendSlots, friendStride, friendX, friendY, units)
+    private fun friendRec(units: List<DispatchUnit>, cmd: Int = friendCmd) =
+        dispatchRec(cmd, DispatchLayout(friendSlots, friendStride, friendX, friendY), units)
 
     @Test
     fun importsEnemyAndFriendDeploymentAtRealOffsets() {
@@ -54,6 +55,43 @@ class LegacyRosterImporterTest {
             "both enemy slots (empty slots skipped) then the ally, each at the disassembly-derived offsets",
         )
         assertEquals(0, d.reinforcementRecords)
+        assertEquals(listOf(596, 226, 181), d.traces.map { it.unit.hid })
+        assertEquals(listOf(0, 3, 0), d.traces.map { it.slot })
+        assertEquals(listOf(28, 28, 26), d.traces.map { it.rawWords.size })
+    }
+
+    @Test
+    fun importsCurrentApkRemappedDispatchProfile() {
+        val blob = eexBlob(
+            enemyRec(listOf(DispatchUnit(0, hid = 596, x = 20, y = 5, level = 2)), cmd = 0xde),
+            friendRec(listOf(DispatchUnit(0, hid = 650, x = 3, y = 10, level = 3)), cmd = 0xdb),
+        )
+
+        val d = LegacyRosterImporter.importDeployment(
+            blob,
+            mapW,
+            mapH,
+            LegacyEexOpcodeProfile.TRSSGSHZ_CURRENT_APK,
+        )
+
+        assertEquals(
+            listOf(
+                LegacyRosterImporter.RosterUnit(596, 20, 5, 2, Side.ENEMY),
+                LegacyRosterImporter.RosterUnit(650, 3, 10, 3, Side.FRIEND),
+            ),
+            d.units,
+        )
+    }
+
+    @Test
+    fun autoDetectionPrefersCurrentProfileOverStaleLegacyMarker() {
+        val blob = eexBlob(
+            enemyRec(listOf(DispatchUnit(0, hid = 999, x = 1, y = 1, level = 2)), cmd = 0x47),
+            enemyRec(listOf(DispatchUnit(0, hid = 596, x = 20, y = 5, level = 2)), cmd = 0xde),
+        )
+
+        assertEquals(LegacyEexOpcodeProfile.TRSSGSHZ_CURRENT_APK, LegacyRosterImporter.detectOpcodeProfile(blob, mapW, mapH))
+        assertEquals(listOf(596), LegacyRosterImporter.importDeployment(blob, mapW, mapH).units.map { it.hid })
     }
 
     @Test
@@ -84,6 +122,16 @@ class LegacyRosterImporterTest {
         val d = LegacyRosterImporter.importDeployment(blob, mapW, mapH)
         assertTrue(d.units.isEmpty(), "slot-0-empty record is rejected")
         assertEquals(0, d.reinforcementRecords)
+    }
+
+    @Test
+    fun rejectsRecordWhenSlotTagsDoNotMatchDispatchSchema() {
+        val record = enemyRec(listOf(DispatchUnit(0, 596, 20, 5, 2))).copyOf()
+        record[6] = 0x25 // corrupt slot0 +0x04 tag: expected 0x26
+
+        val d = LegacyRosterImporter.importDeployment(eexBlob(record), mapW, mapH)
+
+        assertTrue(d.units.isEmpty(), "in-bounds coordinates are not enough when the slot tag schema is wrong")
     }
 
     @Test

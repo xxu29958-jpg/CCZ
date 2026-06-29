@@ -163,6 +163,36 @@ class ContentEventValidatorTest {
     }
 
     @Test
+    fun deferredDeploymentReferencesValidate() {
+        val content = sScriptWith(deferredDeployments = listOf(DeferredDeploymentDef("s1", "zhaoyun", Pos(2, 1), Faction.ENEMY)))
+
+        assertEquals(emptyList(), ContentValidator.validate(content))
+    }
+
+    @Test
+    fun invalidDeferredDeploymentFailsClosed() {
+        val content = sScriptWith(
+            deferredDeployments = listOf(DeferredDeploymentDef("s1", "ghost", Pos(-1, 0), source = "")),
+        )
+
+        val issues = ContentValidator.validate(content)
+
+        assertTrue(issues.any { it.message.contains("unknown unit: ghost") })
+        assertTrue(issues.any { it.message.contains("negative coordinate: (-1, 0)") })
+        assertTrue(issues.any { it.message.contains("source is blank") })
+    }
+
+    @Test
+    fun deferredDeploymentCannotAlsoSpawnInPre() {
+        val content = sScriptWith(
+            pre = listOf(BattleOp.SpawnUnit("zhaoyun", at = Pos(0, 0))),
+            deferredDeployments = listOf(DeferredDeploymentDef("s1", "zhaoyun", Pos(2, 1))),
+        )
+
+        assertTrue(ContentValidator.validate(content).any { it.message.contains("deferred unit is already spawned in pre") })
+    }
+
+    @Test
     fun embeddedPortraitUnknownSubjectFailClosed() {
         val content = sScriptWith(pre = listOf(BattleOp.Script(ScenarioOp.Portrait("ghost"))))
 
@@ -239,15 +269,25 @@ class ContentEventValidatorTest {
 
     private fun sScriptWith(
         win: List<WinLoseCondition> = emptyList(),
-        lose: List<WinLoseCondition> = emptyList(),
         pre: List<BattleOp> = emptyList(),
         mid: List<BattleTrigger> = emptyList(),
+        deferredDeployments: List<DeferredDeploymentDef> = emptyList(),
         portraitSubjects: List<PortraitSubjectDef> = emptyList(),
     ): NativeContent =
         contentWith(
             events = EventTables(
-                sScripts = listOf(SScript("s1", win, lose, pre, mid, post = emptyList())),
+                sScripts = listOf(
+                    SScript(
+                        id = "s1",
+                        win = win,
+                        lose = emptyList(),
+                        pre = pre,
+                        mid = mid,
+                        post = emptyList(),
+                    ),
+                ),
                 portraitSubjects = portraitSubjects,
+                deferredDeployments = deferredDeployments,
             ),
             items = emptyList(),
         )

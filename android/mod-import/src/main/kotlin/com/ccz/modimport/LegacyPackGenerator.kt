@@ -78,7 +78,8 @@ object LegacyPackGenerator {
         val allHeroes = readArray(jsonDir, "dic_hero.json")
         val sources = sourcesFor(jsonDir, allHeroes, hids)
         val terrainMap = cropTerrainMap(read(File(root, "terrainJson"), "terrainMap_1.json"))
-        val objectives = importObjectives(root, allHeroes, hids)
+        val profile = opcodeProfile(root)
+        val objectives = importObjectives(root, allHeroes, hids, profile)
         val spec = MapBattleSpec(
             battleId = "daxingshan",
             mapId = "daxingshan_map",
@@ -119,12 +120,13 @@ object LegacyPackGenerator {
         val terrainMap = read(File(root, "terrainJson"), "terrainMap_1.json")
         val (mapWidth, mapHeight) = mapDims(terrainMap)
         val scriptBytes = File(File(root, "Scenes"), DAXINGSHAN_SCRIPT).readBytes()
-        val deployment = LegacyRosterImporter.importDeployment(scriptBytes, mapWidth, mapHeight)
+        val profile = LegacyRosterImporter.detectOpcodeProfile(scriptBytes, mapWidth, mapHeight)
+        val deployment = LegacyRosterImporter.importDeployment(scriptBytes, mapWidth, mapHeight, profile)
         val placements = fullStagePlacements(deployment)
         val hids = placements.map { it.unit.removePrefix(HERO_PREFIX).toInt() }.toSet()
         val allHeroes = readArray(jsonDir, "dic_hero.json")
         val sources = sourcesFor(jsonDir, allHeroes, hids)
-        val objectives = importObjectives(root, allHeroes, hids)
+        val objectives = importObjectives(root, allHeroes, hids, profile)
         val spec = MapBattleSpec(
             battleId = FULL_BATTLE_ID,
             mapId = "${FULL_BATTLE_ID}_map",
@@ -203,13 +205,25 @@ object LegacyPackGenerator {
 
     /** Import 大兴山's win/lose objectives from the real `Scenes/S_00.eex_new`, scoped to the deployed roster.
      *  [allHeroes] (full dic_hero) resolves any name (incl. non-deployed allies like 邹靖) to its hero id. */
-    private fun importObjectives(root: File, allHeroes: List<JsonElement>, hids: Set<Int>): LegacyObjectiveImporter.ImportedObjectives {
+    private fun importObjectives(
+        root: File,
+        allHeroes: List<JsonElement>,
+        hids: Set<Int>,
+        profile: LegacyEexOpcodeProfile,
+    ): LegacyObjectiveImporter.ImportedObjectives {
         val nameToId = allHeroes.associate { hero ->
             (hero.jsonObject["name"]?.jsonPrimitive?.content ?: "") to "hero_${hero.jsonObject["hid"]?.jsonPrimitive?.int}"
         }
         val rosterIds = hids.mapTo(HashSet()) { "hero_$it" }
         val scriptBytes = File(File(root, "Scenes"), DAXINGSHAN_SCRIPT).readBytes()
-        return LegacyObjectiveImporter.importObjectives(scriptBytes, rosterIds, nameToId::get)
+        return LegacyObjectiveImporter.importObjectives(scriptBytes, rosterIds, nameToId::get, profile)
+    }
+
+    private fun opcodeProfile(root: File): LegacyEexOpcodeProfile {
+        val terrainMap = read(File(root, "terrainJson"), "terrainMap_1.json")
+        val (mapWidth, mapHeight) = mapDims(terrainMap)
+        val scriptBytes = File(File(root, "Scenes"), DAXINGSHAN_SCRIPT).readBytes()
+        return LegacyRosterImporter.detectOpcodeProfile(scriptBytes, mapWidth, mapHeight)
     }
 
     /** Crop the real terrainMap to the [WIN_W]×[WIN_H] window at ([WIN_X],[WIN_Y]) as a terrainMap JSON. */

@@ -32,8 +32,25 @@ game-core
   sole combat authority
 
 Native content
-  manifest / units / classes / terrain / skills / items / maps / events / text / assets
+  manifest / units / classes / terrain / skills / items / commerce / stages / maps / events / text / assets
 ```
+
+## App Entry Flow
+
+The Android app starts from a playable-stage registry:
+
+```text
+LegacyCatalogContent (native commerce catalog)
+  -> CommerceResolver purchase/access result
+  -> PlayableStageCatalog registration check
+  -> optional R-script scenario
+  -> BattleReducer / BattleScreen
+  -> game-core
+```
+
+Catalog access and playability are deliberately separate. A legacy catalog row can be unlocked by products or
+entitlements, but it can launch only after the app registers a native battle runtime for that stage. Today the
+registered production runtime is `legacy_stage_1` -> `CampaignRuntime` (full-stage Daxingshan).
 
 Command validation is realized today inside `game-core` (the `Gameplay.submit` facade over
 `CommandValidator`), since legality is a deterministic rule and `game-core` is the sole combat
@@ -58,10 +75,10 @@ ordered command sequence
 
 The converter may know about:
 
-- R/S scripts and opcode mapping.
+- R/S scripts, opcode mapping, and package-specific opcode profiles.
 - Data tables.
 - Imsg text.
-- legacy maps, sprites, portraits, effects, audio.
+- legacy maps (including null/void normalization and stage migration planning), sprites, portraits, effects, audio.
 - existing Windows tools and exported intermediate artifacts.
 
 The runtime must know only:

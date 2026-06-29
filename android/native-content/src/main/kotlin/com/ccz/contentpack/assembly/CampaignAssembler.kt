@@ -1,6 +1,7 @@
 package com.ccz.contentpack.assembly
 
 import com.ccz.contentpack.ClassDef
+import com.ccz.contentpack.DeferredDeploymentDef
 import com.ccz.contentpack.MapDef
 import com.ccz.contentpack.NativeContent
 import com.ccz.contentpack.SkillDef
@@ -49,6 +50,7 @@ data class BattleSetup(
     val initialState: BattleState,
     val script: SScript,
     val scriptContext: ScriptContext,
+    val deferredDeployments: List<DeferredDeploymentDef> = emptyList(),
 )
 
 /**
@@ -98,8 +100,9 @@ object CampaignAssembler {
             ?: throw CampaignAssemblyException("no s-script '$battleScriptId' in content '${content.manifest.contentId}'")
         val mapDef = content.tables.maps.firstOrNull { it.id == mapId }
             ?: throw CampaignAssemblyException("no map '$mapId' in content '${content.manifest.contentId}'")
+        val deferredDeployments = content.events.deferredDeployments.filter { it.scriptId == battleScriptId }
         validatePreDeploymentOrder(script)
-        validateScriptMapBounds(script, mapDef)
+        validateScriptMapBounds(script, mapDef, deferredDeployments)
         val map = battleMap(mapDef, content.tables.terrain)
         val context = BattleContext(
             map = map,
@@ -116,7 +119,7 @@ object CampaignAssembler {
             reserves = BattleAssembler.reserves(content.tables.units, growthByClass),
             map = map,
         )
-        return BattleSetup(context, deploy(script, scriptContext, seed), script, scriptContext)
+        return BattleSetup(context, deploy(script, scriptContext, seed), script, scriptContext, deferredDeployments)
     }
 
     private fun validatePreDeploymentOrder(script: SScript) {
@@ -149,8 +152,12 @@ object CampaignAssembler {
     private fun preDeploymentRef(scriptId: String, index: Int, op: String, unit: String): String =
         "events.sScripts[$scriptId].pre[$index].$op=$unit"
 
-    private fun validateScriptMapBounds(script: SScript, mapDef: MapDef) {
-        val outOfBounds = scriptPositions(script).filterNot { mapDef.contains(it.pos) }
+    private fun validateScriptMapBounds(
+        script: SScript,
+        mapDef: MapDef,
+        deferredDeployments: List<DeferredDeploymentDef>,
+    ) {
+        val outOfBounds = scriptPositions(script, deferredDeployments).filterNot { mapDef.contains(it.pos) }
         if (outOfBounds.isNotEmpty()) {
             throw CampaignAssemblyException(
                 "battle '${script.id}' references out-of-bounds tile(s) on map '${mapDef.id}': " +
@@ -159,12 +166,21 @@ object CampaignAssembler {
         }
     }
 
-    private fun scriptPositions(script: SScript): List<ScriptPosRef> =
+    private fun scriptPositions(script: SScript, deferredDeployments: List<DeferredDeploymentDef>): List<ScriptPosRef> =
         winLosePositions(script.id, "win", script.win) +
             winLosePositions(script.id, "lose", script.lose) +
             battleOpPositions("events.sScripts[${script.id}].pre", script.pre) +
             script.mid.flatMapIndexed { index, trigger -> triggerPositions(script.id, index, trigger) } +
-            battleOpPositions("events.sScripts[${script.id}].post", script.post)
+            battleOpPositions("events.sScripts[${script.id}].post", script.post) +
+            deferredDeploymentPositions(script.id, deferredDeployments)
+
+    private fun deferredDeploymentPositions(
+        scriptId: String,
+        deferredDeployments: List<DeferredDeploymentDef>,
+    ): List<ScriptPosRef> =
+        deferredDeployments.mapIndexed { index, deployment ->
+            ScriptPosRef("events.deferredDeployments[$scriptId][$index].at", deployment.at)
+        }
 
     private fun triggerPositions(scriptId: String, index: Int, trigger: BattleTrigger): List<ScriptPosRef> =
         triggerConditionPositions(scriptId, index, trigger.whenCondition) +

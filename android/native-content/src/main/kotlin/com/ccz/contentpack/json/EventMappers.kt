@@ -1,5 +1,6 @@
 package com.ccz.contentpack.json
 
+import com.ccz.contentpack.DeferredDeploymentDef
 import com.ccz.contentpack.EventTables
 import com.ccz.core.event.BattleOp
 import com.ccz.core.event.BattleTrigger
@@ -22,6 +23,9 @@ internal fun toEvents(dto: EventsDto): EventTables =
         rScripts = dto.rScripts.map { toRScript(it) },
         sScripts = dto.sScripts.map { toSScript(it) },
         portraitSubjects = dto.portraitSubjects.map { toPortraitSubject(it) },
+        deferredDeployments = dto.deferredDeployments.mapIndexed { index, deployment ->
+            toDeferredDeployment("events.deferred_deployments[$index]", deployment)
+        },
     )
 
 private fun toRScript(dto: RScriptDto): RScript =
@@ -38,6 +42,15 @@ private fun toSScript(dto: SScriptDto): SScript {
         post = dto.post.map { toBattleOp("$path.post", it) },
     )
 }
+
+private fun toDeferredDeployment(path: String, dto: DeferredDeploymentDto): DeferredDeploymentDef =
+    DeferredDeploymentDef(
+        scriptId = dto.script,
+        unit = dto.unit,
+        at = toPos(dto.at),
+        faction = dto.faction?.let { decodeFaction("$path.faction", it) },
+        source = dto.source,
+    )
 
 private fun toBattleTrigger(scriptPath: String, dto: BattleTriggerDto): BattleTrigger {
     val path = "$scriptPath.mid[${dto.id}]"

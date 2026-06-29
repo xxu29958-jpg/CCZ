@@ -25,6 +25,7 @@ internal data class EventsDto(
     val rScripts: List<RScriptDto> = emptyList(),
     val sScripts: List<SScriptDto> = emptyList(),
     val portraitSubjects: List<PortraitSubjectDto> = emptyList(),
+    val deferredDeployments: List<DeferredDeploymentDto> = emptyList(),
 )
 
 @Serializable
@@ -44,6 +45,15 @@ internal data class SScriptDto(
     val pre: List<BattleOpDto> = emptyList(),
     val mid: List<BattleTriggerDto> = emptyList(),
     val post: List<BattleOpDto> = emptyList(),
+)
+
+@Serializable
+internal data class DeferredDeploymentDto(
+    val script: String,
+    val unit: String,
+    val at: PosDto,
+    val faction: String? = null,
+    val source: String = "content",
 )
 
 @Serializable

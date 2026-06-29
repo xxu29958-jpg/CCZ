@@ -44,6 +44,26 @@
 | **友军** `ScriptDispatchFriend` | `0x46` | **20 × 0x34** | s16 `+0x2` | s16 `+0xa` | s16 `+0x10` | s16 `+0x1a` |
 | **玩家** `ScriptDispatchOwn` | `0x4b` | 0x1a 体(单条) | (索引)i32 `+0x2` | i32 `+0x8` | i32 `+0xe` | — |
 
+### 2.1 当前 E 盘 APK opcode profile
+
+上表的 `0x46/0x47` 是旧解密参考包的 native command id。2026-06-29 复核当前
+`E:\trssgshz_reverse_repo\decrypted_full_apk\assets\GameResources\trssgshz` 后确认:payload 字段布局和偏移
+未变,但脚本 opcode 被重排。`LegacyEexOpcodeProfile.TRSSGSHZ_CURRENT_APK` 明确记录当前包映射:
+
+| 语义 | 旧 reference cmd | 当前 APK cmd |
+|---|---:|---:|
+| `ScriptDispatchFriend` | `0x46` | `0xdb` |
+| `ScriptDispatchEnemy` | `0x47` | `0xde` |
+| `ScriptChildInfo` label | `0x02` | `0x0f` |
+| `ScriptActorTalk` dialogue | `0x14` | `0x45` |
+| `ScriptCommonInfo` objective block | `0x19` | `0x54` |
+| `ScriptArmyChange` actor state | `0x3b` | `0xba` |
+| `ScriptSetActorVisible` actor visibility | `0x4c` | `0xed` |
+
+当前 S_00 的主友军记录仍在 `@0x46f`,主敌军记录仍在 `@0x881`;只是 cmd word 从 `0x46/0x47`
+变为 `0xdb/0xde`。因此生产 importer 必须先选择 opcode profile,不能同时扫所有历史 cmd,否则当前包里的旧
+`0x47` 字节巧合会被误报为部署。
+
 布局来源(三重交叉):
 - **子对象 initPara**(`fields2.py` 逐字段追踪):`ScriptDispatchOneEnemy::initPara@0x71da92`(返回 payload+0x38)、
   `ScriptDispatchOneFriend::initPara@0x71dd00`(返回 +0x34)、`ScriptDispatchOwn::initPara@0x7196f4`(返回 +0x1a)。
@@ -71,11 +91,31 @@
 
 1. 记录须完整落在 blob 内(`body + slots*stride <= size`);
 2. **slot 0 必是实兵**(hid>0)—— 真 dispatch 开头就部署;
-3. **每个非哨兵槽**(hid>0)坐标都须在 `[0,W)×[0,H)` —— 出现一个越界非哨兵槽即判**字节巧合**,整条拒。
+3. **每个非哨兵槽**(hid>0)必须匹配 dispatch child 的固定 tag schema(例如敌军槽内 `+0x04=0x26`,
+   `+0x0c=0x04`, `+0x18=0x2b`, `+0x1c=0x3e` 等)。仅靠 hid/x/y 像坐标还不够;payload 内假阳性必须被拒。
+4. **每个非哨兵槽**(hid>0)坐标都须在 `[0,W)×[0,H)` —— 出现一个越界非哨兵槽即判**字节巧合**,整条拒。
    随机字节通过此门概率 ≈ `0.5^80`,极强 fail-closed。代价:若真关卡有**图外待命单位**会被此门误拒
    (保守取舍——宁拒可疑也不纳噪声;S_00 全部部署槽在图内,已核实)。
-4. **同侧取首条有效记录**(最低偏移)= 开局部署;其余有效记录计入 `reinforcementRecords`(增援波,不静默丢、
+5. **同侧取首条有效记录**(最低偏移)= 开局部署;其余有效记录计入 `reinforcementRecords`(增援波,不静默丢、
    也不混进开局)。hid→已知武将的解析与未知过滤交给调用方(`LegacyPackGenerator` 持 dic_hero)。
+
+`LegacyStageMigrationPlanner` 的生成报告会把开局部署里的同格冲突展开为
+`diagnostics.collision_groups[]`：每个冲突单位记录 side / hid / level / slot / record_offset / raw_words。
+这些 raw 16-bit slot words 是继续识别旧作隐藏、替补、换位部署规则的证据；不能把它们直接当运行时内容。
+同组还会输出 `script_refs[]`，列出本关 `ScriptSetActorVisible` / `ScriptArmyChange` 是否点名这些 hid。
+当前真实报告中共有 163 个同格组 / 881 个组内单位，其中 125 个同格组带有这类脚本引用(285 条)，
+并为每个有脚本线索的组输出 `script_ref_coverage`。互斥覆盖形态为：38 组无脚本线索、55 组全员被点名、
+68 组只有一个单位实例未被点名、2 组多单位未点名混合；其中有任意未点名单元的脚本线索组共 70 组。
+这 68 个单候选组会额外输出 `resolution_proposal.kind=opening_unit_with_deferred_actor_state_refs`：
+未点名单位作为开局占格候选，被脚本点名单位作为延迟/隐藏候选。当前报告中是 68 个 proposed opening
+units / 93 个 deferred units，覆盖 16 个关卡，其中 13 个碰撞关卡全部由这种 proposal 组成；这 13 关的
+`collision_resolution_preview.status_after_proposals` 为 `ready`，但原始 `status` 仍保持 blocked。
+例如第一关同格的 `hid 603` 被后续 `set_actor_visible` 点名，proposal 保留未点名的 `hid 226` 为开局候选；
+这证明“显隐/后出场”是重要线索。2026-06-29 的 native 契约已把该线索落为
+`events.deferred_deployments[]` metadata：`planLegacyStages` 对上述 13 个
+`status_after_proposals=ready` 关卡执行 `trial_assembly`，逐关走 `ContentJsonLoader` →
+`ContentValidator` → `CampaignAssembler`，13/13 通过，合计 57 个 deferred units。原始 `status` 仍保持
+blocked，避免把 proposal 静默当成正式迁移；`trial_assembly.status=ready` 是可机器复验的下一步证据。
 
 **装配下一步**(本层之上):`LegacyRosterImporter.Deployment` → `Placement(side+hid+x/y+level)` → `LegacyBattleBuilder.
 buildBattleOnMap` 的**完整 23×16 terrainMap_1**(不裁剪——棋盘滚动 #96 已支持)→ pack → 可玩真·整关。玩家本方

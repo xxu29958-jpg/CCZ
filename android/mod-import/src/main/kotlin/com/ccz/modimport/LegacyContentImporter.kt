@@ -12,6 +12,7 @@ data class PackContent(
     val manifest: PackManifest,
     val tables: PackTables,
     val events: PackEvents? = null,
+    val commerce: PackCommerce = PackCommerce(),
 )
 
 @Serializable
@@ -32,6 +33,7 @@ data class PackTables(
     val units: List<PackUnit> = emptyList(),
     val skills: List<PackSkill> = emptyList(),
     val terrain: List<PackTerrain> = emptyList(),
+    val items: List<PackItem> = emptyList(),
     val maps: List<PackMap> = emptyList(),
 )
 

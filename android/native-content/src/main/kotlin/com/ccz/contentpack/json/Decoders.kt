@@ -5,6 +5,7 @@ import com.ccz.core.model.Ailment
 import com.ccz.core.model.CounterRelation
 import com.ccz.core.model.DamageKind
 import com.ccz.core.model.EffectTarget
+import com.ccz.contentpack.EntitlementKind
 import com.ccz.core.model.Faction
 import com.ccz.core.model.HealMode
 
@@ -40,3 +41,7 @@ internal fun decodeAffectedStat(path: String, value: String): AffectedStat =
 internal fun decodeAilment(path: String, value: String): Ailment =
     Ailment.entries.firstOrNull { it.name == value.uppercase() }
         ?: throw ContentDecodeException("$path: unknown ailment: $value")
+
+internal fun decodeEntitlementKind(path: String, value: String): EntitlementKind =
+    EntitlementKind.entries.firstOrNull { it.name == value.uppercase() }
+        ?: throw ContentDecodeException("$path: unknown entitlement kind: $value")

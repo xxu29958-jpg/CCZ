@@ -48,9 +48,9 @@ class LegacyBattleEndToEndTest {
 
     @Test
     fun realLegacyMapFillsTerrainCoverageAndAssembles() {
-        // a real terrainMap grid references terrain ids beyond the catalog (only mapid 1 here):
-        // ids 0 and 2 must auto-fill so coverage validation passes without hand-curating the catalog.
-        val terrainMap = """{"desc":"tm","map_width":3,"map_height":3,"map_value":[[1,1,2],[1,0,2],[1,1,2]]}"""
+        // A real terrainMap grid can reference ids beyond the catalog (only mapid 1 here) and carry `null`
+        // void cells. id 2 auto-fills passable; null becomes terrain_void and must stay impassable.
+        val terrainMap = """{"desc":"tm","map_width":3,"map_height":3,"map_value":[[1,1,2],[1,null,2],[1,1,2]]}"""
         val battle = MapBattleSpec(
             battleId = "rmap",
             mapId = "real_map",
@@ -61,7 +61,8 @@ class LegacyBattleEndToEndTest {
         val content = LegacyBattleBuilder.loadOnMap(meta, sources(), terrainMap, battle)
 
         assertEquals(emptyList(), ContentValidator.validate(content), "auto-filled terrain coverage must validate")
-        assertTrue(content.tables.terrain.map { it.id }.containsAll(listOf("terrain_0", "terrain_1", "terrain_2")))
+        assertTrue(content.tables.terrain.map { it.id }.containsAll(listOf("terrain_1", "terrain_2", "terrain_void")))
+        assertEquals(false, content.tables.terrain.first { it.id == "terrain_void" }.passable)
         val map = content.tables.maps.single()
         assertEquals(3, map.size.width)
         assertEquals(3, map.size.height)
@@ -70,6 +71,34 @@ class LegacyBattleEndToEndTest {
         assertEquals(setOf("hero_1", "hero_2"), setup.initialState.units.keys, "both sides deploy on the real map")
         assertEquals(Faction.ENEMY, setup.initialState.units.getValue("hero_2").faction)
         assertEquals(BattleOutcome.ONGOING, Gameplay.outcome(setup.initialState, setup.script))
+    }
+
+    @Test
+    fun realLegacyMapCarriesDeferredDeploymentsAsNativeMetadata() {
+        val terrainMap = """{"desc":"tm","map_width":3,"map_height":3,"map_value":[[1,1,1],[1,1,1],[1,1,1]]}"""
+        val battle = MapBattleSpec(
+            battleId = "deferred",
+            mapId = "dm",
+            protect = "hero_1",
+            placements = listOf(Placement("hero_1", 0, 0), Placement("hero_3", 2, 2, enemy = true)),
+        )
+        val deferred = listOf(
+            DeferredPlacement(
+                placement = Placement("hero_2", 1, 1, enemy = true, level = 4),
+                source = "legacy_actor_state_refs",
+            ),
+        )
+
+        val content = LegacyBattleBuilder.loadOnMap(meta, sources(), terrainMap, battle, deferred)
+
+        assertEquals(emptyList(), ContentValidator.validate(content))
+        val setup = CampaignAssembler.assemble(content, "deferred", "dm")
+        assertEquals(setOf("hero_1", "hero_3"), setup.initialState.units.keys, "deferred unit is not opening deployment")
+        assertTrue("hero_2" in setup.scriptContext.reserves, "deferred unit remains spawnable from reserves")
+        assertEquals("hero_2", setup.deferredDeployments.single().unit)
+        assertEquals(Pos(1, 1), setup.deferredDeployments.single().at)
+        assertEquals(Faction.ENEMY, setup.deferredDeployments.single().faction)
+        assertEquals("legacy_actor_state_refs", setup.deferredDeployments.single().source)
     }
 
     @Test

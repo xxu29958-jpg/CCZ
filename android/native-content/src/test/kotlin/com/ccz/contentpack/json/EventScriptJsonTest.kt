@@ -1,6 +1,7 @@
 package com.ccz.contentpack.json
 
 import com.ccz.contentpack.ContentValidator
+import com.ccz.contentpack.DeferredDeploymentDef
 import com.ccz.core.event.BattleOp
 import com.ccz.core.event.ChoiceOption
 import com.ccz.core.event.DialogueLine
@@ -57,6 +58,10 @@ class EventScriptJsonTest {
         assertEquals(listOf(WinLoseCondition.UnitDead("zhaoyun")), s.lose)
         assertEquals(listOf(BattleOp.SpawnUnit("zhaoyun", Pos(1, 2), Faction.ENEMY)), s.pre)
         assertEquals(listOf(BattleOp.SetHp("zhaoyun", 10)), s.post)
+        assertEquals(
+            listOf(DeferredDeploymentDef("s1", "extra", Pos(3, 1), Faction.ENEMY, "legacy_actor_state_refs")),
+            content.events.deferredDeployments,
+        )
 
         val trigger = s.mid.single()
         assertEquals("t1", trigger.id)
@@ -152,6 +157,15 @@ class EventScriptJsonTest {
                     }
                   ],
                   "post": [ { "type": "set_hp", "unit": "zhaoyun", "hp": 10 } ]
+                }
+              ],
+              "deferred_deployments": [
+                {
+                  "script": "s1",
+                  "unit": "extra",
+                  "at": { "x": 3, "y": 1 },
+                  "faction": "ENEMY",
+                  "source": "legacy_actor_state_refs"
                 }
               ]
             }

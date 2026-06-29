@@ -18,6 +18,7 @@ data class PackTerrain(
     val id: String,
     val name: String,
     @SerialName("move_cost") val moveCost: Int,
+    val passable: Boolean = true,
     val bonuses: PackBonuses = PackBonuses(),
 )
 

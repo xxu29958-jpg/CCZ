@@ -52,3 +52,39 @@ tasks.register<JavaExec>("generateLegacyFullStage") {
     classpath = sourceSets["main"].runtimeClasspath
     args((project.findProperty("extractedDir") as String?).orEmpty(), (project.findProperty("outPath") as String?).orEmpty(), "full")
 }
+
+// Offline commerce smoke: reads local decrypted legacy tables, verifies a paid product grants its native reward,
+// and optionally checks whether that reward unlocks a legacy stage. Run e.g.:
+//   ./gradlew :mod-import:verifyLegacyPurchase -PextractedDir=<dir> -PchargeId=trssgshz03 -PgkId=1
+tasks.register<JavaExec>("verifyLegacyPurchase") {
+    group = "ccz"
+    description = "Verify legacy product -> native reward delivery -> optional stage unlock from local decrypted tables."
+    mainClass.set("com.ccz.modimport.LegacyCommerceVerifier")
+    classpath = sourceSets["main"].runtimeClasspath
+    val extractedDir = (project.findProperty("extractedDir") as String?).orEmpty()
+    val chargeId = (project.findProperty("chargeId") as String?).orEmpty()
+    val gkId = (project.findProperty("gkId") as String?).orEmpty()
+    args(listOfNotNull(extractedDir, chargeId, gkId.takeIf { it.isNotBlank() }))
+}
+
+// Full catalog migration: emits a native content pack containing every legacy item, product, reward, and stage
+// unlock requirement. It validates the generated pack before writing it.
+//   ./gradlew :mod-import:generateLegacyCatalog -PextractedDir=<dir> -PoutPath=<file>
+tasks.register<JavaExec>("generateLegacyCatalog") {
+    group = "ccz"
+    description = "Generate a full native catalog pack from local legacy commerce/stage tables."
+    mainClass.set("com.ccz.modimport.LegacyCatalogGenerator")
+    classpath = sourceSets["main"].runtimeClasspath
+    args((project.findProperty("extractedDir") as String?).orEmpty(), (project.findProperty("outPath") as String?).orEmpty())
+}
+
+// Stage migration planning: scans dic_gk + Scenes/S_*.eex_new + terrainJson/terrainMap_*.json, validates the
+// conservative script/map bindings with the existing map/deployment/objective importers, and writes a report.
+//   ./gradlew :mod-import:planLegacyStages -PextractedDir=<dir> -PoutPath=<file>
+tasks.register<JavaExec>("planLegacyStages") {
+    group = "ccz"
+    description = "Plan fail-closed legacy stage migration from local decrypted scripts and maps."
+    mainClass.set("com.ccz.modimport.LegacyStageMigrationPlanner")
+    classpath = sourceSets["main"].runtimeClasspath
+    args((project.findProperty("extractedDir") as String?).orEmpty(), (project.findProperty("outPath") as String?).orEmpty())
+}

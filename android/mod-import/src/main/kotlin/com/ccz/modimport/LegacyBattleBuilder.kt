@@ -23,6 +23,7 @@ data class PackSize(val width: Int, val height: Int)
 data class PackEvents(
     @SerialName("s_scripts") val sScripts: List<PackBattle> = emptyList(),
     @SerialName("r_scripts") val rScripts: List<PackRScript> = emptyList(),
+    @SerialName("deferred_deployments") val deferredDeployments: List<PackDeferredDeployment> = emptyList(),
 )
 
 /** One cutscene script (`events.r_scripts`): an ordered list of scenario ops. */
@@ -79,6 +80,16 @@ data class PackSpawn(
     val faction: String? = null,
 )
 
+/** A native deferred deployment: reserve starts off-map and may be spawned later by script translation. */
+@Serializable
+data class PackDeferredDeployment(
+    val script: String,
+    val unit: String,
+    val at: PackPos,
+    val faction: String? = null,
+    val source: String = "content",
+)
+
 /** A win/lose condition op (`type` is the discriminator; `unit` only set for unit-scoped ones). */
 @Serializable
 data class PackCondition(
@@ -116,6 +127,16 @@ data class Placement(
     val enemy: Boolean = false,
     val level: Int = 1,
     val faction: String? = null,
+)
+
+data class DeferredPlacement(
+    val placement: Placement,
+    val source: String = "legacy_actor_state_refs",
+)
+
+private data class PackDeployments(
+    val opening: List<Placement>,
+    val deferred: List<PackDeferredDeployment> = emptyList(),
 )
 
 /** A synthesized skirmish over ported data: a flat map plus a deploy-and-fight battle script. */
@@ -174,7 +195,7 @@ object LegacyBattleBuilder {
         val row = List(spec.width) { spec.terrainId }
         val map = PackMap(id = mapId(spec.battleId), size = size, tileset = "legacy", tiles = List(spec.height) { row })
         val battle = battleScript(spec.battleId, defaultWin(), defaultLose(spec.protect), spec.placements, Bounds(size, ""))
-        return assemble(meta, sources, battle, map, spec.placements)
+        return assemble(meta, sources, battle, map, PackDeployments(spec.placements))
     }
 
     /** The synthesized battle's default objectives, used when a spec does not carry script-derived ones. */
@@ -199,14 +220,33 @@ object LegacyBattleBuilder {
         sources: LegacyTableSources,
         terrainMapJson: String,
         spec: MapBattleSpec,
+    ): PackContent = buildBattleOnMap(meta, sources, terrainMapJson, spec, emptyList())
+
+    fun buildBattleOnMap(
+        meta: PackMeta,
+        sources: LegacyTableSources,
+        terrainMapJson: String,
+        spec: MapBattleSpec,
+        deferredPlacements: List<DeferredPlacement>,
     ): PackContent {
         require(spec.placements.isNotEmpty()) { "battle needs at least one placement" }
         val map = LegacyMapMapper.mapMap(terrainMapJson, spec.mapId)
         // Use the script-derived objectives when the spec carries them; else fall back to the synthesized pair.
         val win = spec.win ?: defaultWin()
         val lose = spec.lose ?: defaultLose(spec.protect)
-        val battle = battleScript(spec.battleId, win, lose, spec.placements, Bounds(map.size, " '${spec.mapId}'"))
-        val pack = assemble(meta, sources, battle, map, spec.placements)
+        val bounds = Bounds(map.size, " '${spec.mapId}'")
+        val battle = battleScript(spec.battleId, win, lose, spec.placements, bounds)
+        val deferredDeployments = deferredPlacements.map { deferredDeployment(spec.battleId, it, bounds) }
+        val pack = assemble(
+            meta = meta,
+            sources = sources,
+            battle = battle,
+            map = map,
+            deployments = PackDeployments(
+                opening = spec.placements + deferredPlacements.map { it.placement },
+                deferred = deferredDeployments,
+            ),
+        )
         // A real ported map can reference terrain ids absent from the imported catalog (edge/void ids);
         // auto-fill them as default passable terrain so coverage validation passes (synth maps need none).
         return pack.copy(tables = pack.tables.copy(terrain = pack.tables.terrain + missingTerrain(pack.tables.terrain, map)))
@@ -215,6 +255,14 @@ object LegacyBattleBuilder {
     /** Build the real-map battle pack and load it through the engine's content loader. */
     fun loadOnMap(meta: PackMeta, sources: LegacyTableSources, terrainMapJson: String, spec: MapBattleSpec): NativeContent =
         ContentJsonLoader.load(toJson(buildBattleOnMap(meta, sources, terrainMapJson, spec)))
+
+    fun loadOnMap(
+        meta: PackMeta,
+        sources: LegacyTableSources,
+        terrainMapJson: String,
+        spec: MapBattleSpec,
+        deferredPlacements: List<DeferredPlacement>,
+    ): NativeContent = ContentJsonLoader.load(toJson(buildBattleOnMap(meta, sources, terrainMapJson, spec, deferredPlacements)))
 
     /** The bounding map a battle's placements must fit, plus its [label] for the off-map error message
      *  ("" for a synthesized field, " 'id'" for a real ported map). Bundled so [battleScript] stays in budget. */
@@ -244,6 +292,21 @@ object LegacyBattleBuilder {
             },
         )
 
+    private fun deferredDeployment(script: String, deferred: DeferredPlacement, bounds: Bounds): PackDeferredDeployment {
+        val p = deferred.placement
+        require(p.x in 0 until bounds.size.width && p.y in 0 until bounds.size.height) {
+            "deferred placement of '${p.unit}' at (${p.x}, ${p.y}) is off the ${bounds.size.width}x${bounds.size.height} map${bounds.label}"
+        }
+        require(deferred.source.isNotBlank()) { "deferred placement of '${p.unit}' has blank source" }
+        return PackDeferredDeployment(
+            script = script,
+            unit = p.unit,
+            at = PackPos(p.x, p.y),
+            faction = p.faction ?: if (p.enemy) ENEMY_FACTION else null,
+            source = deferred.source,
+        )
+    }
+
     /**
      * Assemble the imported base pack with the [map], the roster stamped with each placement's deploy level,
      * and the single [battle] script. Single-sources the base-pack assembly for both builders; the real-map
@@ -254,15 +317,15 @@ object LegacyBattleBuilder {
         sources: LegacyTableSources,
         battle: PackBattle,
         map: PackMap,
-        placements: List<Placement>,
+        deployments: PackDeployments,
     ): PackContent {
         val base = LegacyContentImporter.buildPack(meta.copy(entry = battle.id), sources)
         return base.copy(
             tables = base.tables.copy(
-                units = rosterWithDeployLevels(base.tables.units, placements),
+                units = rosterWithDeployLevels(base.tables.units, deployments.opening),
                 maps = listOf(map),
             ),
-            events = PackEvents(sScripts = listOf(battle)),
+            events = PackEvents(sScripts = listOf(battle), deferredDeployments = deployments.deferred),
         )
     }
 
@@ -285,7 +348,14 @@ object LegacyBattleBuilder {
     private fun missingTerrain(catalog: List<PackTerrain>, map: PackMap): List<PackTerrain> {
         val have = catalog.mapTo(HashSet()) { it.id }
         return map.tiles.flatten().toSortedSet().filterNot { it in have }
-            .map { PackTerrain(id = it, name = it, moveCost = LegacyTerrainMapper.BASE_MOVE_COST) }
+            .map { terrainId ->
+                PackTerrain(
+                    id = terrainId,
+                    name = terrainId,
+                    moveCost = LegacyTerrainMapper.BASE_MOVE_COST,
+                    passable = terrainId != LegacyMapMapper.VOID_TERRAIN_ID,
+                )
+            }
     }
 
     /** The map id derived for a battle (one synthesized map per battle). */

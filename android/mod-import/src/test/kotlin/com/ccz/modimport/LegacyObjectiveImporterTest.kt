@@ -62,6 +62,21 @@ class LegacyObjectiveImporterTest {
     }
 
     @Test
+    fun importsCurrentApkObjectiveOpcodeProfile() {
+        val blob = eexBlob(strRec(0x54, "胜利条件\n★·全灭敌军。\n失败条件\n☆·刘备死亡。"))
+
+        val imported = LegacyObjectiveImporter.importObjectives(
+            blob,
+            rosterIds = setOf("hero_1"),
+            nameToId = ::nameToId,
+            profile = LegacyEexOpcodeProfile.TRSSGSHZ_CURRENT_APK,
+        )
+
+        assertEquals(listOf(PackCondition(PackCondition.ANNIHILATE_ENEMIES)), imported.win)
+        assertEquals(listOf(PackCondition(PackCondition.PROTECT_ALIVE, unit = "hero_1")), imported.lose)
+    }
+
+    @Test
     fun failsClosedOnMalformedScript() {
         assertFailsWith<EexFormatException> {
             LegacyObjectiveImporter.importObjectives(ByteArray(16) { 0x7a }, emptySet(), ::nameToId)

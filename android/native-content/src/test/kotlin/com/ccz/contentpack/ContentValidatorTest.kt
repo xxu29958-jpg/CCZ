@@ -250,12 +250,60 @@ class ContentValidatorTest {
         assertEquals(emptyList(), ContentValidator.validate(zeroMagic), "a 0 stat is legitimate, not rejected")
     }
 
+    @Test
+    fun commerceReferencesAndBoundsFailClosed() {
+        val content = validContent(
+            tables = defaultTables().copy(items = listOf(itemDef("yuanbao"))),
+            commerce = CommerceTables(
+                products = listOf(ProductDef("p1", "Product", PriceDef(-1), rewardId = "missing_reward")),
+                rewards = listOf(
+                    RewardDef(
+                        "r1",
+                        itemGrants = listOf(ItemGrantDef("missing_item", 0)),
+                        entitlements = listOf(EntitlementDef(EntitlementKind.ALL_STAGES, target = "stage_1")),
+                    ),
+                ),
+                stages = listOf(StageDef("stage_1", "Stage", entry = "missing_entry", requiredItems = listOf("missing_item"))),
+            ),
+        )
+
+        val issues = ContentValidator.validate(content)
+        assertTrue(issues.any { it.path == "commerce.products[0].reward_id" })
+        assertTrue(issues.any { it.path == "commerce.products[0].price.amount_fen" })
+        assertTrue(issues.any { it.path == "commerce.rewards[0].item_grants[0].item_id" })
+        assertTrue(issues.any { it.path == "commerce.rewards[0].item_grants[0].quantity" })
+        assertTrue(issues.any { it.path == "commerce.rewards[0].entitlements[0].target" })
+        assertTrue(issues.any { it.path == "commerce.stages[0].entry" })
+        assertTrue(issues.any { it.path == "commerce.stages[0].required_items[0]" })
+    }
+
+    @Test
+    fun validCommerceValidates() {
+        val content = validContent(
+            tables = defaultTables().copy(items = listOf(itemDef("yuanbao"))),
+            commerce = CommerceTables(
+                products = listOf(ProductDef("p1", "Product", PriceDef(1200), rewardId = "r1")),
+                rewards = listOf(
+                    RewardDef(
+                        "r1",
+                        itemGrants = listOf(ItemGrantDef("yuanbao", 188)),
+                        entitlements = listOf(EntitlementDef(EntitlementKind.ALL_STAGES)),
+                    ),
+                ),
+                stages = listOf(StageDef("stage_1", "Stage", entry = "entry", requiredItems = listOf("yuanbao"))),
+            ),
+        )
+
+        assertEquals(emptyList(), ContentValidator.validate(content))
+    }
+
     // Override any table via defaultTables().copy(...) to keep the parameter list small
     // (CCZ rule: bundle test knobs into the ContentTables value object, not loose params).
     private fun validContent(
         tables: ContentTables = defaultTables(),
         events: EventTables? = null,
         entry: String = "entry",
+        commerce: CommerceTables = CommerceTables(),
     ): NativeContent =
         NativeContent(
             manifest = ContentManifest(
@@ -267,6 +315,7 @@ class ContentValidatorTest {
             ),
             tables = tables,
             events = events ?: EventTables(sScripts = listOf(emptySScript(entry))),
+            commerce = commerce,
         )
 
     private fun defaultTables(): ContentTables =

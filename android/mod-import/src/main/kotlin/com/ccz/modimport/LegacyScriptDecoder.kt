@@ -12,14 +12,6 @@ package com.ccz.modimport
  * guesses semantics (unmappable legacy concepts are simply carried as text for the mapper to fail-close on).
  */
 object LegacyScriptDecoder {
-    // Legacy command ids (from libMyGame.so getScriptByCmd; see docs/recon). These name the FILE FORMAT, not
-    // engine concepts: 0x02 a labelled sub-block (scene title), 0x14/0x15 actor dialogue, 0x16..0x1a the
-    // CommonInfo text variants (title / location / win-lose condition display).
-    private const val CMD_LABEL = 0x02
-    private const val CMD_TALK = 0x14
-    private const val CMD_TALK2 = 0x15
-    private const val CMD_COMMON_LO = 0x16
-    private const val CMD_COMMON_HI = 0x1a
     private const val SPEAKER_MARK = '&' // a dialogue string prefixes each speaker's line with '&Name\n...'
     private const val WIN_HEADER = "胜利条件"
     private const val LOSE_HEADER = "失败条件"
@@ -38,19 +30,25 @@ object LegacyScriptDecoder {
      *  legacy string (e.g. `"刘备死亡。"`), NOT yet an engine condition (that is the mapper's call). */
     data class LegacyObjectives(val win: List<String>, val lose: List<String>, val offset: Int)
 
-    /** Decode an EEX script [blob] into its legacy AST. Throws [EexFormatException] on malformed framing. */
-    fun decode(blob: ByteArray): LegacyScript {
+    /**
+     * Decode an EEX script [blob] into its legacy AST using [profile]'s command words. Throws
+     * [EexFormatException] on malformed framing.
+     */
+    fun decode(
+        blob: ByteArray,
+        profile: LegacyEexOpcodeProfile = LegacyEexOpcodeProfile.LEGACY_DECODED,
+    ): LegacyScript {
         val dialogue = ArrayList<LegacyLine>()
         val objectives = ArrayList<LegacyObjectives>()
         var scene: String? = null
         for (s in EexCodec.strings(blob)) {
             when {
-                s.cmd == CMD_LABEL -> scene = s.text
-                s.cmd == CMD_TALK || s.cmd == CMD_TALK2 ->
+                s.cmd in profile.labelCommands -> scene = s.text
+                s.cmd in profile.dialogueCommands ->
                     for ((speaker, line) in splitSpeakers(s.text)) {
                         dialogue.add(LegacyLine(scene, speaker, line, s.offset))
                     }
-                s.cmd in CMD_COMMON_LO..CMD_COMMON_HI && isObjectiveBlock(s.text) ->
+                s.cmd in profile.commonInfoCommands && isObjectiveBlock(s.text) ->
                     objectives.add(parseObjectives(s.text, s.offset))
             }
         }
