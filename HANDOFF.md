@@ -1,5 +1,15 @@
 # Handoff
 
+> Latest local note (2026-06-30): another ready-stage promotion batch is app-selectable:
+> `legacy_stage_16`, `17`, `18`, `19`, `21`, `23`, `24`, `29`, and `30`. Generated with
+> `:mod-import:generateLegacyStage` from the E-drive decrypted package and committed under
+> `content/legacy_stage_<id>/campaign.json`. All nine packs validate+assemble before write and have no deferred
+> metadata. Opening unit counts are 38/42/70/23/27/51/52/61/81 respectively; maps are
+> 28x20 / 22x20 / 26x30 / 22x18 / 20x30 / 22x24 / 20x35 / 40x24 / 33x34. Stage 21 protects `hero_3`
+> and stage 23 protects `hero_2`; the others use `ProtectAlive("hero_1")`. `PlayableStageCatalog` now exposes
+> stages 1-6, 8-14, 16-19, 21, 23-24, and 29-30. Verified locally:
+> `:app:testGrayDebugUnitTest`, `:app:detekt`, `:app:assertAndroidTestCountEqualsBaseline`.
+
 > Latest local note (2026-06-30): `legacy_stage_8` through `legacy_stage_14` are now promoted and app-selectable,
 > while `legacy_stage_7` remains blocked. Generated with `:mod-import:generateLegacyStage -PstageId=8..14` from
 > the E-drive decrypted package and committed under `content/legacy_stage_<id>/campaign.json`. Stage 8 applies the

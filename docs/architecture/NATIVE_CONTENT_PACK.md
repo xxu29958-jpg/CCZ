@@ -93,10 +93,12 @@ Regenerate it from a local decrypted resource tree with:
 Commerce unlock does not by itself mean a stage is app-playable. The Android app gates launch through
 `PlayableStageCatalog`: a stage must be both unlocked by `CommerceResolver` and registered to a native battle
 runtime. Currently `legacy_stage_1` is registered to `CampaignRuntime`, which combines a generated native stage
-pack with the authored Daxingshan intro. `legacy_stage_2` through `legacy_stage_6` and `legacy_stage_8` through
-`legacy_stage_14` are registered to `PromotedStageRuntimes` from generated native packs. Other catalog rows may
-resolve commerce access but remain non-launchable until their native battle packs are promoted and registered.
-This keeps old-table catalog migration separate from playable runtime exposure.
+pack with the authored Daxingshan intro. Generated native packs are currently registered for `legacy_stage_2`
+through `legacy_stage_6`, `legacy_stage_8` through `legacy_stage_14`, `legacy_stage_16` through
+`legacy_stage_19`, `legacy_stage_21`, `legacy_stage_23` through `legacy_stage_24`, and `legacy_stage_29` through
+`legacy_stage_30`. Other catalog rows may resolve commerce access but remain non-launchable until their native
+battle packs are promoted and registered. This keeps old-table catalog migration separate from playable runtime
+exposure.
 
 Generate a single promoted stage pack from a local decrypted resource tree with:
 

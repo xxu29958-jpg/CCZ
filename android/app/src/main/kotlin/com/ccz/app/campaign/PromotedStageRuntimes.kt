@@ -12,7 +12,8 @@ object PromotedStageRuntimes {
 
     val HulaoPassBattle: BundledBattleRuntime = promotedStage(6)
 
-    private val laterReadyStages: List<BundledBattleRuntime> = (8..14).map(::promotedStage)
+    private val laterReadyStages: List<BundledBattleRuntime> =
+        listOf(8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 21, 23, 24, 29, 30).map(::promotedStage)
 
     fun all(): List<BundledBattleRuntime> = listOf(
         QuyangSiege,

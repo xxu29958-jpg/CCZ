@@ -68,7 +68,7 @@ class PromotedStageRuntimesTest {
             (0 until map.height).map { y -> map.tileAt(Pos(x, y)).terrainId }
         }.toSet().size > 1)
         assertEquals(listOf(WinLoseCondition.AnnihilateEnemies), runtime.script().win)
-        assertEquals(listOf(WinLoseCondition.ProtectAlive("hero_1")), runtime.script().lose)
+        assertEquals(listOf(WinLoseCondition.ProtectAlive(expected.protectUnit)), runtime.script().lose)
     }
 
     private data class PromotedStageExpectation(
@@ -79,6 +79,7 @@ class PromotedStageRuntimesTest {
         val width: Int,
         val height: Int,
         val deferred: Int = 0,
+        val protectUnit: String = "hero_1",
     ) {
         val stageId: String = runtime.stageId
         val factions: Set<Faction> = buildSet {
@@ -102,6 +103,31 @@ class PromotedStageRuntimesTest {
             stage("legacy_stage_12", initialUnits = 78, enemies = 71, allies = 4, width = 24, height = 20),
             stage("legacy_stage_13", initialUnits = 65, enemies = 59, allies = 3, width = 36, height = 16),
             stage("legacy_stage_14", initialUnits = 96, enemies = 79, allies = 14, width = 24, height = 28),
+            stage("legacy_stage_16", initialUnits = 38, enemies = 32, allies = 3, width = 28, height = 20),
+            stage("legacy_stage_17", initialUnits = 42, enemies = 33, allies = 6, width = 22, height = 20),
+            stage("legacy_stage_18", initialUnits = 70, enemies = 59, allies = 8, width = 26, height = 30),
+            stage("legacy_stage_19", initialUnits = 23, enemies = 20, allies = 0, width = 22, height = 18),
+            stage(
+                "legacy_stage_21",
+                initialUnits = 27,
+                enemies = 24,
+                allies = 0,
+                width = 20,
+                height = 30,
+                protectUnit = "hero_3",
+            ),
+            stage(
+                "legacy_stage_23",
+                initialUnits = 51,
+                enemies = 36,
+                allies = 12,
+                width = 22,
+                height = 24,
+                protectUnit = "hero_2",
+            ),
+            stage("legacy_stage_24", initialUnits = 52, enemies = 39, allies = 10, width = 20, height = 35),
+            stage("legacy_stage_29", initialUnits = 61, enemies = 58, allies = 0, width = 40, height = 24),
+            stage("legacy_stage_30", initialUnits = 81, enemies = 78, allies = 0, width = 33, height = 34),
         )
 
         private fun stage(
@@ -112,6 +138,7 @@ class PromotedStageRuntimesTest {
             width: Int,
             height: Int,
             deferred: Int = 0,
+            protectUnit: String = "hero_1",
         ): PromotedStageExpectation =
             PromotedStageExpectation(
                 runtime = requireNotNull(PromotedStageRuntimes.all().singleOrNull { it.stageId == stageId }),
@@ -121,6 +148,7 @@ class PromotedStageRuntimesTest {
                 width = width,
                 height = height,
                 deferred = deferred,
+                protectUnit = protectUnit,
             )
     }
 }
