@@ -1,6 +1,7 @@
 package com.ccz.app.catalog
 
 import com.ccz.app.campaign.CampaignRuntime
+import com.ccz.app.campaign.CampaignStageRuntime
 import com.ccz.app.campaign.PromotedStageRuntimes
 import com.ccz.contentpack.EntitlementKind
 import org.junit.Assert.assertEquals
@@ -16,23 +17,10 @@ class PlayableStageCatalogTest {
         val playable = PlayableStageCatalog.playableStages()
 
         assertEquals(397, PlayableStageCatalog.catalogStageCount())
-        assertEquals(
-            listOf(
-                CampaignRuntime.STAGE_ID,
-                PromotedStageRuntimes.QuyangSiege.stageId,
-                PromotedStageRuntimes.ShimenAttack.stageId,
-                PromotedStageRuntimes.SishuiPassOne.stageId,
-                PromotedStageRuntimes.SishuiPassTwo.stageId,
-                PromotedStageRuntimes.HulaoPassBattle.stageId,
-            ),
-            playable.map { it.stage.id },
-        )
-        assertSame(CampaignRuntime, playable.first().runtime)
-        assertSame(PromotedStageRuntimes.QuyangSiege, playable[1].runtime)
-        assertSame(PromotedStageRuntimes.ShimenAttack, playable[2].runtime)
-        assertSame(PromotedStageRuntimes.SishuiPassOne, playable[3].runtime)
-        assertSame(PromotedStageRuntimes.SishuiPassTwo, playable[4].runtime)
-        assertSame(PromotedStageRuntimes.HulaoPassBattle, playable[5].runtime)
+        assertEquals(expectedRuntimes.map { it.stageId }, playable.map { it.stage.id })
+        expectedRuntimes.forEachIndexed { index, runtime ->
+            assertSame(runtime, playable[index].runtime)
+        }
     }
 
     @Test
@@ -61,15 +49,7 @@ class PlayableStageCatalogTest {
 
     @Test
     fun promotedStagesUnlockAndLaunchNativeRuntimes() {
-        val promoted = listOf(
-            PromotedStageRuntimes.QuyangSiege to 43,
-            PromotedStageRuntimes.ShimenAttack to 72,
-            PromotedStageRuntimes.SishuiPassOne to 52,
-            PromotedStageRuntimes.SishuiPassTwo to 66,
-            PromotedStageRuntimes.HulaoPassBattle to 58,
-        )
-
-        promoted.forEach { (runtime, expectedUnits) ->
+        PromotedStageRuntimes.all().forEach { runtime ->
             val access = PlayableStageCatalog.resolvePurchase(
                 productId = PlayableStageCatalog.FULL_UNLOCK_PRODUCT_ID,
                 stageId = runtime.stageId,
@@ -79,7 +59,7 @@ class PlayableStageCatalogTest {
             assertTrue(access.stageAccess.unlocked)
             assertTrue(access.canStart)
             assertSame(runtime, launched)
-            assertEquals(expectedUnits, requireNotNull(launched).initialState().units.size)
+            assertEquals(expectedInitialUnits.getValue(runtime.stageId), requireNotNull(launched).initialState().units.size)
         }
     }
 
@@ -93,5 +73,25 @@ class PlayableStageCatalogTest {
         assertTrue(access.stageAccess.unlocked)
         assertFalse(access.canStart)
         assertNull(access.launchRuntimeOrNull())
+    }
+
+    private companion object {
+        private val expectedRuntimes: List<CampaignStageRuntime> =
+            listOf(CampaignRuntime) + PromotedStageRuntimes.all()
+
+        private val expectedInitialUnits = mapOf(
+            "legacy_stage_2" to 43,
+            "legacy_stage_3" to 72,
+            "legacy_stage_4" to 52,
+            "legacy_stage_5" to 66,
+            "legacy_stage_6" to 58,
+            "legacy_stage_8" to 70,
+            "legacy_stage_9" to 46,
+            "legacy_stage_10" to 92,
+            "legacy_stage_11" to 47,
+            "legacy_stage_12" to 78,
+            "legacy_stage_13" to 65,
+            "legacy_stage_14" to 96,
+        )
     }
 }

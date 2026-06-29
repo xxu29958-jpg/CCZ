@@ -1,5 +1,16 @@
 # Handoff
 
+> Latest local note (2026-06-30): `legacy_stage_8` through `legacy_stage_14` are now promoted and app-selectable,
+> while `legacy_stage_7` remains blocked. Generated with `:mod-import:generateLegacyStage -PstageId=8..14` from
+> the E-drive decrypted package and committed under `content/legacy_stage_<id>/campaign.json`. Stage 8 applies the
+> existing proposal-ready collision rule and carries 1 native `events.deferred_deployments[]` row (70 opening units
+> on the real 22x21 map: 3 PLAYER / 14 ALLY / 53 ENEMY); stages 9-14 have no deferred metadata and deploy
+> 46/92/47/78/65/96 opening units on their real maps. `PromotedStageRuntimes` is now spec-driven for generated
+> stage packs, and `PlayableStageCatalog` exposes stages 1/2/3/4/5/6/8/9/10/11/12/13/14. Stage 7 remains
+> non-launchable because its same-tile collision groups are `all_units_referenced`; `ScriptSetActorVisible`
+> mode/list semantics are not proven enough to choose opening occupants without guessing. Verified locally:
+> `:app:testGrayDebugUnitTest`, `:app:detekt`, `:app:assertAndroidTestCountEqualsBaseline`.
+
 > Latest local note (2026-06-30): `legacy_stage_5` (汜水关之战 贰) and `legacy_stage_6` (虎牢关会战) are now
 > promoted and app-selectable. Generated with `:mod-import:generateLegacyStage -PstageId=5/6` from the E-drive
 > decrypted package, committed as `content/legacy_stage_5/campaign.json` and

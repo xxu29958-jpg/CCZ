@@ -58,8 +58,11 @@ registered production runtimes are currently:
 - `legacy_stage_4` -> `PromotedStageRuntimes.SishuiPassOne`
 - `legacy_stage_5` -> `PromotedStageRuntimes.SishuiPassTwo`
 - `legacy_stage_6` -> `PromotedStageRuntimes.HulaoPassBattle`
+- `legacy_stage_8` through `legacy_stage_14` -> generated `PromotedStageRuntimes` entries
 
 Promoted stages after `legacy_stage_1` use generated native packs and have no authored intros yet.
+`legacy_stage_7` remains deliberately unregistered until its all-referenced same-tile deployment collisions have
+proven opening/deferred semantics.
 
 Command validation is realized today inside `game-core` (the `Gameplay.submit` facade over
 `CommandValidator`), since legality is a deterministic rule and `game-core` is the sole combat

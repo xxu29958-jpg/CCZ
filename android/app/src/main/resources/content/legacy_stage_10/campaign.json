@@ -1,0 +1,4973 @@
+{
+    "manifest": {
+        "native_format_version": "1",
+        "content_id": "trssgshz_legacy_stage_10",
+        "content_version": "0.1.0",
+        "source": {
+            "mod": "trssgshz"
+        },
+        "entry": "legacy_stage_10"
+    },
+    "tables": {
+        "classes": [
+            {
+                "id": "job_1",
+                "name": "群雄",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 2,
+                    "terrain_cost": {
+                        "terrain_3": 2,
+                        "terrain_4": 2,
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_10": 2,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_14": 2,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_21": 2,
+                        "terrain_22": 2,
+                        "terrain_23": 2,
+                        "terrain_24": 2,
+                        "terrain_25": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_4": 90,
+                        "terrain_5": 90,
+                        "terrain_10": 90,
+                        "terrain_11": 80,
+                        "terrain_14": 90,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110
+                    },
+                    "growth": {
+                        "atk": 3,
+                        "def": 3,
+                        "mat": 3,
+                        "hp": 5
+                    }
+                }
+            },
+            {
+                "id": "job_4",
+                "name": "裨将",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 2,
+                    "terrain_cost": {
+                        "terrain_3": 2,
+                        "terrain_4": 2,
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_8": 2,
+                        "terrain_10": 2,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_14": 2,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_21": 2,
+                        "terrain_22": 2,
+                        "terrain_23": 2,
+                        "terrain_24": 2,
+                        "terrain_25": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_1": 110,
+                        "terrain_2": 110,
+                        "terrain_3": 90,
+                        "terrain_4": 90,
+                        "terrain_5": 90,
+                        "terrain_10": 90,
+                        "terrain_11": 90,
+                        "terrain_14": 90,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110,
+                        "terrain_24": 90
+                    },
+                    "growth": {
+                        "atk": 4,
+                        "def": 4,
+                        "mat": 3,
+                        "hp": 6
+                    }
+                }
+            },
+            {
+                "id": "job_7",
+                "name": "重骑兵",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 2,
+                    "terrain_cost": {
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_10": 2,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_14": 2,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_21": 2,
+                        "terrain_22": 2,
+                        "terrain_23": 2,
+                        "terrain_24": 2,
+                        "terrain_25": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_4": 110,
+                        "terrain_5": 110,
+                        "terrain_11": 90,
+                        "terrain_14": 90,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110
+                    },
+                    "growth": {
+                        "atk": 4,
+                        "def": 4,
+                        "mat": 1,
+                        "hp": 6
+                    }
+                }
+            },
+            {
+                "id": "job_10",
+                "name": "轻骑兵",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 2,
+                    "terrain_cost": {
+                        "terrain_3": 2,
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_10": 2,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_24": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_11": 90,
+                        "terrain_14": 110,
+                        "terrain_17": 110,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110,
+                        "terrain_24": 110
+                    },
+                    "growth": {
+                        "atk": 4,
+                        "def": 3,
+                        "mat": 2,
+                        "hp": 5
+                    }
+                }
+            },
+            {
+                "id": "job_13",
+                "name": "弓骑兵",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 2,
+                    "terrain_cost": {
+                        "terrain_3": 2,
+                        "terrain_4": 2,
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_8": 2,
+                        "terrain_10": 2,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_14": 2,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_21": 2,
+                        "terrain_22": 2,
+                        "terrain_23": 2,
+                        "terrain_24": 2,
+                        "terrain_25": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_10": 90,
+                        "terrain_11": 90,
+                        "terrain_14": 90,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110
+                    },
+                    "growth": {
+                        "atk": 4,
+                        "def": 2,
+                        "mat": 2,
+                        "hp": 5
+                    }
+                }
+            },
+            {
+                "id": "job_16",
+                "name": "短刀手",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 1,
+                    "terrain_cost": {
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_8": 2,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_21": 2,
+                        "terrain_22": 2,
+                        "terrain_23": 2,
+                        "terrain_24": 2,
+                        "terrain_25": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_3": 90,
+                        "terrain_4": 90,
+                        "terrain_5": 90,
+                        "terrain_8": 90,
+                        "terrain_9": 110,
+                        "terrain_10": 110,
+                        "terrain_11": 90,
+                        "terrain_14": 120,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110
+                    },
+                    "growth": {
+                        "atk": 2,
+                        "def": 4,
+                        "mat": 3,
+                        "hp": 7
+                    }
+                }
+            },
+            {
+                "id": "job_19",
+                "name": "长矛手",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 1,
+                    "terrain_cost": {
+                        "terrain_3": 2,
+                        "terrain_4": 2,
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_8": 2,
+                        "terrain_10": 2,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_14": 2,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_21": 2,
+                        "terrain_22": 2,
+                        "terrain_23": 2,
+                        "terrain_24": 2,
+                        "terrain_25": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_1": 110,
+                        "terrain_2": 110,
+                        "terrain_3": 90,
+                        "terrain_4": 90,
+                        "terrain_5": 90,
+                        "terrain_8": 90,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110,
+                        "terrain_24": 90
+                    },
+                    "growth": {
+                        "atk": 3,
+                        "def": 3,
+                        "mat": 2,
+                        "hp": 6
+                    }
+                }
+            },
+            {
+                "id": "job_22",
+                "name": "轻侠",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 1,
+                    "terrain_cost": {
+                        "terrain_4": 2,
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_10": 2,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_14": 2,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_21": 2,
+                        "terrain_22": 2,
+                        "terrain_23": 2,
+                        "terrain_24": 2,
+                        "terrain_25": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_1": 110,
+                        "terrain_2": 110,
+                        "terrain_3": 90,
+                        "terrain_4": 90,
+                        "terrain_5": 90,
+                        "terrain_8": 110,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110,
+                        "terrain_24": 90
+                    },
+                    "growth": {
+                        "atk": 3,
+                        "def": 3,
+                        "mat": 2,
+                        "hp": 5
+                    }
+                }
+            },
+            {
+                "id": "job_25",
+                "name": "短弓手",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 1,
+                    "terrain_cost": {
+                        "terrain_3": 2,
+                        "terrain_4": 2,
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_10": 2,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_14": 2,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_21": 2,
+                        "terrain_22": 2,
+                        "terrain_23": 2,
+                        "terrain_24": 2,
+                        "terrain_25": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_10": 90,
+                        "terrain_11": 90,
+                        "terrain_14": 90,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110,
+                        "terrain_24": 110
+                    },
+                    "growth": {
+                        "atk": 3,
+                        "def": 2,
+                        "mat": 2,
+                        "hp": 4
+                    }
+                }
+            },
+            {
+                "id": "job_28",
+                "name": "短弩手",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 1,
+                    "terrain_cost": {
+                        "terrain_3": 2,
+                        "terrain_4": 2,
+                        "terrain_5": 3,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_8": 2,
+                        "terrain_10": 2,
+                        "terrain_11": 3,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_14": 2,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_21": 2,
+                        "terrain_22": 2,
+                        "terrain_23": 2,
+                        "terrain_24": 2,
+                        "terrain_25": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_1": 110,
+                        "terrain_2": 110,
+                        "terrain_3": 80,
+                        "terrain_4": 90,
+                        "terrain_5": 90,
+                        "terrain_8": 90,
+                        "terrain_10": 90,
+                        "terrain_11": 80,
+                        "terrain_14": 80,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110,
+                        "terrain_24": 90
+                    },
+                    "growth": {
+                        "atk": 3,
+                        "def": 2,
+                        "mat": 2,
+                        "hp": 5
+                    }
+                }
+            },
+            {
+                "id": "job_31",
+                "name": "幕僚",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 1,
+                    "terrain_cost": {
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_14": 2,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_1": 110,
+                        "terrain_2": 110,
+                        "terrain_4": 110,
+                        "terrain_5": 110,
+                        "terrain_8": 110,
+                        "terrain_11": 90,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110
+                    },
+                    "growth": {
+                        "atk": 2,
+                        "def": 2,
+                        "mat": 4,
+                        "hp": 4
+                    }
+                }
+            },
+            {
+                "id": "job_34",
+                "name": "军医",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 1,
+                    "terrain_cost": {
+                        "terrain_3": 2,
+                        "terrain_4": 2,
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_8": 2,
+                        "terrain_10": 2,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_14": 2,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_21": 2,
+                        "terrain_22": 2,
+                        "terrain_23": 2,
+                        "terrain_24": 2,
+                        "terrain_25": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_3": 90,
+                        "terrain_4": 90,
+                        "terrain_5": 80,
+                        "terrain_8": 80,
+                        "terrain_9": 110,
+                        "terrain_10": 80,
+                        "terrain_11": 80,
+                        "terrain_14": 80,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110,
+                        "terrain_24": 90
+                    },
+                    "growth": {
+                        "atk": 2,
+                        "def": 2,
+                        "mat": 4,
+                        "hp": 4
+                    }
+                }
+            },
+            {
+                "id": "job_37",
+                "name": "智士",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 1,
+                    "terrain_cost": {
+                        "terrain_3": 2,
+                        "terrain_4": 2,
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_8": 2,
+                        "terrain_10": 2,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_14": 2,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_21": 2,
+                        "terrain_22": 2,
+                        "terrain_23": 2,
+                        "terrain_24": 2,
+                        "terrain_25": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_1": 110,
+                        "terrain_2": 110,
+                        "terrain_3": 90,
+                        "terrain_4": 90,
+                        "terrain_5": 90,
+                        "terrain_10": 90,
+                        "terrain_11": 90,
+                        "terrain_14": 80,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110,
+                        "terrain_24": 90
+                    },
+                    "growth": {
+                        "atk": 1,
+                        "def": 2,
+                        "mat": 4,
+                        "hp": 3
+                    }
+                }
+            },
+            {
+                "id": "job_46",
+                "name": "儒将",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 1,
+                    "terrain_cost": {
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_1": 110,
+                        "terrain_2": 110,
+                        "terrain_3": 110,
+                        "terrain_4": 110,
+                        "terrain_5": 110,
+                        "terrain_6": 110,
+                        "terrain_7": 110,
+                        "terrain_8": 110,
+                        "terrain_11": 90,
+                        "terrain_14": 110,
+                        "terrain_17": 120,
+                        "terrain_19": 130,
+                        "terrain_20": 130,
+                        "terrain_21": 130,
+                        "terrain_22": 120,
+                        "terrain_23": 120,
+                        "terrain_24": 110
+                    },
+                    "growth": {
+                        "atk": 3,
+                        "def": 3,
+                        "mat": 4,
+                        "hp": 5
+                    }
+                }
+            },
+            {
+                "id": "job_49",
+                "name": "盗贼",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 1,
+                    "terrain_cost": {
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_8": 2,
+                        "terrain_10": 2,
+                        "terrain_11": 3,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_21": 2,
+                        "terrain_22": 2,
+                        "terrain_23": 2,
+                        "terrain_24": 2,
+                        "terrain_25": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_3": 110,
+                        "terrain_8": 90,
+                        "terrain_9": 110,
+                        "terrain_10": 90,
+                        "terrain_11": 90,
+                        "terrain_17": 110,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 120,
+                        "terrain_23": 120,
+                        "terrain_24": 110
+                    },
+                    "growth": {
+                        "atk": 3,
+                        "def": 3,
+                        "mat": 2,
+                        "hp": 6
+                    }
+                }
+            },
+            {
+                "id": "job_61",
+                "name": "白马骑",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 2,
+                    "terrain_cost": {
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_8": 2,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_21": 2,
+                        "terrain_22": 2,
+                        "terrain_23": 2,
+                        "terrain_24": 2,
+                        "terrain_25": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_1": 110,
+                        "terrain_2": 110,
+                        "terrain_8": 110,
+                        "terrain_9": 110,
+                        "terrain_10": 110,
+                        "terrain_11": 110,
+                        "terrain_12": 120,
+                        "terrain_13": 120,
+                        "terrain_14": 120,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110,
+                        "terrain_26": 120,
+                        "terrain_27": 90,
+                        "terrain_28": 120
+                    },
+                    "growth": {
+                        "atk": 3,
+                        "def": 4,
+                        "mat": 1,
+                        "hp": 6
+                    }
+                }
+            },
+            {
+                "id": "job_65",
+                "name": "骑策士",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 2,
+                    "terrain_cost": {
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_14": 2,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_1": 110,
+                        "terrain_2": 110,
+                        "terrain_4": 110,
+                        "terrain_5": 110,
+                        "terrain_8": 110,
+                        "terrain_11": 90,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110
+                    },
+                    "growth": {
+                        "atk": 3,
+                        "def": 3,
+                        "mat": 4,
+                        "hp": 5
+                    }
+                }
+            },
+            {
+                "id": "job_70",
+                "name": "力士",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 1,
+                    "terrain_cost": {
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_14": 2,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_21": 2,
+                        "terrain_22": 2,
+                        "terrain_23": 2,
+                        "terrain_24": 2,
+                        "terrain_25": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_1": 110,
+                        "terrain_2": 110,
+                        "terrain_3": 110,
+                        "terrain_4": 110,
+                        "terrain_5": 110,
+                        "terrain_6": 110,
+                        "terrain_7": 110,
+                        "terrain_8": 110,
+                        "terrain_9": 110,
+                        "terrain_10": 110,
+                        "terrain_11": 110,
+                        "terrain_12": 110,
+                        "terrain_13": 110,
+                        "terrain_14": 110,
+                        "terrain_15": 110,
+                        "terrain_16": 110,
+                        "terrain_17": 110,
+                        "terrain_18": 110,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110,
+                        "terrain_24": 110
+                    },
+                    "growth": {
+                        "atk": 5,
+                        "def": 3,
+                        "mat": 2,
+                        "hp": 7
+                    }
+                }
+            },
+            {
+                "id": "job_72",
+                "name": "井阑",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 1,
+                    "terrain_cost": {
+                        "terrain_3": 2,
+                        "terrain_4": 2,
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_8": 2,
+                        "terrain_10": 2,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_14": 2,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_21": 2,
+                        "terrain_22": 2,
+                        "terrain_23": 2,
+                        "terrain_24": 2,
+                        "terrain_25": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_1": 110,
+                        "terrain_2": 110,
+                        "terrain_3": 110,
+                        "terrain_4": 110,
+                        "terrain_5": 110,
+                        "terrain_6": 110,
+                        "terrain_7": 110,
+                        "terrain_8": 110,
+                        "terrain_9": 110,
+                        "terrain_10": 110,
+                        "terrain_11": 110,
+                        "terrain_12": 110,
+                        "terrain_13": 110,
+                        "terrain_14": 110,
+                        "terrain_15": 110,
+                        "terrain_16": 110,
+                        "terrain_17": 110,
+                        "terrain_18": 110,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110,
+                        "terrain_24": 110
+                    },
+                    "growth": {
+                        "atk": 3,
+                        "def": 4,
+                        "mat": 2,
+                        "hp": 8
+                    }
+                }
+            },
+            {
+                "id": "job_73",
+                "name": "辎重队",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 1,
+                    "terrain_cost": {
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_14": 2,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_21": 2,
+                        "terrain_22": 2,
+                        "terrain_23": 2,
+                        "terrain_24": 2,
+                        "terrain_25": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_1": 110,
+                        "terrain_2": 110,
+                        "terrain_3": 110,
+                        "terrain_4": 110,
+                        "terrain_5": 110,
+                        "terrain_6": 110,
+                        "terrain_7": 110,
+                        "terrain_8": 110,
+                        "terrain_9": 110,
+                        "terrain_10": 110,
+                        "terrain_11": 110,
+                        "terrain_12": 110,
+                        "terrain_13": 110,
+                        "terrain_14": 110,
+                        "terrain_15": 110,
+                        "terrain_16": 110,
+                        "terrain_17": 110,
+                        "terrain_18": 110,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110,
+                        "terrain_24": 110
+                    },
+                    "growth": {
+                        "atk": 1,
+                        "def": 2,
+                        "mat": 2,
+                        "hp": 4
+                    }
+                }
+            },
+            {
+                "id": "job_76",
+                "name": "乌桓兵",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 1,
+                    "terrain_cost": {
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_10": 2,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_14": 2,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_21": 2,
+                        "terrain_22": 2,
+                        "terrain_23": 2,
+                        "terrain_24": 2,
+                        "terrain_25": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_3": 110,
+                        "terrain_4": 110,
+                        "terrain_5": 110,
+                        "terrain_10": 90,
+                        "terrain_11": 90,
+                        "terrain_14": 90,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110
+                    },
+                    "growth": {
+                        "atk": 3,
+                        "def": 3,
+                        "mat": 2,
+                        "hp": 6
+                    }
+                }
+            },
+            {
+                "id": "job_306",
+                "name": "白马统帅",
+                "movement": {
+                    "move_type": "ground",
+                    "move": 1,
+                    "terrain_cost": {
+                        "terrain_3": 2,
+                        "terrain_4": 2,
+                        "terrain_5": 2,
+                        "terrain_6": 0,
+                        "terrain_7": 0,
+                        "terrain_8": 2,
+                        "terrain_10": 2,
+                        "terrain_11": 2,
+                        "terrain_12": 0,
+                        "terrain_13": 0,
+                        "terrain_14": 2,
+                        "terrain_15": 0,
+                        "terrain_16": 0,
+                        "terrain_18": 0,
+                        "terrain_21": 2,
+                        "terrain_22": 2,
+                        "terrain_23": 2,
+                        "terrain_24": 2,
+                        "terrain_25": 2,
+                        "terrain_26": 0,
+                        "terrain_27": 0,
+                        "terrain_28": 0,
+                        "terrain_29": 0,
+                        "terrain_30": 0
+                    }
+                },
+                "combat": {
+                    "terrain_affinity": {
+                        "terrain_1": 110,
+                        "terrain_2": 110,
+                        "terrain_3": 110,
+                        "terrain_4": 110,
+                        "terrain_5": 110,
+                        "terrain_6": 110,
+                        "terrain_7": 110,
+                        "terrain_8": 110,
+                        "terrain_9": 110,
+                        "terrain_14": 110,
+                        "terrain_17": 110,
+                        "terrain_19": 120,
+                        "terrain_20": 120,
+                        "terrain_21": 120,
+                        "terrain_22": 110,
+                        "terrain_23": 110
+                    },
+                    "growth": {
+                        "atk": 4,
+                        "def": 4,
+                        "mat": 2,
+                        "hp": 6
+                    }
+                }
+            }
+        ],
+        "units": [
+            {
+                "identity": {
+                    "id": "hero_1",
+                    "name": "刘备",
+                    "class_id": "job_1",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 6,
+                    "hp_max": 168,
+                    "stats": {
+                        "atk": 78,
+                        "def": 87,
+                        "mat": 83,
+                        "res": 85
+                    },
+                    "grade": 2
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_2",
+                    "name": "关羽",
+                    "class_id": "job_4",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 8,
+                    "hp_max": 170,
+                    "stats": {
+                        "atk": 98,
+                        "def": 95,
+                        "mat": 77,
+                        "res": 79
+                    },
+                    "grade": 2
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_3",
+                    "name": "张飞",
+                    "class_id": "job_7",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 7,
+                    "hp_max": 170,
+                    "stats": {
+                        "atk": 99,
+                        "def": 86,
+                        "mat": 61,
+                        "res": 81
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_36",
+                    "name": "沙摩柯",
+                    "class_id": "job_70",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 190,
+                    "stats": {
+                        "atk": 92,
+                        "def": 82,
+                        "mat": 26,
+                        "res": 80
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_39",
+                    "name": "司马懿",
+                    "class_id": "job_37",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 120,
+                    "stats": {
+                        "atk": 76,
+                        "def": 95,
+                        "mat": 99,
+                        "res": 80
+                    },
+                    "grade": 2
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_40",
+                    "name": "夏侯惇",
+                    "class_id": "job_7",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 160,
+                    "stats": {
+                        "atk": 91,
+                        "def": 90,
+                        "mat": 68,
+                        "res": 86
+                    },
+                    "grade": 2
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_42",
+                    "name": "曹仁",
+                    "class_id": "job_4",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 170,
+                    "stats": {
+                        "atk": 90,
+                        "def": 93,
+                        "mat": 76,
+                        "res": 79
+                    },
+                    "grade": 2
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_48",
+                    "name": "曹植",
+                    "class_id": "job_37",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 99,
+                    "stats": {
+                        "atk": 36,
+                        "def": 60,
+                        "mat": 90,
+                        "res": 69
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_50",
+                    "name": "荀彧",
+                    "class_id": "job_37",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 120,
+                    "stats": {
+                        "atk": 36,
+                        "def": 53,
+                        "mat": 97,
+                        "res": 87
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_55",
+                    "name": "张辽",
+                    "class_id": "job_4",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 176,
+                    "stats": {
+                        "atk": 93,
+                        "def": 91,
+                        "mat": 75,
+                        "res": 90
+                    },
+                    "grade": 2
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_56",
+                    "name": "乐进",
+                    "class_id": "job_19",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 165,
+                    "stats": {
+                        "atk": 84,
+                        "def": 90,
+                        "mat": 63,
+                        "res": 74
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_59",
+                    "name": "徐晃",
+                    "class_id": "job_7",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 165,
+                    "stats": {
+                        "atk": 92,
+                        "def": 90,
+                        "mat": 71,
+                        "res": 69
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_60",
+                    "name": "李典",
+                    "class_id": "job_25",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 134,
+                    "stats": {
+                        "atk": 78,
+                        "def": 77,
+                        "mat": 74,
+                        "res": 74
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_62",
+                    "name": "许褚",
+                    "class_id": "job_70",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 178,
+                    "stats": {
+                        "atk": 97,
+                        "def": 79,
+                        "mat": 62,
+                        "res": 72
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_67",
+                    "name": "田豫",
+                    "class_id": "job_65",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 125,
+                    "stats": {
+                        "atk": 77,
+                        "def": 88,
+                        "mat": 86,
+                        "res": 75
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_68",
+                    "name": "夏侯兰",
+                    "class_id": "job_22",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 130,
+                    "stats": {
+                        "atk": 81,
+                        "def": 84,
+                        "mat": 75,
+                        "res": 95
+                    },
+                    "grade": 2
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_69",
+                    "name": "毛玠",
+                    "class_id": "job_34",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 115,
+                    "stats": {
+                        "atk": 62,
+                        "def": 73,
+                        "mat": 82,
+                        "res": 77
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_125",
+                    "name": "曹性",
+                    "class_id": "job_13",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 3,
+                    "hp_max": 136,
+                    "stats": {
+                        "atk": 76,
+                        "def": 70,
+                        "mat": 63,
+                        "res": 82
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_145",
+                    "name": "王允",
+                    "class_id": "job_37",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 4,
+                    "hp_max": 120,
+                    "stats": {
+                        "atk": 28,
+                        "def": 60,
+                        "mat": 87,
+                        "res": 64
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_149",
+                    "name": "公孙瓒",
+                    "class_id": "job_306",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 4,
+                    "hp_max": 150,
+                    "stats": {
+                        "atk": 87,
+                        "def": 88,
+                        "mat": 56,
+                        "res": 91
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_171",
+                    "name": "太史享",
+                    "class_id": "job_10",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 130,
+                    "stats": {
+                        "atk": 82,
+                        "def": 79,
+                        "mat": 55,
+                        "res": 73
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_172",
+                    "name": "朱灵",
+                    "class_id": "job_7",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 3,
+                    "hp_max": 150,
+                    "stats": {
+                        "atk": 80,
+                        "def": 79,
+                        "mat": 66,
+                        "res": 75
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_173",
+                    "name": "陈登",
+                    "class_id": "job_46",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 3,
+                    "hp_max": 110,
+                    "stats": {
+                        "atk": 76,
+                        "def": 90,
+                        "mat": 92,
+                        "res": 73
+                    },
+                    "grade": 2
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_176",
+                    "name": "公孙越",
+                    "class_id": "job_61",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 3,
+                    "hp_max": 144,
+                    "stats": {
+                        "atk": 78,
+                        "def": 74,
+                        "mat": 60,
+                        "res": 86
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_185",
+                    "name": "蔡阳",
+                    "class_id": "job_7",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 3,
+                    "hp_max": 160,
+                    "stats": {
+                        "atk": 82,
+                        "def": 85,
+                        "mat": 50,
+                        "res": 66
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_286",
+                    "name": "穆顺",
+                    "class_id": "job_7",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 155,
+                    "stats": {
+                        "atk": 1,
+                        "def": 1,
+                        "mat": 1,
+                        "res": 1
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_287",
+                    "name": "藩宫",
+                    "class_id": "job_49",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 140,
+                    "stats": {
+                        "atk": 81,
+                        "def": 76,
+                        "mat": 65,
+                        "res": 84
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_288",
+                    "name": "赵何",
+                    "class_id": "job_49",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 136,
+                    "stats": {
+                        "atk": 73,
+                        "def": 71,
+                        "mat": 68,
+                        "res": 80
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_358",
+                    "name": "裴元绍",
+                    "class_id": "job_25",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 110,
+                    "stats": {
+                        "atk": 74,
+                        "def": 71,
+                        "mat": 44,
+                        "res": 82
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_359",
+                    "name": "刀兵1",
+                    "class_id": "job_16",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 100,
+                    "stats": {
+                        "atk": 70,
+                        "def": 80,
+                        "mat": 65,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_360",
+                    "name": "刀兵2",
+                    "class_id": "job_16",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 100,
+                    "stats": {
+                        "atk": 70,
+                        "def": 80,
+                        "mat": 65,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_361",
+                    "name": "刀兵3",
+                    "class_id": "job_16",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 100,
+                    "stats": {
+                        "atk": 70,
+                        "def": 80,
+                        "mat": 65,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_362",
+                    "name": "刀兵4",
+                    "class_id": "job_16",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 100,
+                    "stats": {
+                        "atk": 70,
+                        "def": 80,
+                        "mat": 65,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_363",
+                    "name": "刀兵5",
+                    "class_id": "job_16",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 100,
+                    "stats": {
+                        "atk": 70,
+                        "def": 80,
+                        "mat": 65,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_380",
+                    "name": "刀斧手6",
+                    "class_id": "job_16",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 120,
+                    "stats": {
+                        "atk": 75,
+                        "def": 85,
+                        "mat": 65,
+                        "res": 65
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_381",
+                    "name": "枪兵1",
+                    "class_id": "job_19",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 75,
+                        "def": 75,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_382",
+                    "name": "枪兵2",
+                    "class_id": "job_19",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 75,
+                        "def": 75,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_383",
+                    "name": "枪兵3",
+                    "class_id": "job_19",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 75,
+                        "def": 75,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_384",
+                    "name": "枪兵4",
+                    "class_id": "job_19",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 75,
+                        "def": 75,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_385",
+                    "name": "枪兵5",
+                    "class_id": "job_19",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 75,
+                        "def": 75,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_386",
+                    "name": "枪兵6",
+                    "class_id": "job_19",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 75,
+                        "def": 75,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_402",
+                    "name": "长枪兵6",
+                    "class_id": "job_19",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 110,
+                    "stats": {
+                        "atk": 75,
+                        "def": 75,
+                        "mat": 65,
+                        "res": 65
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_403",
+                    "name": "轻骑兵1",
+                    "class_id": "job_10",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 80,
+                        "def": 80,
+                        "mat": 60,
+                        "res": 70
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_404",
+                    "name": "轻骑兵2",
+                    "class_id": "job_10",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 80,
+                        "def": 80,
+                        "mat": 60,
+                        "res": 70
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_405",
+                    "name": "轻骑兵3",
+                    "class_id": "job_10",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 80,
+                        "def": 80,
+                        "mat": 60,
+                        "res": 70
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_406",
+                    "name": "轻骑兵4",
+                    "class_id": "job_10",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 80,
+                        "def": 80,
+                        "mat": 60,
+                        "res": 70
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_407",
+                    "name": "轻骑兵5",
+                    "class_id": "job_10",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 80,
+                        "def": 80,
+                        "mat": 60,
+                        "res": 70
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_408",
+                    "name": "轻骑兵6",
+                    "class_id": "job_10",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 80,
+                        "def": 80,
+                        "mat": 60,
+                        "res": 70
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_409",
+                    "name": "轻骑兵7",
+                    "class_id": "job_10",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 80,
+                        "def": 80,
+                        "mat": 60,
+                        "res": 70
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_426",
+                    "name": "精锐骑8",
+                    "class_id": "job_10",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 110,
+                    "stats": {
+                        "atk": 85,
+                        "def": 75,
+                        "mat": 65,
+                        "res": 70
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_427",
+                    "name": "弩兵1",
+                    "class_id": "job_28",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 80,
+                    "stats": {
+                        "atk": 75,
+                        "def": 65,
+                        "mat": 60,
+                        "res": 70
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_428",
+                    "name": "弩兵2",
+                    "class_id": "job_28",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 80,
+                    "stats": {
+                        "atk": 75,
+                        "def": 65,
+                        "mat": 60,
+                        "res": 70
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_444",
+                    "name": "强弩兵6",
+                    "class_id": "job_28",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 100,
+                    "stats": {
+                        "atk": 80,
+                        "def": 65,
+                        "mat": 65,
+                        "res": 70
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_445",
+                    "name": "弓箭兵1",
+                    "class_id": "job_25",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 85,
+                    "stats": {
+                        "atk": 75,
+                        "def": 60,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_446",
+                    "name": "弓箭兵2",
+                    "class_id": "job_25",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 85,
+                    "stats": {
+                        "atk": 75,
+                        "def": 60,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_447",
+                    "name": "弓箭兵3",
+                    "class_id": "job_25",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 85,
+                    "stats": {
+                        "atk": 75,
+                        "def": 60,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_448",
+                    "name": "弓箭兵4",
+                    "class_id": "job_25",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 85,
+                    "stats": {
+                        "atk": 75,
+                        "def": 60,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_449",
+                    "name": "弓箭兵5",
+                    "class_id": "job_25",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 85,
+                    "stats": {
+                        "atk": 75,
+                        "def": 60,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_450",
+                    "name": "弓箭兵6",
+                    "class_id": "job_25",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 85,
+                    "stats": {
+                        "atk": 75,
+                        "def": 60,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_451",
+                    "name": "弓箭兵7",
+                    "class_id": "job_25",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 85,
+                    "stats": {
+                        "atk": 75,
+                        "def": 60,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_466",
+                    "name": "强弓兵6",
+                    "class_id": "job_25",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 105,
+                    "stats": {
+                        "atk": 75,
+                        "def": 65,
+                        "mat": 65,
+                        "res": 65
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_467",
+                    "name": "武斗兵1",
+                    "class_id": "job_22",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 75,
+                        "def": 65,
+                        "mat": 60,
+                        "res": 85
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_468",
+                    "name": "武斗兵2",
+                    "class_id": "job_22",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 75,
+                        "def": 65,
+                        "mat": 60,
+                        "res": 85
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_469",
+                    "name": "武斗兵3",
+                    "class_id": "job_22",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 75,
+                        "def": 65,
+                        "mat": 60,
+                        "res": 85
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_482",
+                    "name": "武斗兵16",
+                    "class_id": "job_22",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 75,
+                        "def": 65,
+                        "mat": 60,
+                        "res": 85
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_483",
+                    "name": "军医1",
+                    "class_id": "job_34",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 80,
+                    "stats": {
+                        "atk": 60,
+                        "def": 60,
+                        "mat": 80,
+                        "res": 65
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_488",
+                    "name": "军医6",
+                    "class_id": "job_34",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 80,
+                    "stats": {
+                        "atk": 60,
+                        "def": 60,
+                        "mat": 80,
+                        "res": 65
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_489",
+                    "name": "策士1",
+                    "class_id": "job_31",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 80,
+                    "stats": {
+                        "atk": 60,
+                        "def": 60,
+                        "mat": 80,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_500",
+                    "name": "参军6",
+                    "class_id": "job_31",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 100,
+                    "stats": {
+                        "atk": 65,
+                        "def": 65,
+                        "mat": 85,
+                        "res": 65
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_519",
+                    "name": "统领1",
+                    "class_id": "job_4",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 120,
+                    "stats": {
+                        "atk": 80,
+                        "def": 80,
+                        "mat": 70,
+                        "res": 60
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_520",
+                    "name": "统领2",
+                    "class_id": "job_4",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 120,
+                    "stats": {
+                        "atk": 80,
+                        "def": 80,
+                        "mat": 70,
+                        "res": 60
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_551",
+                    "name": "贼首3",
+                    "class_id": "job_49",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 120,
+                    "stats": {
+                        "atk": 75,
+                        "def": 75,
+                        "mat": 65,
+                        "res": 70
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_552",
+                    "name": "弓骑兵1",
+                    "class_id": "job_13",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 80,
+                        "def": 70,
+                        "mat": 60,
+                        "res": 70
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_553",
+                    "name": "弓骑兵2",
+                    "class_id": "job_13",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 80,
+                        "def": 70,
+                        "mat": 60,
+                        "res": 70
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_554",
+                    "name": "弓骑兵3",
+                    "class_id": "job_13",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 80,
+                        "def": 70,
+                        "mat": 60,
+                        "res": 70
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_566",
+                    "name": "弓骑兵15",
+                    "class_id": "job_13",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 80,
+                        "def": 70,
+                        "mat": 60,
+                        "res": 70
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_567",
+                    "name": "力士1",
+                    "class_id": "job_70",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 3,
+                    "hp_max": 130,
+                    "stats": {
+                        "atk": 85,
+                        "def": 70,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_568",
+                    "name": "力士2",
+                    "class_id": "job_70",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 3,
+                    "hp_max": 130,
+                    "stats": {
+                        "atk": 85,
+                        "def": 70,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_569",
+                    "name": "力士3",
+                    "class_id": "job_70",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 3,
+                    "hp_max": 130,
+                    "stats": {
+                        "atk": 85,
+                        "def": 70,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_618",
+                    "name": "辎重队10",
+                    "class_id": "job_73",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 100,
+                    "stats": {
+                        "atk": 50,
+                        "def": 60,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_619",
+                    "name": "井阑1",
+                    "class_id": "job_72",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 120,
+                    "stats": {
+                        "atk": 75,
+                        "def": 90,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_620",
+                    "name": "井阑2",
+                    "class_id": "job_72",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 120,
+                    "stats": {
+                        "atk": 75,
+                        "def": 90,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_621",
+                    "name": "井阑3",
+                    "class_id": "job_72",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 120,
+                    "stats": {
+                        "atk": 75,
+                        "def": 90,
+                        "mat": 60,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_735",
+                    "name": "乌桓兵11",
+                    "class_id": "job_76",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 90,
+                    "stats": {
+                        "atk": 70,
+                        "def": 70,
+                        "mat": 65,
+                        "res": 65
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_736",
+                    "name": "重骑兵1",
+                    "class_id": "job_7",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 120,
+                    "stats": {
+                        "atk": 80,
+                        "def": 80,
+                        "mat": 50,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_737",
+                    "name": "重骑兵2",
+                    "class_id": "job_7",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 120,
+                    "stats": {
+                        "atk": 80,
+                        "def": 80,
+                        "mat": 50,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_738",
+                    "name": "重骑兵3",
+                    "class_id": "job_7",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 120,
+                    "stats": {
+                        "atk": 80,
+                        "def": 80,
+                        "mat": 50,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_739",
+                    "name": "重骑兵4",
+                    "class_id": "job_7",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 2,
+                    "hp_max": 120,
+                    "stats": {
+                        "atk": 80,
+                        "def": 80,
+                        "mat": 50,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_740",
+                    "name": "重骑兵5",
+                    "class_id": "job_7",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 120,
+                    "stats": {
+                        "atk": 80,
+                        "def": 80,
+                        "mat": 50,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_741",
+                    "name": "重骑兵6",
+                    "class_id": "job_7",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 120,
+                    "stats": {
+                        "atk": 80,
+                        "def": 80,
+                        "mat": 50,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_742",
+                    "name": "重骑兵7",
+                    "class_id": "job_7",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 120,
+                    "stats": {
+                        "atk": 80,
+                        "def": 80,
+                        "mat": 50,
+                        "res": 60
+                    }
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            },
+            {
+                "identity": {
+                    "id": "hero_953",
+                    "name": "赵昂",
+                    "class_id": "job_7",
+                    "faction": "PLAYER"
+                },
+                "profile": {
+                    "level": 1,
+                    "hp_max": 140,
+                    "stats": {
+                        "atk": 85,
+                        "def": 79,
+                        "mat": 62,
+                        "res": 77
+                    },
+                    "grade": 1
+                },
+                "loadout": {
+                    "skills": [
+                        "skill_1"
+                    ]
+                }
+            }
+        ],
+        "skills": [
+            {
+                "id": "skill_1",
+                "name": "普攻",
+                "kind": "PHYSICAL",
+                "power_coeff": 100,
+                "use": {
+                    "range": {
+                        "min": 1,
+                        "max": 1
+                    },
+                    "area": "single",
+                    "targeting": "enemy"
+                }
+            }
+        ],
+        "terrain": [
+            {
+                "id": "terrain_1",
+                "name": "平原",
+                "move_cost": 1
+            },
+            {
+                "id": "terrain_2",
+                "name": "草原",
+                "move_cost": 1
+            },
+            {
+                "id": "terrain_3",
+                "name": "树林",
+                "move_cost": 1,
+                "bonuses": {
+                    "avoid_bonus": 15
+                }
+            },
+            {
+                "id": "terrain_4",
+                "name": "荒地",
+                "move_cost": 1,
+                "bonuses": {
+                    "avoid_bonus": 5
+                }
+            },
+            {
+                "id": "terrain_5",
+                "name": "山地",
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 15,
+                    "avoid_bonus": 10
+                }
+            },
+            {
+                "id": "terrain_6",
+                "name": "岩山",
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 25,
+                    "avoid_bonus": 10
+                }
+            },
+            {
+                "id": "terrain_7",
+                "name": "山崖",
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 25,
+                    "avoid_bonus": 10
+                }
+            },
+            {
+                "id": "terrain_8",
+                "name": "雪原",
+                "move_cost": 1,
+                "bonuses": {
+                    "avoid_bonus": 5
+                }
+            },
+            {
+                "id": "terrain_9",
+                "name": "桥梁",
+                "move_cost": 1
+            },
+            {
+                "id": "terrain_10",
+                "name": "浅滩",
+                "move_cost": 1
+            },
+            {
+                "id": "terrain_11",
+                "name": "沼泽",
+                "move_cost": 1
+            },
+            {
+                "id": "terrain_12",
+                "name": "池塘",
+                "move_cost": 1
+            },
+            {
+                "id": "terrain_13",
+                "name": "小河",
+                "move_cost": 1
+            },
+            {
+                "id": "terrain_14",
+                "name": "大河",
+                "move_cost": 1
+            },
+            {
+                "id": "terrain_15",
+                "name": "栅栏",
+                "move_cost": 1
+            },
+            {
+                "id": "terrain_16",
+                "name": "城墙",
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 30
+                }
+            },
+            {
+                "id": "terrain_17",
+                "name": "城内",
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 20
+                }
+            },
+            {
+                "id": "terrain_18",
+                "name": "城门",
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 20
+                }
+            },
+            {
+                "id": "terrain_19",
+                "name": "城池",
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 20
+                }
+            },
+            {
+                "id": "terrain_20",
+                "name": "关隘",
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 20
+                }
+            },
+            {
+                "id": "terrain_21",
+                "name": "鹿砦",
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 20
+                }
+            },
+            {
+                "id": "terrain_22",
+                "name": "村庄",
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 10,
+                    "heal": 10
+                }
+            },
+            {
+                "id": "terrain_23",
+                "name": "兵营",
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 10,
+                    "heal": 10
+                }
+            },
+            {
+                "id": "terrain_24",
+                "name": "民居",
+                "move_cost": 1,
+                "bonuses": {
+                    "def_bonus": 10,
+                    "heal": 10
+                }
+            },
+            {
+                "id": "terrain_25",
+                "name": "宝物库",
+                "move_cost": 1
+            },
+            {
+                "id": "terrain_26",
+                "name": "水池",
+                "move_cost": 1
+            },
+            {
+                "id": "terrain_27",
+                "name": "火",
+                "move_cost": 1
+            },
+            {
+                "id": "terrain_28",
+                "name": "船",
+                "move_cost": 1
+            },
+            {
+                "id": "terrain_29",
+                "name": "祭坛",
+                "move_cost": 1
+            },
+            {
+                "id": "terrain_30",
+                "name": "废墟",
+                "move_cost": 1
+            },
+            {
+                "id": "terrain_0",
+                "name": "terrain_0",
+                "move_cost": 1
+            }
+        ],
+        "maps": [
+            {
+                "id": "legacy_stage_10_map",
+                "size": {
+                    "width": 24,
+                    "height": 20
+                },
+                "tileset": "legacy",
+                "tiles": [
+                    [
+                        "terrain_23",
+                        "terrain_0",
+                        "terrain_20",
+                        "terrain_20",
+                        "terrain_0",
+                        "terrain_23",
+                        "terrain_14",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_14",
+                        "terrain_22",
+                        "terrain_0",
+                        "terrain_4",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5"
+                    ],
+                    [
+                        "terrain_23",
+                        "terrain_23",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_23",
+                        "terrain_23",
+                        "terrain_14",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_21",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_14",
+                        "terrain_14",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5"
+                    ],
+                    [
+                        "terrain_14",
+                        "terrain_14",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_14",
+                        "terrain_14",
+                        "terrain_14",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_5",
+                        "terrain_5"
+                    ],
+                    [
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_22",
+                        "terrain_22",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_4"
+                    ],
+                    [
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_14",
+                        "terrain_14",
+                        "terrain_0",
+                        "terrain_3",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_4"
+                    ],
+                    [
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_3",
+                        "terrain_29",
+                        "terrain_0",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_29",
+                        "terrain_3",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0"
+                    ],
+                    [
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0"
+                    ],
+                    [
+                        "terrain_0",
+                        "terrain_14",
+                        "terrain_14",
+                        "terrain_0",
+                        "terrain_14",
+                        "terrain_14",
+                        "terrain_0",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_4",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0"
+                    ],
+                    [
+                        "terrain_0",
+                        "terrain_14",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_14",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_4",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_3",
+                        "terrain_3"
+                    ],
+                    [
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_22",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_15",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_3",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_3",
+                        "terrain_29",
+                        "terrain_3"
+                    ],
+                    [
+                        "terrain_0",
+                        "terrain_14",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_14",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_19",
+                        "terrain_0",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_3",
+                        "terrain_3"
+                    ],
+                    [
+                        "terrain_0",
+                        "terrain_14",
+                        "terrain_14",
+                        "terrain_0",
+                        "terrain_14",
+                        "terrain_14",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_15",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0"
+                    ],
+                    [
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_29",
+                        "terrain_3",
+                        "terrain_0",
+                        "terrain_4",
+                        "terrain_15",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0"
+                    ],
+                    [
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_3",
+                        "terrain_29",
+                        "terrain_0",
+                        "terrain_0"
+                    ],
+                    [
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_21",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_0",
+                        "terrain_4",
+                        "terrain_4"
+                    ],
+                    [
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_4",
+                        "terrain_5",
+                        "terrain_5"
+                    ],
+                    [
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_0",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_3",
+                        "terrain_4",
+                        "terrain_5",
+                        "terrain_24"
+                    ],
+                    [
+                        "terrain_15",
+                        "terrain_15",
+                        "terrain_15",
+                        "terrain_19",
+                        "terrain_19",
+                        "terrain_19",
+                        "terrain_15",
+                        "terrain_15",
+                        "terrain_15",
+                        "terrain_15",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_0",
+                        "terrain_3",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_3",
+                        "terrain_4",
+                        "terrain_4"
+                    ],
+                    [
+                        "terrain_23",
+                        "terrain_22",
+                        "terrain_23",
+                        "terrain_16",
+                        "terrain_16",
+                        "terrain_16",
+                        "terrain_23",
+                        "terrain_22",
+                        "terrain_23",
+                        "terrain_15",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_0",
+                        "terrain_4",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_4",
+                        "terrain_4",
+                        "terrain_3",
+                        "terrain_3"
+                    ],
+                    [
+                        "terrain_23",
+                        "terrain_23",
+                        "terrain_16",
+                        "terrain_20",
+                        "terrain_18",
+                        "terrain_20",
+                        "terrain_16",
+                        "terrain_23",
+                        "terrain_23",
+                        "terrain_15",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_2",
+                        "terrain_4",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_5",
+                        "terrain_4",
+                        "terrain_3",
+                        "terrain_3"
+                    ]
+                ]
+            }
+        ]
+    },
+    "events": {
+        "s_scripts": [
+            {
+                "id": "legacy_stage_10",
+                "win": [
+                    {
+                        "type": "annihilate_enemies"
+                    }
+                ],
+                "lose": [
+                    {
+                        "type": "protect_alive",
+                        "unit": "hero_1"
+                    }
+                ],
+                "pre": [
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_1",
+                        "at": {
+                            "x": 12,
+                            "y": 19
+                        }
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_2",
+                        "at": {
+                            "x": 11,
+                            "y": 19
+                        }
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_3",
+                        "at": {
+                            "x": 13,
+                            "y": 19
+                        }
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_380",
+                        "at": {
+                            "x": 15,
+                            "y": 7
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_381",
+                        "at": {
+                            "x": 15,
+                            "y": 8
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_382",
+                        "at": {
+                            "x": 15,
+                            "y": 9
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_426",
+                        "at": {
+                            "x": 14,
+                            "y": 7
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_427",
+                        "at": {
+                            "x": 14,
+                            "y": 8
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_428",
+                        "at": {
+                            "x": 14,
+                            "y": 9
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_444",
+                        "at": {
+                            "x": 13,
+                            "y": 8
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_445",
+                        "at": {
+                            "x": 13,
+                            "y": 9
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_446",
+                        "at": {
+                            "x": 13,
+                            "y": 10
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_56",
+                        "at": {
+                            "x": 16,
+                            "y": 7
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_482",
+                        "at": {
+                            "x": 11,
+                            "y": 10
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_488",
+                        "at": {
+                            "x": 11,
+                            "y": 11
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_59",
+                        "at": {
+                            "x": 9,
+                            "y": 1
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_447",
+                        "at": {
+                            "x": 9,
+                            "y": 0
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_448",
+                        "at": {
+                            "x": 9,
+                            "y": 2
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_449",
+                        "at": {
+                            "x": 10,
+                            "y": 0
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_450",
+                        "at": {
+                            "x": 10,
+                            "y": 1
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_451",
+                        "at": {
+                            "x": 10,
+                            "y": 2
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_36",
+                        "at": {
+                            "x": 3,
+                            "y": 0
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_48",
+                        "at": {
+                            "x": 2,
+                            "y": 0
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_60",
+                        "at": {
+                            "x": 4,
+                            "y": 0
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_566",
+                        "at": {
+                            "x": 1,
+                            "y": 0
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_358",
+                        "at": {
+                            "x": 2,
+                            "y": 2
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_359",
+                        "at": {
+                            "x": 3,
+                            "y": 2
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_618",
+                        "at": {
+                            "x": 2,
+                            "y": 3
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_619",
+                        "at": {
+                            "x": 3,
+                            "y": 3
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_466",
+                        "at": {
+                            "x": 12,
+                            "y": 1
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_467",
+                        "at": {
+                            "x": 13,
+                            "y": 1
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_468",
+                        "at": {
+                            "x": 13,
+                            "y": 2
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_469",
+                        "at": {
+                            "x": 14,
+                            "y": 2
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_553",
+                        "at": {
+                            "x": 1,
+                            "y": 4
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_554",
+                        "at": {
+                            "x": 4,
+                            "y": 4
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_735",
+                        "at": {
+                            "x": 2,
+                            "y": 6
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_736",
+                        "at": {
+                            "x": 3,
+                            "y": 6
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_737",
+                        "at": {
+                            "x": 6,
+                            "y": 8
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_738",
+                        "at": {
+                            "x": 6,
+                            "y": 9
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_739",
+                        "at": {
+                            "x": 6,
+                            "y": 10
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_69",
+                        "at": {
+                            "x": 5,
+                            "y": 14
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_68",
+                        "at": {
+                            "x": 4,
+                            "y": 14
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_67",
+                        "at": {
+                            "x": 12,
+                            "y": 2
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_40",
+                        "at": {
+                            "x": 3,
+                            "y": 9
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_39",
+                        "at": {
+                            "x": 3,
+                            "y": 14
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_55",
+                        "at": {
+                            "x": 17,
+                            "y": 16
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_171",
+                        "at": {
+                            "x": 20,
+                            "y": 14
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_50",
+                        "at": {
+                            "x": 3,
+                            "y": 11
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_519",
+                        "at": {
+                            "x": 5,
+                            "y": 9
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_520",
+                        "at": {
+                            "x": 1,
+                            "y": 9
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_402",
+                        "at": {
+                            "x": 0,
+                            "y": 8
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_403",
+                        "at": {
+                            "x": 0,
+                            "y": 9
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_404",
+                        "at": {
+                            "x": 0,
+                            "y": 10
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_42",
+                        "at": {
+                            "x": 14,
+                            "y": 17
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_360",
+                        "at": {
+                            "x": 13,
+                            "y": 16
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_361",
+                        "at": {
+                            "x": 13,
+                            "y": 17
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_362",
+                        "at": {
+                            "x": 15,
+                            "y": 17
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_363",
+                        "at": {
+                            "x": 15,
+                            "y": 18
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_383",
+                        "at": {
+                            "x": 17,
+                            "y": 15
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_384",
+                        "at": {
+                            "x": 16,
+                            "y": 16
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_385",
+                        "at": {
+                            "x": 18,
+                            "y": 16
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_386",
+                        "at": {
+                            "x": 17,
+                            "y": 17
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_740",
+                        "at": {
+                            "x": 20,
+                            "y": 13
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_741",
+                        "at": {
+                            "x": 21,
+                            "y": 14
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_742",
+                        "at": {
+                            "x": 19,
+                            "y": 14
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_405",
+                        "at": {
+                            "x": 2,
+                            "y": 15
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_406",
+                        "at": {
+                            "x": 3,
+                            "y": 15
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_407",
+                        "at": {
+                            "x": 4,
+                            "y": 15
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_408",
+                        "at": {
+                            "x": 5,
+                            "y": 15
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_567",
+                        "at": {
+                            "x": 7,
+                            "y": 0
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_568",
+                        "at": {
+                            "x": 7,
+                            "y": 1
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_569",
+                        "at": {
+                            "x": 7,
+                            "y": 2
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_620",
+                        "at": {
+                            "x": 2,
+                            "y": 14
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_621",
+                        "at": {
+                            "x": 6,
+                            "y": 14
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_500",
+                        "at": {
+                            "x": 3,
+                            "y": 13
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_483",
+                        "at": {
+                            "x": 4,
+                            "y": 13
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_489",
+                        "at": {
+                            "x": 5,
+                            "y": 13
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_551",
+                        "at": {
+                            "x": 2,
+                            "y": 13
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_552",
+                        "at": {
+                            "x": 6,
+                            "y": 13
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_62",
+                        "at": {
+                            "x": 10,
+                            "y": 10
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_409",
+                        "at": {
+                            "x": 6,
+                            "y": 15
+                        },
+                        "faction": "ENEMY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_288",
+                        "at": {
+                            "x": 22,
+                            "y": 18
+                        },
+                        "faction": "ALLY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_145",
+                        "at": {
+                            "x": 4,
+                            "y": 19
+                        },
+                        "faction": "ALLY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_176",
+                        "at": {
+                            "x": 17,
+                            "y": 7
+                        },
+                        "faction": "ALLY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_185",
+                        "at": {
+                            "x": 4,
+                            "y": 17
+                        },
+                        "faction": "ALLY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_172",
+                        "at": {
+                            "x": 5,
+                            "y": 17
+                        },
+                        "faction": "ALLY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_173",
+                        "at": {
+                            "x": 7,
+                            "y": 18
+                        },
+                        "faction": "ALLY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_125",
+                        "at": {
+                            "x": 3,
+                            "y": 17
+                        },
+                        "faction": "ALLY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_149",
+                        "at": {
+                            "x": 18,
+                            "y": 0
+                        },
+                        "faction": "ALLY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_286",
+                        "at": {
+                            "x": 21,
+                            "y": 18
+                        },
+                        "faction": "ALLY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_287",
+                        "at": {
+                            "x": 21,
+                            "y": 19
+                        },
+                        "faction": "ALLY"
+                    },
+                    {
+                        "type": "spawn_unit",
+                        "unit": "hero_953",
+                        "at": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "faction": "ALLY"
+                    }
+                ]
+            }
+        ]
+    }
+}
