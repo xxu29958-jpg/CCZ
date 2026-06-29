@@ -1,6 +1,16 @@
 # Handoff
 
 > Latest local note (2026-06-30): another eligible promotion batch is app-selectable:
+> `legacy_stage_91`, `93` through `97`, `99`, `101` through `105`, `107`, `109`, `111` through `112`,
+> `114` through `116`, and `119` through `120`. Generated with `:mod-import:generateLegacyStage` from the
+> E-drive decrypted package under `content/legacy_stage_<id>/campaign.json`. Opening unit counts are
+> 65/28/48/65/73/12/55/12/16/12/24/43/31/19/15/19/23/81/81/83/49. Stages 103/115/116 protect
+> `hero_2`; stage 104 protects `hero_3`; the others use `ProtectAlive("hero_1")`. `PlayableStageCatalog` now
+> exposes stages 1-6, 8-14, 16-19, 21, 23-24, 29-31, 34-42, 44-48, 50-59, 61-62, 64, 66, 69-70, 72-73,
+> 76-78, 83, 86, 89, 91, 93-97, 99, 101-105, 107, 109, 111-112, 114-116, and 119-120.
+> Verified locally with the full current local gate.
+
+> Latest local note (2026-06-30): another eligible promotion batch is app-selectable:
 > `legacy_stage_64`, `66`, `69`, `70`, `72`, `73`, `76`, `77`, `78`, `83`, `86`, and `89`. Generated with
 > `:mod-import:generateLegacyStage` from the E-drive decrypted package under
 > `content/legacy_stage_<id>/campaign.json`. Opening unit counts are 73/50/73/83/83/49/52/50/68/92/99/4.

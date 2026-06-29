@@ -99,8 +99,11 @@ through `legacy_stage_6`, `legacy_stage_8` through `legacy_stage_14`, `legacy_st
 `legacy_stage_31`, plus `legacy_stage_34` through `legacy_stage_42`, `legacy_stage_44` through `legacy_stage_48`,
 `legacy_stage_50` through `legacy_stage_59`, `legacy_stage_61` through `legacy_stage_62`, `legacy_stage_64`,
 `legacy_stage_66`, `legacy_stage_69` through `legacy_stage_70`, `legacy_stage_72` through `legacy_stage_73`,
-`legacy_stage_76` through `legacy_stage_78`, `legacy_stage_83`, `legacy_stage_86`, and `legacy_stage_89`. Other
-catalog rows may resolve commerce access but remain non-launchable until their native battle packs are promoted and
+`legacy_stage_76` through `legacy_stage_78`, `legacy_stage_83`, `legacy_stage_86`, `legacy_stage_89`,
+`legacy_stage_91`, `legacy_stage_93` through `legacy_stage_97`, `legacy_stage_99`, `legacy_stage_101` through
+`legacy_stage_105`, `legacy_stage_107`, `legacy_stage_109`, `legacy_stage_111` through `legacy_stage_112`,
+`legacy_stage_114` through `legacy_stage_116`, and `legacy_stage_119` through `legacy_stage_120`. Other catalog
+rows may resolve commerce access but remain non-launchable until their native battle packs are promoted and
 registered. This keeps old-table catalog migration separate from playable runtime exposure.
 
 Generate a single promoted stage pack from a local decrypted resource tree with:
