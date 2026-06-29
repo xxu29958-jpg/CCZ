@@ -1,6 +1,18 @@
 # Handoff
 
 > Latest local note (2026-06-30): another eligible promotion batch is app-selectable:
+> `legacy_stage_122`, `127` through `128`, `130` through `131`, `134` through `137`, `141`,
+> `143` through `148`, `152`, and `156` through `158`. Generated with `:mod-import:generateLegacyStage`
+> from the E-drive decrypted package under `content/legacy_stage_<id>/campaign.json`. Opening unit counts are
+> 83/66/14/31/23/47/30/57/73/33/78/43/26/46/68/72/73/14/19/27. All use default annihilate/protect-`hero_1`
+> objectives and have no deferred deployments. The promoted-stage test expectations are now single-sourced in
+> `PromotedStageExpectations` so app launch tests and pack/runtime tests share the same unit-count truth.
+> `PlayableStageCatalog` now exposes stages 1-6, 8-14, 16-19, 21, 23-24, 29-31, 34-42, 44-48, 50-59,
+> 61-62, 64, 66, 69-70, 72-73, 76-78, 83, 86, 89, 91, 93-97, 99, 101-105, 107, 109, 111-112, 114-116,
+> 119-120, 122, 127-128, 130-131, 134-137, 141, 143-148, 152, and 156-158.
+> Verified locally with the full current local gate.
+
+> Latest local note (2026-06-30): another eligible promotion batch is app-selectable:
 > `legacy_stage_91`, `93` through `97`, `99`, `101` through `105`, `107`, `109`, `111` through `112`,
 > `114` through `116`, and `119` through `120`. Generated with `:mod-import:generateLegacyStage` from the
 > E-drive decrypted package under `content/legacy_stage_<id>/campaign.json`. Opening unit counts are
