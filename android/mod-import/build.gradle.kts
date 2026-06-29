@@ -53,6 +53,20 @@ tasks.register<JavaExec>("generateLegacyFullStage") {
     args((project.findProperty("extractedDir") as String?).orEmpty(), (project.findProperty("outPath") as String?).orEmpty(), "full")
 }
 
+// Production one-stage promotion: emits a validated+assembled native pack for a ready legacy catalog row.
+//   ./gradlew :mod-import:generateLegacyStage -PextractedDir=<dir> -PoutPath=<file> -PstageId=2
+tasks.register<JavaExec>("generateLegacyStage") {
+    group = "ccz"
+    description = "Generate one promoted native stage pack from local legacy scripts/maps/tables."
+    mainClass.set("com.ccz.modimport.LegacyStagePackGenerator")
+    classpath = sourceSets["main"].runtimeClasspath
+    args(
+        (project.findProperty("extractedDir") as String?).orEmpty(),
+        (project.findProperty("outPath") as String?).orEmpty(),
+        (project.findProperty("stageId") as String?).orEmpty(),
+    )
+}
+
 // Offline commerce smoke: reads local decrypted legacy tables, verifies a paid product grants its native reward,
 // and optionally checks whether that reward unlocks a legacy stage. Run e.g.:
 //   ./gradlew :mod-import:verifyLegacyPurchase -PextractedDir=<dir> -PchargeId=trssgshz03 -PgkId=1

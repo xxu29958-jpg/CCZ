@@ -2,6 +2,7 @@ package com.ccz.app.catalog
 
 import com.ccz.app.campaign.CampaignRuntime
 import com.ccz.app.campaign.CampaignStageRuntime
+import com.ccz.app.campaign.PromotedStageRuntimes
 import com.ccz.contentpack.CommerceResolver
 import com.ccz.contentpack.EntitlementKind
 import com.ccz.contentpack.StageAccess
@@ -32,7 +33,7 @@ object PlayableStageCatalog {
     const val FULL_UNLOCK_PRODUCT_ID = "trssgshz01"
 
     private val runtimesByStageId: Map<String, CampaignStageRuntime> =
-        listOf(CampaignRuntime).associateBy { it.stageId }
+        (listOf(CampaignRuntime) + PromotedStageRuntimes.all()).associateBy { it.stageId }
 
     private val stagesById: Map<String, StageDef> by lazy {
         LegacyCatalogContent.pack().commerce.stages.associateBy { it.id }

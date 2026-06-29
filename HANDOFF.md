@@ -1,5 +1,17 @@
 # Handoff
 
+> Latest local note (2026-06-30): `legacy_stage_2` (曲阳围城战) is now promoted from migration evidence into a
+> committed native battle pack. `LegacyStagePackGenerator` adds a production `generateLegacyStage` Gradle entry
+> that reads a ready `S_<gkid-1>.eex_new` + `terrainMap_<gkid>.json`, adds the default player trio where the old
+> game had interactive deployment, grants the current basic attack, and validates+assembles before writing. The
+> generated `content/legacy_stage_2/campaign.json` deploys 43 units on the real 21x20 map (3 PLAYER / 11 ALLY /
+> 29 ENEMY), uses default annihilate/protect-LiuBei objectives, and is registered through
+> `PromotedStageRuntimes.QuyangSiege`; `PlayableStageCatalog` now exposes `legacy_stage_1` and `legacy_stage_2`,
+> while unlocked-but-unregistered rows such as `legacy_stage_3` still cannot launch. Root/app test baselines are
+> 514 / 102. Verified locally with `:mod-import` test/detekt plus the full current local gate. Next promotion step:
+> either batch more original-ready stages through `generateLegacyStage`, or first add an explicit player-deployment
+> policy before widening app exposure.
+
 > Latest local note (2026-06-30): app stage entry is now wired through a native playable registry.
 > `PlayableStageCatalog` separates commerce access from launchability: `LegacyCatalogContent` still exposes
 > the full 397-row legacy commerce catalog, but only registered native runtimes can start. `legacy_stage_1`

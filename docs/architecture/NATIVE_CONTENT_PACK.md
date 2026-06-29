@@ -93,9 +93,22 @@ Regenerate it from a local decrypted resource tree with:
 Commerce unlock does not by itself mean a stage is app-playable. The Android app gates launch through
 `PlayableStageCatalog`: a stage must be both unlocked by `CommerceResolver` and registered to a native battle
 runtime. Currently `legacy_stage_1` is registered to the committed full-stage Daxingshan runtime
-(`CampaignRuntime`); other catalog rows may resolve commerce access but remain non-launchable until their
-native battle packs are promoted and registered. This keeps old-table catalog migration separate from playable
-runtime exposure.
+(`CampaignRuntime`), and `legacy_stage_2` is registered to `PromotedStageRuntimes.QuyangSiege` from a generated
+native pack. Other catalog rows may resolve commerce access but remain non-launchable until their native battle
+packs are promoted and registered. This keeps old-table catalog migration separate from playable runtime exposure.
+
+Generate a single promoted stage pack from a local decrypted resource tree with:
+
+```powershell
+.\gradlew.bat --no-daemon :mod-import:generateLegacyStage `
+  -PextractedDir=E:\trssgshz_reverse_repo\decrypted_full_apk\assets\GameResources\trssgshz `
+  -PoutPath=D:\ccz_tactics_engine\android\app\src\main\resources\content\legacy_stage_2\campaign.json `
+  -PstageId=2
+```
+
+`generateLegacyStage` validates and assembles the pack before writing it. It currently promotes original-ready
+stages only; collision stages still require applying the planner's deferred-deployment proposal explicitly before
+production output.
 
 ## Legacy Maps And Stage Planning
 

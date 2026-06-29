@@ -1,6 +1,7 @@
 package com.ccz.app.catalog
 
 import com.ccz.app.campaign.CampaignRuntime
+import com.ccz.app.campaign.PromotedStageRuntimes
 import com.ccz.contentpack.EntitlementKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -15,8 +16,9 @@ class PlayableStageCatalogTest {
         val playable = PlayableStageCatalog.playableStages()
 
         assertEquals(397, PlayableStageCatalog.catalogStageCount())
-        assertEquals(listOf(CampaignRuntime.STAGE_ID), playable.map { it.stage.id })
-        assertSame(CampaignRuntime, playable.single().runtime)
+        assertEquals(listOf(CampaignRuntime.STAGE_ID, PromotedStageRuntimes.QuyangSiege.stageId), playable.map { it.stage.id })
+        assertSame(CampaignRuntime, playable.first().runtime)
+        assertSame(PromotedStageRuntimes.QuyangSiege, playable.last().runtime)
     }
 
     @Test
@@ -44,10 +46,23 @@ class PlayableStageCatalogTest {
     }
 
     @Test
+    fun promotedSecondStageUnlocksAndLaunchesNativeRuntime() {
+        val access = PlayableStageCatalog.resolvePurchase(
+            productId = PlayableStageCatalog.FULL_UNLOCK_PRODUCT_ID,
+            stageId = PromotedStageRuntimes.QuyangSiege.stageId,
+        )
+
+        assertTrue(access.stageAccess.unlocked)
+        assertTrue(access.canStart)
+        assertSame(PromotedStageRuntimes.QuyangSiege, access.launchRuntimeOrNull())
+        assertEquals(43, access.launchRuntimeOrNull()!!.initialState().units.size)
+    }
+
+    @Test
     fun unlockedButUnregisteredLegacyStageDoesNotLaunch() {
         val access = PlayableStageCatalog.resolvePurchase(
             productId = PlayableStageCatalog.FULL_UNLOCK_PRODUCT_ID,
-            stageId = "legacy_stage_2",
+            stageId = "legacy_stage_3",
         )
 
         assertTrue(access.stageAccess.unlocked)
