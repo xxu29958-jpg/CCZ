@@ -97,9 +97,11 @@ pack with the authored Daxingshan intro. Generated native packs are currently re
 through `legacy_stage_6`, `legacy_stage_8` through `legacy_stage_14`, `legacy_stage_16` through
 `legacy_stage_19`, `legacy_stage_21`, `legacy_stage_23` through `legacy_stage_24`, and `legacy_stage_29` through
 `legacy_stage_31`, plus `legacy_stage_34` through `legacy_stage_42`, `legacy_stage_44` through `legacy_stage_48`,
-`legacy_stage_50` through `legacy_stage_59`, and `legacy_stage_61` through `legacy_stage_62`. Other catalog rows may
-resolve commerce access but remain non-launchable until their native battle packs are promoted and registered. This
-keeps old-table catalog migration separate from playable runtime exposure.
+`legacy_stage_50` through `legacy_stage_59`, `legacy_stage_61` through `legacy_stage_62`, `legacy_stage_64`,
+`legacy_stage_66`, `legacy_stage_69` through `legacy_stage_70`, `legacy_stage_72` through `legacy_stage_73`,
+`legacy_stage_76` through `legacy_stage_78`, `legacy_stage_83`, `legacy_stage_86`, and `legacy_stage_89`. Other
+catalog rows may resolve commerce access but remain non-launchable until their native battle packs are promoted and
+registered. This keeps old-table catalog migration separate from playable runtime exposure.
 
 Generate a single promoted stage pack from a local decrypted resource tree with:
 
@@ -221,10 +223,12 @@ RE proposals are checked against the real native runtime path before they are ac
 - Events use known ops and trigger conditions.
 - R-script branch/choice jumps target a label defined in the same script (labels unique); portraits name a known unit or `events.portrait_subjects` entry.
 - `events.deferred_deployments` references known S-scripts and units, has a non-blank source, uses non-negative coordinates, and does not duplicate an opening `pre` spawn.
+- S-script opening `pre` deployment cannot spawn the same unit id twice.
 - Native maps match declared size after legacy-map normalization.
 - Campaign assembly checks every coordinate in the selected S-script against the selected `MapDef` bounds before battle setup is returned.
 - Campaign assembly also checks selected `events.deferred_deployments` coordinates against the selected `MapDef` bounds.
 - Campaign assembly rejects selected S-script `pre` MoveUnit/RemoveUnit ops that target a unit not currently deployed by earlier `pre` ops.
+- Campaign assembly rejects selected S-script `pre` duplicate SpawnUnit ids even if validation was skipped by a caller.
 - Commerce product ids, reward ids, and stage ids are unique.
 - Commerce products reference known rewards.
 - Commerce rewards grant at least one item or entitlement; item grants reference known items and have positive quantity.

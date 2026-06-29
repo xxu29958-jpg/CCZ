@@ -128,6 +128,18 @@ class PlayableStageCatalogTest {
             "legacy_stage_59" to 40,
             "legacy_stage_61" to 68,
             "legacy_stage_62" to 68,
+            "legacy_stage_64" to 73,
+            "legacy_stage_66" to 50,
+            "legacy_stage_69" to 73,
+            "legacy_stage_70" to 83,
+            "legacy_stage_72" to 83,
+            "legacy_stage_73" to 49,
+            "legacy_stage_76" to 52,
+            "legacy_stage_77" to 50,
+            "legacy_stage_78" to 68,
+            "legacy_stage_83" to 92,
+            "legacy_stage_86" to 99,
+            "legacy_stage_89" to 4,
         )
     }
 }

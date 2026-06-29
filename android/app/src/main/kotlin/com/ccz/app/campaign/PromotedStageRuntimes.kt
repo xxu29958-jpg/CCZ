@@ -20,6 +20,7 @@ object PromotedStageRuntimes {
             44, 45, 46, 47, 48,
             50, 51, 52, 53, 54, 55, 56, 57, 58, 59,
             61, 62,
+            64, 66, 69, 70, 72, 73, 76, 77, 78, 83, 86, 89,
         ).map(::promotedStage)
 
     fun all(): List<BundledBattleRuntime> = listOf(

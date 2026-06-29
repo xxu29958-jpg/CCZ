@@ -1,5 +1,16 @@
 # Handoff
 
+> Latest local note (2026-06-30): another eligible promotion batch is app-selectable:
+> `legacy_stage_64`, `66`, `69`, `70`, `72`, `73`, `76`, `77`, `78`, `83`, `86`, and `89`. Generated with
+> `:mod-import:generateLegacyStage` from the E-drive decrypted package under
+> `content/legacy_stage_<id>/campaign.json`. Opening unit counts are 73/50/73/83/83/49/52/50/68/92/99/4.
+> All use default annihilate/protect-`hero_1` objectives. `legacy_stage_80` was generated during sweep but
+> rejected because its `pre` ops spawn `hero_1` and `hero_2` twice with conflicting factions; native-content now
+> fails duplicate `pre` spawns closed. `legacy_stage_84` remains unregistered because its ready report has no
+> ENEMY deployment under the default annihilate objective. `PlayableStageCatalog` now exposes stages 1-6, 8-14,
+> 16-19, 21, 23-24, 29-31, 34-42, 44-48, 50-59, 61-62, 64, 66, 69-70, 72-73, 76-78, 83, 86, and 89.
+> Verified locally with the full current local gate.
+
 > Latest local note (2026-06-30): another report-ready promotion batch is app-selectable:
 > `legacy_stage_44` through `48`, `50` through `59`, and `61` through `62`. Generated with
 > `:mod-import:generateLegacyStage` from the E-drive decrypted package under
