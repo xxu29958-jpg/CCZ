@@ -23,5 +23,25 @@ object PromotedStageRuntimes {
         battlePackResource = "/content/legacy_stage_4/campaign.json",
     )
 
-    fun all(): List<CampaignStageRuntime> = listOf(QuyangSiege, ShimenAttack, SishuiPassOne)
+    val SishuiPassTwo: BundledBattleRuntime = BundledBattleRuntime(
+        stageId = "legacy_stage_5",
+        battleScriptId = "legacy_stage_5",
+        mapId = "legacy_stage_5_map",
+        battlePackResource = "/content/legacy_stage_5/campaign.json",
+    )
+
+    val HulaoPassBattle: BundledBattleRuntime = BundledBattleRuntime(
+        stageId = "legacy_stage_6",
+        battleScriptId = "legacy_stage_6",
+        mapId = "legacy_stage_6_map",
+        battlePackResource = "/content/legacy_stage_6/campaign.json",
+    )
+
+    fun all(): List<CampaignStageRuntime> = listOf(
+        QuyangSiege,
+        ShimenAttack,
+        SishuiPassOne,
+        SishuiPassTwo,
+        HulaoPassBattle,
+    )
 }

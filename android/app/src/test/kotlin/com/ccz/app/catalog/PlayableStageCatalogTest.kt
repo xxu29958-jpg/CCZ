@@ -22,6 +22,8 @@ class PlayableStageCatalogTest {
                 PromotedStageRuntimes.QuyangSiege.stageId,
                 PromotedStageRuntimes.ShimenAttack.stageId,
                 PromotedStageRuntimes.SishuiPassOne.stageId,
+                PromotedStageRuntimes.SishuiPassTwo.stageId,
+                PromotedStageRuntimes.HulaoPassBattle.stageId,
             ),
             playable.map { it.stage.id },
         )
@@ -29,6 +31,8 @@ class PlayableStageCatalogTest {
         assertSame(PromotedStageRuntimes.QuyangSiege, playable[1].runtime)
         assertSame(PromotedStageRuntimes.ShimenAttack, playable[2].runtime)
         assertSame(PromotedStageRuntimes.SishuiPassOne, playable[3].runtime)
+        assertSame(PromotedStageRuntimes.SishuiPassTwo, playable[4].runtime)
+        assertSame(PromotedStageRuntimes.HulaoPassBattle, playable[5].runtime)
     }
 
     @Test
@@ -61,6 +65,8 @@ class PlayableStageCatalogTest {
             PromotedStageRuntimes.QuyangSiege to 43,
             PromotedStageRuntimes.ShimenAttack to 72,
             PromotedStageRuntimes.SishuiPassOne to 52,
+            PromotedStageRuntimes.SishuiPassTwo to 66,
+            PromotedStageRuntimes.HulaoPassBattle to 58,
         )
 
         promoted.forEach { (runtime, expectedUnits) ->
@@ -81,7 +87,7 @@ class PlayableStageCatalogTest {
     fun unlockedButUnregisteredLegacyStageDoesNotLaunch() {
         val access = PlayableStageCatalog.resolvePurchase(
             productId = PlayableStageCatalog.FULL_UNLOCK_PRODUCT_ID,
-            stageId = "legacy_stage_5",
+            stageId = "legacy_stage_7",
         )
 
         assertTrue(access.stageAccess.unlocked)

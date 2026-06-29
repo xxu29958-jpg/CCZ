@@ -1,11 +1,22 @@
 # Handoff
 
+> Latest local note (2026-06-30): `legacy_stage_5` (汜水关之战 贰) and `legacy_stage_6` (虎牢关会战) are now
+> promoted and app-selectable. Generated with `:mod-import:generateLegacyStage -PstageId=5/6` from the E-drive
+> decrypted package, committed as `content/legacy_stage_5/campaign.json` and
+> `content/legacy_stage_6/campaign.json`, and registered as `PromotedStageRuntimes.SishuiPassTwo` and
+> `PromotedStageRuntimes.HulaoPassBattle`. Stage 5 deploys 66 opening units on the real 20x28 map
+> (3 PLAYER / 14 ALLY / 49 ENEMY); stage 6 deploys 58 opening units on the real 35x16 map
+> (3 PLAYER / 15 ALLY / 40 ENEMY). Both use default annihilate/protect-LiuBei objectives and have no deferred
+> metadata. `PlayableStageCatalog` now exposes stages 1/2/3/4/5/6; `legacy_stage_7` remains non-launchable and
+> `generateLegacyStage -PstageId=7` fails closed on an unresolved deployment collision at (1, 5). Verified locally:
+> `:app:testGrayDebugUnitTest`, `:app:detekt`, `:app:assertAndroidTestCountEqualsBaseline`.
+
 > Latest local note (2026-06-30): `legacy_stage_4` (汜水关之战 壹) is now promoted and app-selectable.
 > Generated with `:mod-import:generateLegacyStage -PstageId=4` from the E-drive decrypted package, committed as
 > `content/legacy_stage_4/campaign.json`, and registered as `PromotedStageRuntimes.SishuiPassOne`. The pack
 > validates+assembles before write, deploys 52 opening units on the real 19x20 map (3 PLAYER / 10 ALLY /
 > 39 ENEMY), uses default annihilate/protect-LiuBei objectives, and has no deferred metadata. `PlayableStageCatalog`
-> now exposes stages 1/2/3/4; unlocked-but-unregistered rows such as `legacy_stage_5` still cannot launch.
+> exposed stages 1/2/3/4 at this point; later notes supersede launchability for subsequently promoted rows.
 > Verified locally: `:app:testGrayDebugUnitTest`, `:app:detekt`, `:app:assertAndroidTestCountEqualsBaseline`.
 
 > Latest local note (2026-06-30): `legacy_stage_3` (石门攻击战) is now promoted and app-selectable.
