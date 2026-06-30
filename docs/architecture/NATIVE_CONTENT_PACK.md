@@ -113,7 +113,11 @@ through `legacy_stage_180`, `legacy_stage_182`, `legacy_stage_186`, `legacy_stag
 `legacy_stage_214` through `legacy_stage_222`, `legacy_stage_224` through `legacy_stage_231`, and
 `legacy_stage_233`, `legacy_stage_234` through `legacy_stage_237`, `legacy_stage_239`,
 `legacy_stage_242` through `legacy_stage_245`, `legacy_stage_249` through `legacy_stage_252`,
-`legacy_stage_257` through `legacy_stage_259`, and `legacy_stage_263` through `legacy_stage_266`. Other catalog
+`legacy_stage_257` through `legacy_stage_259`, `legacy_stage_263` through `legacy_stage_266`,
+`legacy_stage_268` through `legacy_stage_269`, `legacy_stage_272`, `legacy_stage_276` through
+`legacy_stage_277`, `legacy_stage_279` through `legacy_stage_281`, `legacy_stage_283`, `legacy_stage_285`,
+`legacy_stage_287` through `legacy_stage_288`, `legacy_stage_293`, `legacy_stage_295`, and
+`legacy_stage_297` through `legacy_stage_302`. Other catalog
 rows may resolve commerce access but remain non-launchable until their native battle packs are promoted and
 registered. This keeps old-table catalog migration separate from playable runtime exposure.
 
