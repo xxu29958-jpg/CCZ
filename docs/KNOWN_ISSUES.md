@@ -10,6 +10,10 @@
 > app-playable generated native packs. `legacy_stage_318` remains unregistered because its legacy `pre` script
 > duplicates `hero_478`, and the native duplicate-spawn gate rejects it fail-closed.
 
+> 2026-06-30 update: `legacy_stage_332`-`336`, `338`-`341`, `343`-`345`, `347`, and `351`-`357` are now promoted
+> app-playable generated native packs. `legacy_stage_337` remains unregistered because its legacy `pre` script
+> duplicates default player-party ids `hero_1` and `hero_2`.
+
 > 收口散在 `HANDOFF.md` / 规则 / KDoc 的 dormant caveat、defer 项、已知限制，分级并区分
 > **设计契约（按预期，非缺陷）** 与 **缺陷/限制**。镜像 xiaopiaojia 的 `KNOWN_ISSUES.md` 实践
 > （小票夹工程金矿移植 backlog #5，`docs/audits/2026-06-22-xiaopiaojia-port-backlog.md`）。

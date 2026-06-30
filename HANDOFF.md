@@ -1,6 +1,16 @@
 # Handoff
 
 > Latest local note (2026-06-30): next eligible promotion batch is app-selectable:
+> `legacy_stage_332` through `336`, `338` through `341`, `343` through `345`, `347`, and `351` through `357`.
+> Generated with `:mod-import:generateLegacyStage` from the E-drive decrypted package under
+> `content/legacy_stage_<id>/campaign.json`. Opening unit counts are
+> 12/26/33/13/30/20/15/15/33/63/64/17/20/17/5/5/19/82/64/55. All use default
+> annihilate/protect-`hero_1` objectives and have no deferred deployments. `legacy_stage_337` remains
+> unregistered because its legacy `pre` script duplicates default player-party ids `hero_1` and `hero_2`;
+> the native duplicate-spawn gate rejects it fail-closed. `PlayableStageCatalog` now also exposes these 20 stages.
+> Verified locally with the full current local gate.
+
+> Latest local note (2026-06-30): next eligible promotion batch is app-selectable:
 > `legacy_stage_309` through `314`, `316` through `317`, `319` through `323`, and `325` through `331`.
 > Generated with `:mod-import:generateLegacyStage` from the E-drive decrypted package under
 > `content/legacy_stage_<id>/campaign.json`. Opening unit counts are
