@@ -92,11 +92,15 @@ registered production runtimes are currently:
   `legacy_stage_285`, `legacy_stage_287` through `legacy_stage_288`, `legacy_stage_293`,
   `legacy_stage_295`, and `legacy_stage_297` through `legacy_stage_302`
   -> generated `PromotedStageRuntimes` entries
+- `legacy_stage_309` through `legacy_stage_314`, `legacy_stage_316` through `legacy_stage_317`,
+  `legacy_stage_319` through `legacy_stage_323`, and `legacy_stage_325` through `legacy_stage_331`
+  -> generated `PromotedStageRuntimes` entries
 
 Promoted stages after `legacy_stage_1` use generated native packs and have no authored intros yet.
 `legacy_stage_7` remains deliberately unregistered until its all-referenced same-tile deployment collisions have
 proven opening/deferred semantics. `legacy_stage_80` is also unregistered until duplicate legacy actor ids can be
-resolved without conflicting with the default player-party ids.
+resolved without conflicting with the default player-party ids. `legacy_stage_318` is likewise unregistered because
+its legacy `pre` script duplicates `hero_478`, which the native duplicate-spawn gate rejects fail-closed.
 
 Command validation is realized today inside `game-core` (the `Gameplay.submit` facade over
 `CommandValidator`), since legality is a deterministic rule and `game-core` is the sole combat

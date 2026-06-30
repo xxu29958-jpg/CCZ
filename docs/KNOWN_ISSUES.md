@@ -6,6 +6,10 @@
 > True non-basic/effect skill import is still future converter work and is covered by the promoted-stage default
 > loadout limitation below.
 
+> 2026-06-30 update: `legacy_stage_309`-`314`, `316`-`317`, `319`-`323`, and `325`-`331` are now promoted
+> app-playable generated native packs. `legacy_stage_318` remains unregistered because its legacy `pre` script
+> duplicates `hero_478`, and the native duplicate-spawn gate rejects it fail-closed.
+
 > 收口散在 `HANDOFF.md` / 规则 / KDoc 的 dormant caveat、defer 项、已知限制，分级并区分
 > **设计契约（按预期，非缺陷）** 与 **缺陷/限制**。镜像 xiaopiaojia 的 `KNOWN_ISSUES.md` 实践
 > （小票夹工程金矿移植 backlog #5，`docs/audits/2026-06-22-xiaopiaojia-port-backlog.md`）。
